@@ -18,44 +18,41 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            NavigationView {
-                List {
-                    ForEach(viewModel.podcasts) { podcast in
-                        VStack(alignment: .leading) {
-                            Text(podcast.title)
-                                .font(.headline)
-                            Text(podcast.subtitle)
-                                .font(.subheadline)
-                        }
-                        .onTapGesture {
-                            let detailViewModel = PodcastDetailViewModel(podcast: podcast)
-                            currentViewModel = detailViewModel
-                        }
-                        .onAppear {
-                            // Trigger fetching more data when this podcast appears
-                            if podcast == viewModel.podcasts.last {
-                                debugPrint("Content view: fetchDataIfNeeded")
-                                viewModel.fetchDataIfNeeded(currentItem: podcast)
-                            }
+            List {
+                ForEach(viewModel.podcasts) { podcast in
+                    VStack(alignment: .leading) {
+                        Text(podcast.title)
+                            .font(.headline)
+                        Text(podcast.subtitle)
+                            .font(.subheadline)
+                    }
+                    .onTapGesture {
+                        let detailViewModel = PodcastDetailViewModel(podcast: podcast)
+                        currentViewModel = detailViewModel
+                    }
+                    .onAppear {
+                        // Trigger fetching more data when this podcast appears
+                        if podcast == viewModel.podcasts.last {
+                            viewModel.fetchDataIfNeeded(currentItem: podcast)
                         }
                     }
+                }
 
-                    // Placeholder cells for loading
-                    if viewModel.isLoadingMore {
-                        ForEach(0..<5, id: \.self) { _ in
-                            PlaceholderView()
-                                .redacted(reason: .placeholder)
-                                .shimmering() // Add blinking animation
-                        }
+                // Show placeholder cells for loading if there is more data to fetch
+                if viewModel.isLoadingMore && viewModel.hasMoreData {
+                    ForEach(0..<5, id: \.self) { _ in
+                        PlaceholderView()
+                            .redacted(reason: .placeholder)
+                            .shimmering() // Add blinking animation
                     }
                 }
-                .navigationTitle("Podcasts")
-                .onAppear {
-                    viewModel.fetchData()  // Initial fetch
-                }
-                .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
-                    Alert(title: Text("Error"), message: Text(viewModel.errorMessage ?? "Unknown error"), dismissButton: .default(Text("OK")))
-                }
+            }
+            .navigationTitle("Podcasts")
+            .onAppear {
+                viewModel.fetchData()  // Initial fetch
+            }
+            .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
+                Alert(title: Text("Error"), message: Text(viewModel.errorMessage ?? "Unknown error"), dismissButton: .default(Text("OK")))
             }
 
             if let currentViewModel = currentViewModel {

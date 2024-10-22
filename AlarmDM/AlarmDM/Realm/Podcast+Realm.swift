@@ -9,19 +9,6 @@ import Foundation
 import Realm
 import RealmSwift
 
-enum ShowRealm: String, PersistableEnum {
-    case alarmSaDaskomIMladjom
-    case ljudiIzPodzemlja
-    case naIviciOfsajda
-    case topleLjuckePrice
-    case mozemoSamoDaSeSlikamo
-    case punaUstaPoezije
-    case rastrojavanje
-    case vecernjaSkolaRokenrola
-    case sportskiPozdrav
-    case unutrasnjaEmigracija
-}
-
 class PodcastRealm: Object {
     @Persisted(primaryKey: true) var id: String
     @Persisted var title: String = ""
@@ -33,7 +20,7 @@ class PodcastRealm: Object {
     @Persisted var lengthInBytes: Double = 0.0
     @Persisted var itunesDuration: String = ""
 
-    @Persisted var type: ShowRealm?
+    @Persisted var show: String?
     @Persisted var fileUrl: String?
     @Persisted var isFavorite: Bool = false
     @Persisted var isWithMusic: Bool = false
@@ -53,7 +40,7 @@ extension PodcastRealm {
         self.duration = podcast.duration
         self.lengthInBytes = podcast.lengthInBytes
         self.itunesDuration = podcast.itunesDuration
-        self.type = ShowRealm(rawValue: podcast.show?.rawValue ?? "")
+        self.show = podcast.show?.rawValue
         self.fileUrl = podcast.fileUrl
         self.isFavorite = podcast.isFavorite
         self.isWithMusic = podcast.isWithMusic
@@ -78,7 +65,9 @@ extension PodcastRealm {
         self.lengthInBytes = response.lengthInBytes
         self.itunesDuration = response.itunesDuration
         self.fileUrl = response.fileUrl
-        
+        self.show = response.showType
+        self.isWithMusic = response.withMusic
+
         // Convert createdDate from String to Date if applicable
         if let date = response.createdDate.formattedCreatedDate {
             self.createdAt = date

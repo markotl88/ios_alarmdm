@@ -38,7 +38,7 @@ extension Date {
     }
 }
 protocol PodcastServiceProtocol {
-    func getPodcasts(page: Int?, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, Error>) -> Void)
+    func getPodcasts(for show: String?, page: Int?, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, Error>) -> Void)
 }
 
 final class PodcastService: PodcastServiceProtocol {
@@ -48,12 +48,15 @@ final class PodcastService: PodcastServiceProtocol {
         self.networkManager = networkManager
     }
     
-    func getPodcasts(page: Int? = nil, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, any Error>) -> Void) {
+    func getPodcasts(for show: String?, page: Int? = nil, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, any Error>) -> Void) {
         
         let address = APIRouter.firebasePodcasts.url
         var components = URLComponents(string: address)
         
         var queryItems = [URLQueryItem]()
+        if let show = show {
+            queryItems.append(URLQueryItem(name: "show", value: show))
+        }
         if let page = page {
             queryItems.append(URLQueryItem(name: "page", value: String(page)))
         }
@@ -70,7 +73,6 @@ final class PodcastService: PodcastServiceProtocol {
             return
         }
         
-        debugPrint("URL: \(url)")
         networkManager.get(url: url, headers: nil, completion: completion)
     }
 }

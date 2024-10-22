@@ -7,17 +7,49 @@
 
 import Foundation
 
-enum Show: String {
+enum Show: String, CaseIterable, Identifiable {
     case alarmSaDaskomIMladjom
     case ljudiIzPodzemlja
-    case naIviciOfsajda
-    case topleLjuckePrice
-    case mozemoSamoDaSeSlikamo
-    case punaUstaPoezije
-    case rastrojavanje
     case vecernjaSkolaRokenrola
     case sportskiPozdrav
     case unutrasnjaEmigracija
+    case naIviciOfsajda
+    case topleLjuckePrice
+    case rastrojavanje
+    case punaUstaPoezije
+    case mozemoSamoDaSeSlikamo
+    
+    var id: String { self.rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .alarmSaDaskomIMladjom: return "Alarm sa Daškom i Mlađom"
+        case .ljudiIzPodzemlja: return "Ljudi iz podzemlja"
+        case .naIviciOfsajda: return "Na ivici ofsajda"
+        case .rastrojavanje: return "Rastrojavanje"
+        case .vecernjaSkolaRokenrola: return "Večernja škola rokenrola"
+        case .sportskiPozdrav: return "Sportski pozdrav"
+        case .topleLjuckePrice: return "Tople Ljucke Priče"
+        case .mozemoSamoDaSeSlikamo: return "Možemo samo da se slikamo"
+        case .punaUstaPoezije: return "Puna usta poezije"
+        case .unutrasnjaEmigracija: return "Unutrašnja emigracija"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .alarmSaDaskomIMladjom: return "Svakog radnog dana od 07 do 10h."
+        case .ljudiIzPodzemlja: return "Specijalizovana za punk/hardcore zvuk. Sreda u 20h."
+        case .naIviciOfsajda: return "Romantizovani fudbalski istorijat. Nedelja u 20h."
+        case .rastrojavanje: return "Četvrtkom o važnim temama."
+        case .vecernjaSkolaRokenrola: return "Rokenrol za večernje sate."
+        case .sportskiPozdrav: return "Sportska emisija. Svake nedelje u 20h."
+        case .topleLjuckePrice: return "Emisija sa toplim ljudskim pričama."
+        case .mozemoSamoDaSeSlikamo: return "Satira i humor."
+        case .punaUstaPoezije: return "Emisija posvećena poeziji."
+        case .unutrasnjaEmigracija: return "Svi mi emigranti."
+        }
+    }
 }
 
 struct Podcast: Identifiable, Equatable {
@@ -39,18 +71,6 @@ struct Podcast: Identifiable, Equatable {
         fileUrl != nil
     }
     var bookmarks: [Bookmark]?
-    
-//    init(from podcastResponse: PodcastResponse) {
-//        id = podcastResponse.id
-//        title = podcastResponse.title
-//        subtitle = podcastResponse.subtitle
-//        timestamp = podcastResponse.timestamp
-//        podcastUrl = podcastResponse.podcastUrl
-//        duration = podcastResponse.duration
-//        lengthInBytes = podcastResponse.lengthInBytes
-//        itunesDuration = podcastResponse.itunesDuration
-//        createdDate = podcastResponse.createdDate.formattedCreatedDate
-//    }
 }
 
 extension Podcast {
@@ -64,7 +84,7 @@ extension Podcast {
         self.duration = podcastRealm.duration
         self.lengthInBytes = podcastRealm.lengthInBytes
         self.itunesDuration = podcastRealm.itunesDuration
-        self.show = Show(rawValue: podcastRealm.type?.rawValue ?? "")
+        self.show = Show(rawValue: podcastRealm.show ?? "")
         self.fileUrl = podcastRealm.fileUrl
         self.isFavorite = podcastRealm.isFavorite
         self.isWithMusic = podcastRealm.isWithMusic

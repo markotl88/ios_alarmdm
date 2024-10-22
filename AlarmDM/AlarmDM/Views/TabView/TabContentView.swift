@@ -19,12 +19,12 @@ struct TabContentView: View {
                 }
                 .tag(TabContentViewModel.Tab.radio)
             
-            ContentView(viewModel: ContentViewModel.init())
+            ShowView()
                 .tabItem {
                     Image(systemName: "paperplane.fill")
-                    Text("Kontakt")
+                    Text("Podkast")
                 }
-                .tag(TabContentViewModel.Tab.contact)
+                .tag(TabContentViewModel.Tab.radio)
             
             StoreView()
                 .tabItem {

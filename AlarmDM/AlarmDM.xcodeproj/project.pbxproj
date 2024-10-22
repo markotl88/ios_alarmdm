@@ -18,6 +18,8 @@
 		4D66779D2CC7B07A00EC2ADE /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */; };
 		4D66779F2CC7B5E100EC2ADE /* PodcastResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */; };
 		4D6677A02CC7BC3300EC2ADE /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A32CC83D2300EC2ADE /* ShowView.swift */; };
+		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
 		4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */; };
 		4DAF9EB92C579D5100B4FA7F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB82C579D5100B4FA7F /* ContentView.swift */; };
 		4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */; };
@@ -75,6 +77,8 @@
 		4D66779A2CC7B06B00EC2ADE /* Podcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Podcast.swift; sourceTree = "<group>"; };
 		4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
 		4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastResponse.swift; sourceTree = "<group>"; };
+		4D6677A32CC83D2300EC2ADE /* ShowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowView.swift; sourceTree = "<group>"; };
+		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
 		4DAF9EB32C579D5100B4FA7F /* AlarmDM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlarmDM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMApp.swift; sourceTree = "<group>"; };
 		4DAF9EB82C579D5100B4FA7F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -138,6 +142,25 @@
 				4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */,
 			);
 			path = Model;
+			sourceTree = "<group>";
+		};
+		4D6677A22CC83D1300EC2ADE /* ShowView */ = {
+			isa = PBXGroup;
+			children = (
+				4D6677A32CC83D2300EC2ADE /* ShowView.swift */,
+				4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */,
+			);
+			path = ShowView;
+			sourceTree = "<group>";
+		};
+		4D6677A72CC84DD400EC2ADE /* PodcastDetailView */ = {
+			isa = PBXGroup;
+			children = (
+				4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */,
+				4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */,
+				4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */,
+			);
+			path = PodcastDetailView;
 			sourceTree = "<group>";
 		};
 		4DAF9EAA2C579D5100B4FA7F = {
@@ -214,6 +237,8 @@
 		4DAF9EEA2C57B64C00B4FA7F /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				4D6677A72CC84DD400EC2ADE /* PodcastDetailView */,
+				4D6677A22CC83D1300EC2ADE /* ShowView */,
 				4DAF9EF32C57B76200B4FA7F /* RadioView */,
 				4DAF9EEC2C57B66100B4FA7F /* TabView */,
 				4DAF9EEB2C57B65400B4FA7F /* ContentView */,
@@ -226,9 +251,6 @@
 			children = (
 				4DAF9EB82C579D5100B4FA7F /* ContentView.swift */,
 				4DAF9EE72C57B08A00B4FA7F /* ContentViewModel.swift */,
-				4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */,
-				4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */,
-				4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */,
 			);
 			path = ContentView;
 			sourceTree = "<group>";
@@ -402,7 +424,9 @@
 				4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */,
 				4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
+				4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */,
 				4D6677902CC6703600EC2ADE /* MiniPodcastDetailView.swift in Sources */,
+				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,
 				4D66778C2CC66CA400EC2ADE /* PodcastDetailView.swift in Sources */,
 				4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */,
 			);

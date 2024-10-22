@@ -18,4 +18,6 @@ struct PodcastResponse: Codable {
     var itunesDuration = ""
     var fileUrl = ""
     var createdDate: String = ""
+    var showType: String?
+    var withMusic: Bool = false
 }

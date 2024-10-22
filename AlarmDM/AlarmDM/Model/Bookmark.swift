@@ -37,7 +37,7 @@ extension Bookmark {
         self.note = bookmarkRealm.note
         self.createdAt = bookmarkRealm.createdAt
         self.duration = bookmarkRealm.duration
-        self.category = BookmarkCategory(rawValue: bookmarkRealm.category.rawValue) ?? .custom
+        self.category = BookmarkCategory(rawValue: bookmarkRealm.category ?? "") ?? .custom
         if let podcastRealm = bookmarkRealm.parentPodcast.first {
             self.podcast = Podcast(from: podcastRealm)
         } else {
