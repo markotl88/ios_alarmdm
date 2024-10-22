@@ -50,6 +50,21 @@ enum Show: String, CaseIterable, Identifiable {
         case .unutrasnjaEmigracija: return "Svi mi emigranti."
         }
     }
+    
+    var imageName: String {
+        switch self {
+        case .alarmSaDaskomIMladjom: return "img_alarm"
+        case .ljudiIzPodzemlja: return "img_ljp"
+        case .naIviciOfsajda: return "img_nio"
+        case .rastrojavanje: return "img_rastrojavanje"
+        case .vecernjaSkolaRokenrola: return "img_vecernja_skola_rokenrola"
+        case .sportskiPozdrav: return "img_sportski_pozdrav"
+        case .topleLjuckePrice: return "img_tljp"
+        case .mozemoSamoDaSeSlikamo: return "img_msdss"
+        case .punaUstaPoezije: return "img_pup"
+        case .unutrasnjaEmigracija: return "img_unutrasnja_emigracija"
+        }
+    }
 }
 
 struct Podcast: Identifiable, Equatable {
