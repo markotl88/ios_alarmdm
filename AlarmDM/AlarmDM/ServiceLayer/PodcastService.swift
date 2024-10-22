@@ -13,70 +13,73 @@ enum APIRouter: String {
     case podcasts = "http://podcast.daskoimladja.com/feed.xml"
     case phoneNumber = "+38166442266"
     case bankAccount = "325-9300600398707-66"
-    case firebasePodcasts = "https://getpodcasts-ysnuoqfipq-uc.a.run.app"
+    case firebasePodcasts = "https://us-central1-dasko-i-mladja.cloudfunctions.net/getPodcasts"
     
-    static func getPodcasts(page: Int? = nil, pageSize: Int = 200) -> String {
-        guard let page = page else {
-            return APIRouter.firebasePodcasts.rawValue + "?pageSize=\(pageSize)"
-        }
-        return APIRouter.firebasePodcasts.rawValue + "?page=\(page)&pageSize=\(pageSize)"
+    var url: String {
+        self.rawValue
     }
 }
 
-struct Podcast: Codable, Identifiable, Equatable {
-    var id: String = ""
-    var title = ""
-    var subtitle = ""
-    var timestamp: String?
-    var podcastUrl = ""
-    var duration = ""
-    var lengthInBytes = 0.0
-    var itunesDuration = ""
-    var fileUrl = ""
-    var isFavorite = false
-    var isDownloaded = false
-    var withMusic = false
-    var createdDate: String? // Change to String
-}
-
-extension Podcast {
+extension String {
     var formattedCreatedDate: Date? {
-        guard let createdDate = createdDate else { return nil }
-        
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "E, d MMM yyyy HH:mm:ss Z" // Use the correct format for your date
-        return dateFormatter.date(from: createdDate)
+        dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZ" // Format for ISO 8601 date with milliseconds
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX") // Use POSIX locale to ensure consistency
+        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0) // Use UTC timezone for "Z"
+        return dateFormatter.date(from: self)
     }
 }
 
+extension Date {
+    var iso8601String: String {
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds] // Ensure milliseconds are included
+        return isoFormatter.string(from: self)
+    }
+}
 protocol PodcastServiceProtocol {
-    func getPodcasts(page: Int?, completion: @escaping (Result<PaginationDataResponse<Podcast>, Error>) -> Void)
+    func getPodcasts(page: Int?, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, Error>) -> Void)
 }
 
 final class PodcastService: PodcastServiceProtocol {
-    
     private let networkManager: NetworkManaging
     
     init(networkManager: NetworkManaging = NetworkManager()) {
         self.networkManager = networkManager
     }
     
-    func getPodcasts(page: Int? = nil, completion: @escaping (Result<PaginationDataResponse<Podcast>, Error>) -> Void) {
-        let endpoint = APIRouter.getPodcasts(page: page)
-        guard let url = URL(string: endpoint) else {
-            completion(.failure(NetworkError.urlNotValid(url: endpoint))) // Handle invalid URL case
+    func getPodcasts(page: Int? = nil, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, any Error>) -> Void) {
+        
+        let address = APIRouter.firebasePodcasts.url
+        var components = URLComponents(string: address)
+        
+        var queryItems = [URLQueryItem]()
+        if let page = page {
+            queryItems.append(URLQueryItem(name: "page", value: String(page)))
+        }
+        if let date = date {
+            queryItems.append(URLQueryItem(name: "date", value: date))
+        }
+        if let isBefore = isBefore {
+            queryItems.append(URLQueryItem(name: "is_before", value: String(isBefore)))
+        }
+        components?.queryItems = queryItems
+        
+        guard let url = components?.url else {
+            completion(.failure(NetworkError.urlNotValid(url: address)))
             return
         }
         
+        debugPrint("URL: \(url)")
         networkManager.get(url: url, headers: nil, completion: completion)
     }
 }
 
 // MARK: - PaginationData
 struct PaginationDataResponse<T: Codable>: Codable {
-    let page: Int
-    let pageSize: Int
+    let page: Int?
+    let pageSize: Int?
     let totalItems: Int
-    let totalPages: Int
+    let totalPages: Int?
     let podcasts: [T]
 }

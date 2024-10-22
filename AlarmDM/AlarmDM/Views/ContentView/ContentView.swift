@@ -42,7 +42,7 @@ struct ContentView: View {
 
                     // Placeholder cells for loading
                     if viewModel.isLoadingMore {
-                        ForEach(0..<20, id: \.self) { _ in
+                        ForEach(0..<5, id: \.self) { _ in
                             PlaceholderView()
                                 .redacted(reason: .placeholder)
                                 .shimmering() // Add blinking animation
@@ -101,13 +101,13 @@ struct PodcastDetailModalView: View {
     }
 }
 
-struct ContentView_Previews: PreviewProvider {
-    static var previews: some View {
-        let mockService = MockPodcastService()
-        let viewModel = ContentViewModel(podcastService: mockService)
-        ContentView(viewModel: viewModel)
-    }
-}
+//struct ContentView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        let mockService = MockPodcastService()
+//        let viewModel = ContentViewModel(podcastService: mockService)
+//        ContentView(viewModel: viewModel)
+//    }
+//}
 
 struct PlaceholderView: View {
     var body: some View {

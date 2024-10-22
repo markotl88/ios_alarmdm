@@ -11,15 +11,15 @@ import Foundation
 class PodcastParser: NSObject {
     
     var currentParsedElement = String()
-    var podcasts = [Podcast]()
-    var currentPodcast: Podcast!
+    var podcasts = [PodcastResponse]()
+    var currentPodcast: PodcastResponse!
     var title = ""
     var subtitle = ""
     var timestamp = ""
     var parent = ""
     var itunesDuration = ""
 
-    internal func parse(data: Data) -> [Podcast] {
+    internal func parse(data: Data) -> [PodcastResponse] {
         podcasts.removeAll()
         let parser = XMLParser(data: data)
         parser.delegate = self
@@ -36,7 +36,7 @@ extension PodcastParser: XMLParserDelegate {
         switch elementName {
         case "item":
             parent = "item"
-            currentPodcast = Podcast()
+            currentPodcast = PodcastResponse()
         case "title":
             title = ""
         case "description":

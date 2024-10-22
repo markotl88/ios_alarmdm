@@ -84,7 +84,7 @@ final class NetworkManager: NetworkManaging {
         task.resume()
     }
     
-    func get<T>(url: URL, headers: [String: String]? = nil, completion: @escaping (Result<T, Error>) -> ()) where T : Codable {
+    func get<T>(url: URL, headers: [String: String]? = nil, completion: @escaping (Result<T, Error>) -> ()) where T: Codable {
         
         var request = URLRequest(url: url)
         
@@ -97,7 +97,9 @@ final class NetworkManager: NetworkManaging {
         let task = session.dataTask(with: request) { data, response, error in
             // Handle error
             if let error = error {
-                completion(.failure(error))
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
                 return
             }
             
@@ -107,26 +109,36 @@ final class NetworkManager: NetworkManaging {
                 case 200...299:
                     break // Successful response
                 case 401:
-                    completion(.failure(NetworkError.authenticationError))
+                    DispatchQueue.main.async {
+                        completion(.failure(NetworkError.authenticationError))
+                    }
                     return
                 default:
-                    completion(.failure(NetworkError.serverError(statusCode: httpResponse.statusCode)))
+                    DispatchQueue.main.async {
+                        completion(.failure(NetworkError.serverError(statusCode: httpResponse.statusCode)))
+                    }
                     return
                 }
             }
             
             // Handle missing data
             guard let data = data else {
-                completion(.failure(NetworkError.dataError))
+                DispatchQueue.main.async {
+                    completion(.failure(NetworkError.dataError))
+                }
                 return
             }
             
             do {
                 // Decode the data into the expected type
                 let decodedData = try JSONDecoder().decode(T.self, from: data)
-                completion(.success(decodedData))
+                DispatchQueue.main.async {
+                    completion(.success(decodedData))
+                }
             } catch let error {
-                completion(.failure(NetworkError.decodingError(message: error.localizedDescription)))
+                DispatchQueue.main.async {
+                    completion(.failure(NetworkError.decodingError(message: error.localizedDescription)))
+                }
             }
         }
         task.resume()
