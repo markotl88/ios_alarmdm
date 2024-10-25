@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4D13F43B2CCA65E400AA52D1 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */; };
+		4D13F4412CCA746200AA52D1 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4402CCA746200AA52D1 /* HomeView.swift */; };
+		4D13F4432CCA75B200AA52D1 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4422CCA75B200AA52D1 /* HomeViewModel.swift */; };
+		4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */; };
+		4D13F4472CCA82A500AA52D1 /* PodcastDetailModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4462CCA82A500AA52D1 /* PodcastDetailModalView.swift */; };
 		4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */; };
 		4D66778C2CC66CA400EC2ADE /* PodcastDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */; };
 		4D66778E2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */; };
@@ -20,8 +25,10 @@
 		4D6677A02CC7BC3300EC2ADE /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A32CC83D2300EC2ADE /* ShowView.swift */; };
 		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
+		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
+		4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */; };
 		4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */; };
-		4DAF9EB92C579D5100B4FA7F /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB82C579D5100B4FA7F /* ContentView.swift */; };
+		4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */; };
 		4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */; };
 		4DAF9EBE2C579D5200B4FA7F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBD2C579D5200B4FA7F /* Preview Assets.xcassets */; };
 		4DAF9EC82C579D5200B4FA7F /* AlarmDMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */; };
@@ -30,7 +37,7 @@
 		4DAF9EE22C579E3100B4FA7F /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE12C579E3000B4FA7F /* NetworkManager.swift */; };
 		4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */; };
 		4DAF9EE62C57AE5000B4FA7F /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE52C57AE5000B4FA7F /* Parser.swift */; };
-		4DAF9EE82C57B08A00B4FA7F /* ContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE72C57B08A00B4FA7F /* ContentViewModel.swift */; };
+		4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */; };
 		4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */; };
 		4DAF9EF22C57B69000B4FA7F /* TabContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */; };
 		4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */; };
@@ -68,6 +75,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
+		4D13F4402CCA746200AA52D1 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		4D13F4422CCA75B200AA52D1 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioViewModel.swift; sourceTree = "<group>"; };
+		4D13F4462CCA82A500AA52D1 /* PodcastDetailModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDetailModalView.swift; sourceTree = "<group>"; };
 		4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPodcastService.swift; sourceTree = "<group>"; };
 		4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDetailView.swift; sourceTree = "<group>"; };
 		4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDetailViewModel.swift; sourceTree = "<group>"; };
@@ -79,9 +91,11 @@
 		4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastResponse.swift; sourceTree = "<group>"; };
 		4D6677A32CC83D2300EC2ADE /* ShowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowView.swift; sourceTree = "<group>"; };
 		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
+		4D6677A82CC9341600EC2ADE /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
+		4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		4DAF9EB32C579D5100B4FA7F /* AlarmDM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlarmDM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMApp.swift; sourceTree = "<group>"; };
-		4DAF9EB82C579D5100B4FA7F /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesView.swift; sourceTree = "<group>"; };
 		4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4DAF9EBD2C579D5200B4FA7F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4DAF9EC32C579D5200B4FA7F /* AlarmDMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlarmDMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,7 +106,7 @@
 		4DAF9EE12C579E3000B4FA7F /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastService.swift; sourceTree = "<group>"; };
 		4DAF9EE52C57AE5000B4FA7F /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
-		4DAF9EE72C57B08A00B4FA7F /* ContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentViewModel.swift; sourceTree = "<group>"; };
+		4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesViewModel.swift; sourceTree = "<group>"; };
 		4DAF9EE92C57B40B00B4FA7F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentView.swift; sourceTree = "<group>"; };
 		4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentViewModel.swift; sourceTree = "<group>"; };
@@ -125,6 +139,39 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		4D13F43C2CCA709800AA52D1 /* Player */ = {
+			isa = PBXGroup;
+			children = (
+				4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */,
+			);
+			path = Player;
+			sourceTree = "<group>";
+		};
+		4D13F43D2CCA70A100AA52D1 /* MiniPodcastDetailView */ = {
+			isa = PBXGroup;
+			children = (
+				4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */,
+			);
+			path = MiniPodcastDetailView;
+			sourceTree = "<group>";
+		};
+		4D13F43E2CCA70AF00AA52D1 /* Helpers */ = {
+			isa = PBXGroup;
+			children = (
+				4D6677A82CC9341600EC2ADE /* FileService.swift */,
+			);
+			path = Helpers;
+			sourceTree = "<group>";
+		};
+		4D13F43F2CCA744800AA52D1 /* HomeView */ = {
+			isa = PBXGroup;
+			children = (
+				4D13F4402CCA746200AA52D1 /* HomeView.swift */,
+				4D13F4422CCA75B200AA52D1 /* HomeViewModel.swift */,
+			);
+			path = HomeView;
+			sourceTree = "<group>";
+		};
 		4D6677942CC7AA9500EC2ADE /* Realm */ = {
 			isa = PBXGroup;
 			children = (
@@ -156,9 +203,9 @@
 		4D6677A72CC84DD400EC2ADE /* PodcastDetailView */ = {
 			isa = PBXGroup;
 			children = (
+				4D13F4462CCA82A500AA52D1 /* PodcastDetailModalView.swift */,
 				4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */,
 				4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */,
-				4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */,
 			);
 			path = PodcastDetailView;
 			sourceTree = "<group>";
@@ -186,6 +233,8 @@
 		4DAF9EB52C579D5100B4FA7F /* AlarmDM */ = {
 			isa = PBXGroup;
 			children = (
+				4D13F43C2CCA709800AA52D1 /* Player */,
+				4D13F43E2CCA70AF00AA52D1 /* Helpers */,
 				4D6677992CC7B06000EC2ADE /* Model */,
 				4D6677942CC7AA9500EC2ADE /* Realm */,
 				4DAF9EEA2C57B64C00B4FA7F /* Views */,
@@ -193,6 +242,7 @@
 				4DAF9EE02C579D8E00B4FA7F /* ServiceLayer */,
 				4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */,
 				4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */,
+				4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */,
 				4DAF9EBC2C579D5200B4FA7F /* Preview Content */,
 			);
 			path = AlarmDM;
@@ -237,22 +287,24 @@
 		4DAF9EEA2C57B64C00B4FA7F /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				4D6677A72CC84DD400EC2ADE /* PodcastDetailView */,
-				4D6677A22CC83D1300EC2ADE /* ShowView */,
+				4D13F43F2CCA744800AA52D1 /* HomeView */,
 				4DAF9EF32C57B76200B4FA7F /* RadioView */,
+				4D6677A22CC83D1300EC2ADE /* ShowView */,
+				4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */,
+				4D6677A72CC84DD400EC2ADE /* PodcastDetailView */,
+				4D13F43D2CCA70A100AA52D1 /* MiniPodcastDetailView */,
 				4DAF9EEC2C57B66100B4FA7F /* TabView */,
-				4DAF9EEB2C57B65400B4FA7F /* ContentView */,
 			);
 			path = Views;
 			sourceTree = "<group>";
 		};
-		4DAF9EEB2C57B65400B4FA7F /* ContentView */ = {
+		4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */ = {
 			isa = PBXGroup;
 			children = (
-				4DAF9EB82C579D5100B4FA7F /* ContentView.swift */,
-				4DAF9EE72C57B08A00B4FA7F /* ContentViewModel.swift */,
+				4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */,
+				4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */,
 			);
-			path = ContentView;
+			path = PodcastEpisodesView;
 			sourceTree = "<group>";
 		};
 		4DAF9EEC2C57B66100B4FA7F /* TabView */ = {
@@ -268,6 +320,7 @@
 			isa = PBXGroup;
 			children = (
 				4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */,
+				4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */,
 			);
 			path = RadioView;
 			sourceTree = "<group>";
@@ -383,6 +436,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4D13F43B2CCA65E400AA52D1 /* Colors.xcassets in Resources */,
 				4DAF9EBE2C579D5200B4FA7F /* Preview Assets.xcassets in Resources */,
 				4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */,
 			);
@@ -413,21 +467,27 @@
 				4D66779F2CC7B5E100EC2ADE /* PodcastResponse.swift in Sources */,
 				4DAF9EF22C57B69000B4FA7F /* TabContentViewModel.swift in Sources */,
 				4DAF9EE22C579E3100B4FA7F /* NetworkManager.swift in Sources */,
-				4DAF9EB92C579D5100B4FA7F /* ContentView.swift in Sources */,
-				4DAF9EE82C57B08A00B4FA7F /* ContentViewModel.swift in Sources */,
+				4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */,
+				4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */,
 				4D66779D2CC7B07A00EC2ADE /* Bookmark.swift in Sources */,
 				4DAF9EE62C57AE5000B4FA7F /* Parser.swift in Sources */,
+				4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */,
 				4D66779B2CC7B06B00EC2ADE /* Podcast.swift in Sources */,
 				4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */,
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
+				4D13F4472CCA82A500AA52D1 /* PodcastDetailModalView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
+				4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */,
 				4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */,
 				4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */,
+				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
 				4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */,
 				4D6677902CC6703600EC2ADE /* MiniPodcastDetailView.swift in Sources */,
+				4D13F4432CCA75B200AA52D1 /* HomeViewModel.swift in Sources */,
 				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,
 				4D66778C2CC66CA400EC2ADE /* PodcastDetailView.swift in Sources */,
+				4D13F4412CCA746200AA52D1 /* HomeView.swift in Sources */,
 				4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -14,7 +14,8 @@ enum APIRouter: String {
     case phoneNumber = "+38166442266"
     case bankAccount = "325-9300600398707-66"
     case firebasePodcasts = "https://us-central1-dasko-i-mladja.cloudfunctions.net/getPodcasts"
-    
+    case firebaseLivestream = "https://us-central1-dasko-i-mladja.cloudfunctions.net/getLivestreamUrl"
+
     var url: String {
         self.rawValue
     }
@@ -39,6 +40,8 @@ extension Date {
 }
 protocol PodcastServiceProtocol {
     func getPodcasts(for show: String?, page: Int?, date: String?, isBefore: Bool?, completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, Error>) -> Void)
+    func downloadPodcasts(from url: URL, completion: @escaping (Result<URL, Error>) -> Void, progressHandler: @escaping (Double) -> Void)
+    func getLivestream(completion: @escaping (Result<URL, Error>) -> Void)
 }
 
 final class PodcastService: PodcastServiceProtocol {
@@ -75,6 +78,34 @@ final class PodcastService: PodcastServiceProtocol {
         
         networkManager.get(url: url, headers: nil, completion: completion)
     }
+    
+    func downloadPodcasts(from url: URL, completion: @escaping (Result<URL, Error>) -> Void, progressHandler: @escaping (Double) -> Void) {
+        networkManager.downloadFile(from: url, completion: completion, progressHandler: progressHandler)
+    }
+    
+    // Fetch the Livestream URL from Firebase
+    func getLivestream(completion: @escaping (Result<URL, Error>) -> Void) {
+        // Assuming you have a Firebase Cloud Function setup to return the livestream URL
+        let address = APIRouter.firebaseLivestream.url
+        
+        guard let url = URL(string: address) else {
+            completion(.failure(NetworkError.urlNotValid(url: address)))
+            return
+        }
+        
+        networkManager.get(url: url, headers: nil) { (result: Result<LivestreamResponse, Error>) in
+            switch result {
+            case .success(let response):
+                if let url = URL(string: response.url) {
+                    completion(.success(url))
+                } else {
+                    completion(.failure(NetworkError.dataNotValid))
+                }
+            case .failure(let error):
+                completion(.failure(error))
+            }
+        }
+    }
 }
 
 // MARK: - PaginationData
@@ -84,4 +115,8 @@ struct PaginationDataResponse<T: Codable>: Codable {
     let totalItems: Int
     let totalPages: Int?
     let podcasts: [T]
+}
+
+struct LivestreamResponse: Codable {
+    let url: String
 }

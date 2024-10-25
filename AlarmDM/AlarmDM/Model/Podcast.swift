@@ -89,6 +89,21 @@ struct Podcast: Identifiable, Equatable {
 }
 
 extension Podcast {
+    init(from response: PodcastResponse) {
+        self.title = response.title
+        self.subtitle = response.subtitle
+        self.createdDate = response.createdDate.formattedCreatedDate
+        self.timestamp = response.timestamp
+        self.podcastUrl = response.podcastUrl
+        self.duration = response.duration
+        self.lengthInBytes = response.lengthInBytes
+        self.itunesDuration = response.itunesDuration
+        self.show = Show(rawValue: response.showType ?? "")
+        self.isWithMusic = response.withMusic
+    }
+}
+
+extension Podcast {
     init(from podcastRealm: PodcastRealm) {
         self.id = UUID(uuidString: podcastRealm.id) ?? UUID() // Convert String to UUID, fallback to a new UUID if conversion fails
         self.title = podcastRealm.title

@@ -9,6 +9,7 @@ import SwiftUI
 
 struct TabContentView: View {
     @StateObject private var tabViewModel = TabContentViewModel()
+    let bindingFalse = Binding.constant(false)
     
     var body: some View {
         TabView(selection: $tabViewModel.selectedTab) {
@@ -21,10 +22,17 @@ struct TabContentView: View {
             
             ShowView()
                 .tabItem {
-                    Image(systemName: "paperplane.fill")
+                    Image(systemName: "radio.fill")
                     Text("Podkast")
                 }
                 .tag(TabContentViewModel.Tab.radio)
+
+            StoreView()
+                .tabItem {
+                    Image(systemName: "paperplane.fill")
+                    Text("Podkast")
+                }
+                .tag(TabContentViewModel.Tab.contact) // Fix the tag to match the correct view
             
             StoreView()
                 .tabItem {
@@ -39,6 +47,11 @@ struct TabContentView: View {
                     Text("Ostalo")
                 }
                 .tag(TabContentViewModel.Tab.settings)
+        }
+        .accentColor(Color("primary"))  // Set the accent color for the TabView
+        .background(Color("background"))  // Set the background color
+        .onAppear {
+            UITabBar.appearance().barTintColor = UIColor(named: "background") // Customize tab bar background
         }
     }
 }

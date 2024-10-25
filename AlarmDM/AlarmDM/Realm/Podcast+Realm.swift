@@ -53,24 +53,24 @@ extension PodcastRealm {
     }
 }
 
-extension PodcastRealm {
-    convenience init(from response: PodcastResponse) {
-        self.init()
-        self.id = response.id// Assuming PodcastResponse.id is a String; safely convert to Int
-        self.title = response.title
-        self.subtitle = response.subtitle
-        self.timestamp = response.timestamp
-        self.podcastUrl = response.podcastUrl
-        self.duration = response.duration
-        self.lengthInBytes = response.lengthInBytes
-        self.itunesDuration = response.itunesDuration
-        self.fileUrl = response.fileUrl
-        self.show = response.showType
-        self.isWithMusic = response.withMusic
-
-        // Convert createdDate from String to Date if applicable
-        if let date = response.createdDate.formattedCreatedDate {
-            self.createdAt = date
-        }
-    }
-}
+//extension PodcastRealm {
+//    convenience init(from response: PodcastResponse) {
+//        self.init()
+//        self.id = response.id// Assuming PodcastResponse.id is a String; safely convert to Int
+//        self.title = response.title
+//        self.subtitle = response.subtitle
+//        self.timestamp = response.timestamp
+//        self.podcastUrl = response.podcastUrl
+//        self.duration = response.duration
+//        self.lengthInBytes = response.lengthInBytes
+//        self.itunesDuration = response.itunesDuration
+//        self.fileUrl = response.fileUrl
+//        self.show = response.showType
+//        self.isWithMusic = response.withMusic
+//
+//        // Convert createdDate from String to Date if applicable
+//        if let date = response.createdDate.formattedCreatedDate {
+//            self.createdAt = date
+//        }
+//    }
+//}

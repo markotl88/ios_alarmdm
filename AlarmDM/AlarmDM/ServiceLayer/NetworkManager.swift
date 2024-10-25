@@ -30,6 +30,7 @@ protocol NetworkManaging {
     func performRequest(url: String, httpMethod: HTTPMethod, completion: @escaping (Result<Data, Error>) -> Void)
     func performRequest<T: Decodable>(url: URL, httpMethod: HTTPMethod, headers: [String: String]?, body: Encodable?, completion: @escaping (Result<T, Error>) -> Void)
     func get<T: Codable>(url: URL, headers: [String: String]?, completion: @escaping (Result<T, Error>) -> ())
+    func downloadFile(from url: URL, completion: @escaping (Result<URL, Error>) -> Void, progressHandler: @escaping (Double) -> Void)
 }
 
 final class NetworkManager: NetworkManaging {
@@ -211,7 +212,67 @@ final class NetworkManager: NetworkManaging {
         task.resume()
     }
 
-}
+    func downloadFile(from url: URL, completion: @escaping (Result<URL, Error>) -> Void, progressHandler: @escaping (Double) -> Void) {
+        let downloadTask = session.downloadTask(with: url) { localURL, response, error in
+            // Handle errors
+            if let error = error {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+                return
+            }
+
+            guard let localURL = localURL else {
+                DispatchQueue.main.async {
+                    completion(.failure(NetworkError.dataNotValid))
+                }
+                return
+            }
+
+            do {
+                // Move file to a permanent location
+                let fileManager = FileManager.default
+                let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first
+                let destinationURL = documentsURL?.appendingPathComponent(url.lastPathComponent)
+
+                if let destinationURL = destinationURL {
+                    // If the file already exists, remove it before copying the new file
+                    if fileManager.fileExists(atPath: destinationURL.path) {
+                        try fileManager.removeItem(at: destinationURL)
+                    }
+
+                    try fileManager.moveItem(at: localURL, to: destinationURL)
+
+                    DispatchQueue.main.async {
+                        completion(.success(destinationURL))
+                    }
+                } else {
+                    DispatchQueue.main.async {
+                        completion(.failure(NetworkError.dataError))
+                    }
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(.failure(error))
+                }
+            }
+        }
+
+        // Observe progress updates
+        let observation = downloadTask.progress.observe(\.fractionCompleted) { progress, _ in
+            DispatchQueue.main.async {
+                progressHandler(progress.fractionCompleted)
+            }
+        }
+        
+        // Start the download task
+        downloadTask.resume()
+        
+        // Make sure to invalidate the observation **after** the task is complete, not immediately
+        downloadTask.progress.cancellationHandler = {
+            observation.invalidate() // Safely invalidate the observation when download completes
+        }
+    }}
 
 extension URLRequest {
     public func debugLog() -> Self {

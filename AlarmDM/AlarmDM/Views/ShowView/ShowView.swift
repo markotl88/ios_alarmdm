@@ -12,24 +12,26 @@ struct ShowView: View {
 
     var body: some View {
         NavigationView {
-            ShowListView(shows: viewModel.shows)
-                .navigationTitle("Shows")
+            VStack {
+                ShowListView(shows: viewModel.shows)
+                    .background(Color("background").edgesIgnoringSafeArea(.all)) // Background color from assets
+            }
         }
     }
 }
-
 struct ShowListView: View {
     let shows: [Show]
 
     var body: some View {
         List(shows, id: \.self) { show in
-            NavigationLink(destination: ContentView(viewModel: ContentViewModel(show: show))) {
+            NavigationLink(destination: PodcastEpisodesView(viewModel: PodcastEpisodesViewModel(show: show))) {
                 ShowRowView(show: show)
+                    .listRowBackground(Color("background")) // List row background color
             }
         }
+        .background(Color("background")) // Overall background
     }
 }
-
 struct ShowRowView: View {
     let show: Show
     
@@ -46,18 +48,18 @@ struct ShowRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(show.displayName)
                     .font(.headline)
-                    .foregroundColor(.primary)
+                    .foregroundColor(Color("primaryText")) // Text color from assets
                 
                 Text(show.description)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(3) // Limit to 2 lines to match the design
+                    .foregroundColor(Color("secondaryText")) // Secondary text color from assets
+                    .lineLimit(3)
             }
             
             Spacer() // Push content to the left
         }
+        .background(Color("primary").opacity(0.05)) // Light background for the row
+        .cornerRadius(8)
+        .padding(.vertical, 4)
     }
-}
-#Preview {
-    ShowView()
 }

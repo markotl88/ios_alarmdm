@@ -1,5 +1,5 @@
 //
-//  ContentViewModel.swift
+//  PodcastEpisodesViewModel.swift
 //  AlarmDM
 //
 //  Created by Marko Stajic on 29.07.2024.
@@ -8,7 +8,7 @@
 import SwiftUI
 import RealmSwift
 
-final class ContentViewModel: ObservableObject {
+final class PodcastEpisodesViewModel: ObservableObject {
     
     @Published var podcasts: [Podcast] = []
     @Published var errorMessage: String?
@@ -57,7 +57,7 @@ final class ContentViewModel: ObservableObject {
             switch result {
             case .success(let paginationData):
                 
-                let newRealmPodcasts = paginationData.podcasts.map { PodcastRealm(from: $0) }
+                let newRealmPodcasts = paginationData.podcasts.map { Podcast(from: $0) }.map({ PodcastRealm(from: $0) })
                 self.savePodcastsToRealm(newRealmPodcasts)
                 self.podcasts = loadPodcastsFromRealm()
                 
