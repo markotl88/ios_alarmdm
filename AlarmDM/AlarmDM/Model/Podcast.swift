@@ -71,7 +71,7 @@ enum Show: String, CaseIterable, Identifiable {
         case .topleLjuckePrice: return "Emisija sa toplim ljudskim pričama."
         case .punaUstaPoezije: return "Emisija posvećena poeziji."
         case .citanjac: return "Čitanje uz mikrofon."
-        case .falis: return "Snimci sa festivala."
+        case .falis: return "Prenosi sa Festivala alternative i ljevice u Šibeniku, 2024."
         case .ostalo: return "Epizode van redovnih emisija."
         }
     }
@@ -91,7 +91,9 @@ enum Show: String, CaseIterable, Identifiable {
         case .topleLjuckePrice: return "img_tljp"
         case .punaUstaPoezije: return "img_pup"
         case .jbt: return "img_jbt"
-        case .nepopularnoMisljenje, .priceUMagli, .citanjac, .falis, .ostalo:
+        case .nepopularnoMisljenje: return "img_nepopularno"
+        case .falis: return "img_falis"
+        case .priceUMagli, .citanjac, .ostalo:
             return "img_radio"
         }
     }
