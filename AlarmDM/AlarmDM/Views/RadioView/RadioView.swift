@@ -85,11 +85,23 @@ struct RadioView: View {
                     }
                 }
             } header: {
-                podcastsHeader
+                HStack {
+                    Text("Najnoviji podkasti")
+                    if let active = viewModel.activeFilter {
+                        Spacer()
+                        Label(active.title, systemImage: active.systemImage)
+                            .textCase(nil)
+                            .font(.caption)
+                            .foregroundColor(Color("primary"))
+                    }
+                }
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Radio")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { filterMenu }
+        }
         .refreshable { viewModel.refresh() }
         .onAppear { viewModel.refresh() }
     }
@@ -98,34 +110,31 @@ struct RadioView: View {
         playerViewModel.isLive && playerViewModel.isPlaying
     }
 
-    /// Sticky header: the section title plus the two filters that mean the same
-    /// thing across every show. "With music" is left to a show's own list.
-    private var podcastsHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Najnoviji podkasti")
-
-            HStack(spacing: 8) {
+    /// The filter lives in the toolbar rather than in a bar under the title.
+    /// Chips here would sit directly below the navigation bar once the card
+    /// scrolls away — two stacked bars saying the same thing.
+    private var filterMenu: some View {
+        Menu {
+            Picker("Filter", selection: filterBinding) {
+                Text("Sve epizode").tag(EpisodeFilter?.none)
                 ForEach(viewModel.availableFilters) { filter in
-                    let isActive = viewModel.activeFilter == filter
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.18)) { viewModel.toggle(filter) }
-                    } label: {
-                        Label(filter.title, systemImage: filter.systemImage)
-                            .font(.caption.weight(isActive ? .semibold : .regular))
-                            .textCase(nil)
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(
-                                Capsule().fill(isActive ? Color("primary") : Color("primary").opacity(0.12))
-                            )
-                            .foregroundColor(isActive ? .white : Color("primaryText"))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(isActive ? .isSelected : [])
+                    Label(filter.title, systemImage: filter.systemImage)
+                        .tag(EpisodeFilter?.some(filter))
                 }
             }
+        } label: {
+            Image(systemName: viewModel.activeFilter == nil
+                  ? "line.3.horizontal.decrease.circle"
+                  : "line.3.horizontal.decrease.circle.fill")
         }
-        .padding(.bottom, 4)
+        .accessibilityLabel("Filtriraj epizode")
+    }
+
+    private var filterBinding: Binding<EpisodeFilter?> {
+        Binding(
+            get: { viewModel.activeFilter },
+            set: { newValue in withAnimation(.easeInOut(duration: 0.18)) { viewModel.activeFilter = newValue } }
+        )
     }
 
     @ViewBuilder
