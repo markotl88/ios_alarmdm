@@ -92,7 +92,7 @@ struct RadioView: View {
                         Label(active.title, systemImage: active.systemImage)
                             .textCase(nil)
                             .font(.caption)
-                            .foregroundColor(Color("primary"))
+                            .foregroundColor(Color("primaryLink"))
                     }
                 }
             }

@@ -91,10 +91,12 @@ struct PodcastEpisodesView: View {
                             .padding(.vertical, 7)
                             .background(
                                 Capsule().fill(
-                                    isActive ? Color("primary") : Color("primary").opacity(0.10)
+                                    isActive ? Color("primaryLink") : Color(.tertiarySystemFill)
                                 )
                             )
-                            .foregroundColor(isActive ? .white : Color("primaryText"))
+                            // System background as the foreground: white on blue in
+                            // light mode, near-black on light blue in dark mode.
+                            .foregroundColor(isActive ? Color(.systemBackground) : Color("primaryText"))
                     }
                     .buttonStyle(.plain)
                     .accessibilityAddTraits(isActive ? .isSelected : [])
@@ -191,7 +193,7 @@ struct PodcastRowView: View {
                 if podcast.isFavorite {
                     Image(systemName: "heart.fill")
                         .font(.footnote)
-                        .foregroundColor(Color("primary"))
+                        .foregroundColor(Color("primaryLink"))
                         .accessibilityLabel("Omiljeno")
                 }
                 if podcast.isDownloaded {
@@ -279,7 +281,7 @@ struct EpisodeRowActions: ViewModifier {
                         systemImage: podcast.isFavorite ? "heart.slash" : "heart"
                     )
                 }
-                .tint(Color("primary"))
+                .tint(Color("primaryLink"))
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 if podcast.isDownloaded {

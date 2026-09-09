@@ -77,7 +77,7 @@ struct SupportView: View {
             HStack(spacing: 14) {
                 Image(systemName: "building.columns.circle.fill")
                     .font(.title)
-                    .foregroundColor(Color("primary"))
+                    .foregroundColor(Color("primaryLink"))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Uplata na račun")
                         .font(.headline)
@@ -101,12 +101,12 @@ struct SupportView: View {
                         .foregroundColor(Color("primaryText"))
                     Spacer()
                     Image(systemName: didCopyAccount ? "checkmark" : "doc.on.doc")
-                        .foregroundColor(Color("primary"))
+                        .foregroundColor(Color("primaryLink"))
                 }
                 .padding(14)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color("primary").opacity(0.08))
+                        .fill(Color(.tertiarySystemFill))
                 )
             }
             .buttonStyle(.plain)
@@ -142,7 +142,7 @@ struct SupportView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color("primary").opacity(0.05))
+                .fill(Color(.secondarySystemBackground))
         )
     }
 
@@ -152,7 +152,7 @@ struct SupportView: View {
         HStack(spacing: 14) {
             Image(systemName: systemImage)
                 .font(.title)
-                .foregroundColor(Color("primary"))
+                .foregroundColor(Color("primaryLink"))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -172,7 +172,7 @@ struct SupportView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color("primary").opacity(0.05))
+                .fill(Color(.secondarySystemBackground))
         )
     }
 }

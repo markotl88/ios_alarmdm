@@ -13,7 +13,6 @@ struct ShowView: View {
     var body: some View {
         ShowListView(shows: viewModel.shows)
             .navigationTitle("Emisije")
-            .background(Color("background").edgesIgnoringSafeArea(.all))
     }
 }
 struct ShowListView: View {
@@ -23,10 +22,8 @@ struct ShowListView: View {
         List(shows, id: \.self) { show in
             NavigationLink(destination: PodcastEpisodesView(show: show)) {
                 ShowRowView(show: show)
-                    .listRowBackground(Color("background")) // List row background color
             }
         }
-        .background(Color("background")) // Overall background
     }
 }
 struct ShowRowView: View {
@@ -45,18 +42,16 @@ struct ShowRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(show.displayName)
                     .font(.headline)
-                    .foregroundColor(Color("primaryText")) // Text color from assets
+                    .foregroundColor(Color("primaryText"))
                 
                 Text(show.description)
                     .font(.subheadline)
-                    .foregroundColor(Color("secondaryText")) // Secondary text color from assets
+                    .foregroundColor(Color("secondaryText"))
                     .lineLimit(3)
             }
             
             Spacer() // Push content to the left
         }
-        .background(Color("primary").opacity(0.05)) // Light background for the row
-        .cornerRadius(8)
         .padding(.vertical, 4)
     }
 }

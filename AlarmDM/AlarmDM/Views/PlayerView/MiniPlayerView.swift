@@ -20,7 +20,7 @@ struct MiniPlayerView: View {
             if !playerViewModel.isLive {
                 ProgressView(value: playerViewModel.playbackProgress)
                     .progressViewStyle(.linear)
-                    .tint(Color("primary"))
+                    .tint(Color("primaryLink"))
                     .frame(height: 2)
             }
 
@@ -39,7 +39,7 @@ struct MiniPlayerView: View {
 
                     Text(playerViewModel.isLive ? "UŽIVO" : playerViewModel.subtitle)
                         .font(.caption)
-                        .foregroundColor(playerViewModel.isLive ? Color("primary") : Color("secondaryText"))
+                        .foregroundColor(playerViewModel.isLive ? Color("primaryLink") : Color("secondaryText"))
                         .lineLimit(1)
                 }
 
@@ -182,7 +182,7 @@ struct FullscreenPlayerView: View {
         .foregroundColor(Color("primaryText"))
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Capsule().fill(Color("primary").opacity(0.15)))
+        .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
     }
 
     private var scrubber: some View {
@@ -200,7 +200,7 @@ struct FullscreenPlayerView: View {
                     }
                 }
             )
-            .tint(Color("primary"))
+            .tint(Color("primaryLink"))
             .disabled(playerViewModel.duration <= 0)
 
             HStack {
@@ -227,13 +227,13 @@ struct FullscreenPlayerView: View {
                 playerViewModel.togglePlayPause()
             } label: {
                 ZStack {
-                    Circle().fill(Color("primary")).frame(width: 72, height: 72)
+                    Circle().fill(Color("primaryLink")).frame(width: 72, height: 72)
                     if playerViewModel.isBuffering {
-                        ProgressView().tint(.white)
+                        ProgressView().tint(Color(.systemBackground))
                     } else {
                         Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 30))
-                            .foregroundColor(.white)
+                            .foregroundColor(Color(.systemBackground))
                     }
                 }
             }
@@ -258,7 +258,7 @@ struct FullscreenPlayerView: View {
                 systemImage: playerViewModel.isFavorite ? "heart.fill" : "heart"
             )
             .font(.subheadline)
-            .foregroundColor(playerViewModel.isFavorite ? Color("primary") : Color("primaryText"))
+            .foregroundColor(playerViewModel.isFavorite ? Color("primaryLink") : Color("primaryText"))
         }
         .accessibilityLabel(playerViewModel.isFavorite ? "Ukloni iz omiljenih" : "Dodaj u omiljene")
     }
@@ -269,7 +269,7 @@ struct FullscreenPlayerView: View {
             VStack(spacing: 8) {
                 ProgressView(value: playerViewModel.progress)
                     .progressViewStyle(.linear)
-                    .tint(Color("primary"))
+                    .tint(Color("primaryLink"))
                     .frame(width: 180)
                 Text("Preuzimanje \(Int(playerViewModel.progress * 100))%")
                     .font(.caption)
@@ -293,7 +293,7 @@ struct FullscreenPlayerView: View {
                 Label("Preuzmi epizodu", systemImage: "arrow.down.circle")
                     .font(.subheadline)
             }
-            .foregroundColor(Color("primary"))
+            .foregroundColor(Color("primaryLink"))
         }
     }
 
