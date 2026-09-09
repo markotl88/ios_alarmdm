@@ -65,7 +65,7 @@ enum Show: String, CaseIterable, Identifiable {
         case .nepopularnoMisljenje: return "Teme o kojima se ćuti."
         case .sportskiPozdrav: return "Sportska emisija."
         case .provizorniPodnevniProgram: return "Podnevni program."
-        case .jbt: return "Razgovori sa gostima."
+        case .jbt: return "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05."
         case .priceUMagli: return "Radio-drama."
         case .rastrojavanje: return "Četvrtkom o važnim temama."
         case .topleLjuckePrice: return "Emisija sa toplim ljudskim pričama."
@@ -90,7 +90,8 @@ enum Show: String, CaseIterable, Identifiable {
         case .rastrojavanje: return "img_rastrojavanje"
         case .topleLjuckePrice: return "img_tljp"
         case .punaUstaPoezije: return "img_pup"
-        case .nepopularnoMisljenje, .jbt, .priceUMagli, .citanjac, .falis, .ostalo:
+        case .jbt: return "img_jbt"
+        case .nepopularnoMisljenje, .priceUMagli, .citanjac, .falis, .ostalo:
             return "img_radio"
         }
     }
