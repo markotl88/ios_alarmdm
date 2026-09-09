@@ -11,7 +11,15 @@ final class RadioViewModel: ObservableObject {
     @Published var livestreamUrl: URL?
     @Published var latestPodcasts: [Podcast] = []
     @Published var isLoading = false
+    @Published var isLoadingMore = false
     @Published var errorMessage: String?
+    @Published var activeFilter: EpisodeFilter?
+
+    /// How many episodes are on screen. Grows as the list is scrolled; the API
+    /// is only asked for more when Realm runs out.
+    private var displayLimit = 20
+    private var nextPage = 1
+    private var reachedEnd = false
 
     private let podcastService: PodcastServiceProtocol
     private let repository = PodcastRepository.shared
@@ -24,13 +32,73 @@ final class RadioViewModel: ObservableObject {
 
     /// Whatever is already on disk shows instantly; the network refresh follows.
     private func loadCached() {
-        latestPodcasts = repository.latestPodcasts(limit: 20)
+        latestPodcasts = repository.latestPodcasts(limit: displayLimit)
+    }
+
+    var visiblePodcasts: [Podcast] {
+        guard let activeFilter else { return latestPodcasts }
+        switch activeFilter {
+        case .downloaded: return latestPodcasts.filter { $0.isDownloaded }
+        case .favourites: return latestPodcasts.filter { $0.isFavorite }
+        case .withMusic, .withoutMusic: return latestPodcasts
+        }
+    }
+
+    /// Across shows, "with music" says little — each show does its own thing.
+    /// Only the two that mean the same everywhere are offered here.
+    let availableFilters: [EpisodeFilter] = [.downloaded, .favourites]
+
+    func toggle(_ filter: EpisodeFilter) {
+        activeFilter = (activeFilter == filter) ? nil : filter
+    }
+
+    /// Called as rows appear. Widens the window first, and only goes to the
+    /// network once the local rows are used up.
+    func loadMoreIfNeeded(currentItem: Podcast) {
+        guard !isLoadingMore, !reachedEnd else { return }
+        guard let index = latestPodcasts.firstIndex(where: { $0.id == currentItem.id }) else { return }
+        guard index >= latestPodcasts.count - 5 else { return }
+
+        displayLimit += 20
+        let widened = repository.latestPodcasts(limit: displayLimit)
+
+        if widened.count > latestPodcasts.count {
+            latestPodcasts = widened
+        } else {
+            fetchNextPage()
+        }
+    }
+
+    private func fetchNextPage() {
+        guard !isLoadingMore, !reachedEnd else { return }
+        isLoadingMore = true
+        nextPage += 1
+
+        podcastService.getPodcasts(for: nil, page: nextPage, date: nil, isBefore: true) { [weak self] result in
+            guard let self else { return }
+            self.isLoadingMore = false
+
+            switch result {
+            case .success(let page):
+                if page.podcasts.isEmpty {
+                    self.reachedEnd = true
+                } else {
+                    self.repository.save(page.podcasts.map { Podcast(from: $0) })
+                    self.latestPodcasts = self.repository.latestPodcasts(limit: self.displayLimit)
+                }
+            case .failure(let error):
+                self.nextPage -= 1
+                debugPrint("Error fetching page \(self.nextPage + 1): \(error.localizedDescription)")
+            }
+        }
     }
 
     func refresh() {
         guard !isLoading else { return }
         isLoading = true
         errorMessage = nil
+        reachedEnd = false
+        nextPage = 1
 
         podcastService.getPodcasts(for: nil, page: 1, date: nil, isBefore: true) { [weak self] result in
             guard let self else { return }
@@ -39,7 +107,7 @@ final class RadioViewModel: ObservableObject {
             switch result {
             case .success(let page):
                 self.repository.save(page.podcasts.map { Podcast(from: $0) })
-                self.latestPodcasts = self.repository.latestPodcasts(limit: 20)
+                self.latestPodcasts = self.repository.latestPodcasts(limit: self.displayLimit)
             case .failure(let error):
                 if self.latestPodcasts.isEmpty {
                     self.errorMessage = "Nije moguće učitati podkaste. Proveri internet vezu."
@@ -51,12 +119,12 @@ final class RadioViewModel: ObservableObject {
 
     func toggleFavourite(_ podcast: Podcast) {
         EpisodeLibrary.shared.toggleFavourite(podcast)
-        latestPodcasts = repository.latestPodcasts(limit: 20)
+        latestPodcasts = repository.latestPodcasts(limit: displayLimit)
     }
 
     func deleteDownload(_ podcast: Podcast) {
         EpisodeLibrary.shared.deleteDownload(podcast)
-        latestPodcasts = repository.latestPodcasts(limit: 20)
+        latestPodcasts = repository.latestPodcasts(limit: displayLimit)
     }
 
     private func fetchLivestreamUrl() {

@@ -15,44 +15,49 @@ struct RadioView: View {
         List {
             // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 0) {
                     Image("img_radio_wide")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 180)
                         .clipped()
-                        .cornerRadius(12)
 
-                    Text("Internet radio Daško i Mlađa")
-                        .font(.headline)
-
-                    Text("Svakog radnog dana 07-10h. Dobra muzika non-stop!")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Internet radio Daško i Mlađa")
+                            .font(.headline)
+                        Text("Svakog radnog dana 07-10h. Dobra muzika non-stop!")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
 
                     Button {
                         playerViewModel.mode = .radio(stream: viewModel.livestreamUrl)
                         playerViewModel.togglePlayPause()
                     } label: {
-                        HStack {
-                            Image(systemName: "play.circle.fill")
-                            Text("Pusti uživo")
+                        HStack(spacing: 8) {
+                            Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
+                            Text(isLivePlaying ? "Pauziraj uživo" : "Pusti uživo")
+                                .font(.headline)
                         }
-                        .font(.title2)
-                        .foregroundColor(Color("primary"))
-                        .padding(.top, 8)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color("primary"))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
                 }
-                .padding(.vertical)
+                .listRowInsets(EdgeInsets())
             }
 
-            // MARK: - Najnoviji podkasti
-            Section(header: Text("Najnoviji podkasti")) {
-                if viewModel.latestPodcasts.isEmpty {
+            // MARK: - Podkasti
+            Section {
+                if viewModel.visiblePodcasts.isEmpty {
                     emptyState
                 } else {
-                    ForEach(viewModel.latestPodcasts, id: \.id) { podcast in
+                    ForEach(viewModel.visiblePodcasts, id: \.id) { podcast in
                         PodcastRowView(podcast: podcast)
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -68,14 +73,59 @@ struct RadioView: View {
                                 toggleFavourite: { viewModel.toggleFavourite(podcast) },
                                 deleteDownload: { viewModel.deleteDownload(podcast) }
                             )
+                            .onAppear { viewModel.loadMoreIfNeeded(currentItem: podcast) }
+                    }
+
+                    if viewModel.isLoadingMore {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
                     }
                 }
+            } header: {
+                podcastsHeader
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Radio")
         .refreshable { viewModel.refresh() }
         .onAppear { viewModel.refresh() }
+    }
+
+    private var isLivePlaying: Bool {
+        playerViewModel.isLive && playerViewModel.isPlaying
+    }
+
+    /// Sticky header: the section title plus the two filters that mean the same
+    /// thing across every show. "With music" is left to a show's own list.
+    private var podcastsHeader: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Najnoviji podkasti")
+
+            HStack(spacing: 8) {
+                ForEach(viewModel.availableFilters) { filter in
+                    let isActive = viewModel.activeFilter == filter
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) { viewModel.toggle(filter) }
+                    } label: {
+                        Label(filter.title, systemImage: filter.systemImage)
+                            .font(.caption.weight(isActive ? .semibold : .regular))
+                            .textCase(nil)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(
+                                Capsule().fill(isActive ? Color("primary") : Color("primary").opacity(0.12))
+                            )
+                            .foregroundColor(isActive ? .white : Color("primaryText"))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isActive ? .isSelected : [])
+                }
+            }
+        }
+        .padding(.bottom, 4)
     }
 
     @ViewBuilder
