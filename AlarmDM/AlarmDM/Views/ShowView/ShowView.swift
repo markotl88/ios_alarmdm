@@ -9,8 +9,7 @@ import SwiftUI
 
 struct ShowView: View {
     @StateObject private var viewModel = ShowViewModel()
-    @EnvironmentObject private var playerViewModel: PlayerViewModel
-    
+
     var body: some View {
         ShowListView(shows: viewModel.shows)
             .navigationTitle("Emisije")
@@ -19,7 +18,6 @@ struct ShowView: View {
 }
 struct ShowListView: View {
     let shows: [Show]
-    @EnvironmentObject private var playerViewModel: PlayerViewModel
 
     var body: some View {
         List(shows, id: \.self) { show in
@@ -33,7 +31,6 @@ struct ShowListView: View {
 }
 struct ShowRowView: View {
     let show: Show
-    @EnvironmentObject private var playerViewModel: PlayerViewModel
 
     var body: some View {
         HStack(alignment: .center, spacing: 16) {

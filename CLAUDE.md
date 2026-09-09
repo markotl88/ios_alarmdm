@@ -76,6 +76,20 @@ lock screen shows up correctly in the app.
 - Entitlement: `com.apple.developer.carplay-audio` only (the deprecated
   `playable-content` key was removed)
 
+### Backend
+
+There is no backend code in this repo. The app talks to two Firebase Cloud
+Functions in the Google Cloud project `dasko-i-mladja`, region `us-central1`:
+
+- `getPodcasts` — paginated episode list. Query params: `show` (the Show
+  enum's rawValue, e.g. `alarmSaDaskomIMladjom`), `page`, `date`, `is_before`.
+  Returns `{page, pageSize, totalItems, totalPages, podcasts[]}`.
+- `getLivestreamUrl` — returns `{success, url}` for the live stream.
+
+Episode media and the RSS feed are served from `podcast.daskoimladja.com`, all
+over HTTPS (no ATS exception is needed). The functions are the single point of
+failure for the whole app: if they go down, both tabs are empty.
+
 ### Key Dependencies
 
 - **RealmSwift** - Local database for podcast storage and favorites

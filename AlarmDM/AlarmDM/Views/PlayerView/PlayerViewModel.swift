@@ -107,7 +107,11 @@ final class PlayerViewModel: ObservableObject {
             .sink { [weak self] in self?.isBuffering = $0 }
             .store(in: &cancellables)
 
+        // Rounded and de-duplicated: the engine ticks twice a second, and every
+        // distinct value re-renders each view observing this object.
         engine.currentTimePublisher
+            .map { $0.rounded(.down) }
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.currentTime = $0 }
             .store(in: &cancellables)
