@@ -38,7 +38,7 @@ struct RadioView: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
-                            Text(isLivePlaying ? "Pauziraj uživo" : "Pusti uživo")
+                            Text(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
                                 .font(.headline)
                         }
                         .foregroundColor(.white)
