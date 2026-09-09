@@ -186,20 +186,3 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return "Pusti"
     }
 }
-
-// MARK: - Realm access for CarPlay
-
-final class PodcastRepository {
-    static let shared = PodcastRepository()
-
-    func latestPodcasts(limit: Int = 10) -> [Podcast] {
-        guard let realm = try? Realm() else {
-            debugPrint("Realm unavailable, returning no podcasts")
-            return []
-        }
-        let podcastRealms = realm.objects(PodcastRealm.self)
-            .sorted(byKeyPath: "createdAt", ascending: false)
-
-        return Array(podcastRealms.prefix(limit)).map { Podcast(from: $0) }
-    }
-}

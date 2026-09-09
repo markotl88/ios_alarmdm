@@ -30,6 +30,7 @@
 		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
 		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
 		4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */; };
+		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
 		4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */; };
@@ -105,6 +106,7 @@
 		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
 		4D6677A82CC9341600EC2ADE /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 		4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
 		4D9E122E2DC0DEAB005D99E9 /* AlarmDM.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AlarmDM.entitlements; sourceTree = "<group>"; };
@@ -211,6 +213,7 @@
 			isa = PBXGroup;
 			children = (
 				4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */,
+				AA0000000000000000000108 /* PodcastRepository.swift */,
 				4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */,
 			);
 			path = Realm;
@@ -522,6 +525,7 @@
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */,
+				AA0000000000000000000107 /* PodcastRepository.swift in Sources */,
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
 				AA0000000000000000000101 /* PlaybackEngine.swift in Sources */,
 				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,

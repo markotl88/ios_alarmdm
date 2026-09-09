@@ -11,14 +11,12 @@ struct RadioView: View {
     @StateObject private var viewModel = RadioViewModel()
     @EnvironmentObject private var playerViewModel: PlayerViewModel
 
-    private let calendar = Calendar.current
-
     var body: some View {
         List {
-            // MARK: - Radio uživo sekcija
+            // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Image("iTunesArtwork") // ← tvoja hardkodovana slika
+                    Image("iTunesArtwork")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 180)
@@ -32,59 +30,101 @@ struct RadioView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
 
-                    Button(action: {
-                        debugPrint("Play radio stream")
+                    Button {
                         playerViewModel.mode = .radio(stream: viewModel.livestreamUrl)
                         playerViewModel.togglePlayPause()
-                    }) {
+                    } label: {
                         HStack {
                             Image(systemName: "play.circle.fill")
                             Text("Pusti uživo")
                         }
                         .font(.title2)
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(Color("primary"))
                         .padding(.top, 8)
                     }
+                    .buttonStyle(.plain)
                 }
                 .padding(.vertical)
             }
 
-            // MARK: - Podcasti sekcija
+            // MARK: - Najnoviji podkasti
             Section(header: Text("Najnoviji podkasti")) {
-                ForEach(latestPodcasts(), id: \.id) { podcast in
-                    HStack(spacing: 12) {
-                        Image(podcast.show.imageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 50, height: 50)
-                            .cornerRadius(8)
-                        
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(podcast.title)
-                                .font(.headline)
-                            Text(podcast.subtitle)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 6)
-                    .onTapGesture {
-                        playerViewModel.mode = .podcast(podcast: podcast)
-                        playerViewModel.togglePlayPause()
+                if viewModel.latestPodcasts.isEmpty {
+                    emptyState
+                } else {
+                    ForEach(viewModel.latestPodcasts, id: \.id) { podcast in
+                        PodcastRowView(podcast: podcast)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                playerViewModel.mode = .podcast(podcast: podcast)
+                                playerViewModel.togglePlayPause()
+                            }
                     }
                 }
             }
         }
         .listStyle(.insetGrouped)
         .navigationTitle("Radio")
+        .refreshable { viewModel.refresh() }
+        .onAppear { viewModel.refresh() }
     }
 
-    private func latestPodcasts() -> [Podcast] {
-        let all = PodcastRepository.shared.latestPodcasts(limit: 100)
-        let oneMonthAgo = calendar.date(byAdding: .month, value: -1, to: Date()) ?? Date()
-        return all.filter { ($0.createdDate ?? .distantPast) > oneMonthAgo }
+    @ViewBuilder
+    private var emptyState: some View {
+        if viewModel.isLoading {
+            HStack(spacing: 12) {
+                ProgressView()
+                Text("Učitavanje…").foregroundColor(.secondary)
+            }
+            .padding(.vertical, 8)
+        } else if let error = viewModel.errorMessage {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(error).font(.subheadline).foregroundColor(.secondary)
+                Button("Pokušaj ponovo") { viewModel.refresh() }
+                    .font(.subheadline)
+            }
+            .padding(.vertical, 8)
+        } else {
+            Text("Nema podkasta za prikaz.")
+                .foregroundColor(.secondary)
+                .padding(.vertical, 8)
+        }
     }
 }
+
+struct PodcastRowView: View {
+    let podcast: Podcast
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(podcast.show.imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 50, height: 50)
+                .cornerRadius(8)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(podcast.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                Text(podcast.subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+
+            if podcast.isDownloaded {
+                Image(systemName: "arrow.down.circle.fill")
+                    .foregroundColor(.secondary)
+                    .font(.footnote)
+            }
+        }
+        .padding(.vertical, 6)
+    }
+}
+
 /*
 struct RadioView: View {
     @StateObject private var viewModel = RadioViewModel()

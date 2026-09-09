@@ -107,6 +107,9 @@ extension Podcast {
 
 extension Podcast {
     init(from response: PodcastResponse) {
+        // Identity comes from the media URL, never from a fresh UUID — see UUID.stable.
+        let identitySource = response.id.isEmpty ? response.podcastUrl : response.id
+        self.id = .stable(from: identitySource)
         self.title = response.title
         self.subtitle = response.subtitle
         self.createdDate = response.createdDate.formattedCreatedDate

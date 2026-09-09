@@ -19,7 +19,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
     private let selectedShow: Show
     private var currentPage = 1
     private var totalPages: Int = 1
-    private let realm = try? Realm()
+    private let repository = PodcastRepository.shared
     private var queryDate: String?
     
     init(podcastService: PodcastServiceProtocol = PodcastService(), show: Show) {
@@ -40,11 +40,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
     
     // MARK: - Fetch Podcasts from Realm
     private func loadPodcastsFromRealm() -> [Podcast] {
-        guard let realm else { return [] }
-        let podcastRealms = realm.objects(PodcastRealm.self)
-            .filter("show == %@", selectedShow.rawValue)
-            .sorted(byKeyPath: "createdAt", ascending: false)
-        return podcastRealms.map { Podcast(from: $0) }
+        repository.podcasts(for: selectedShow)
     }
     
     
@@ -58,8 +54,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
             switch result {
             case .success(let paginationData):
                 
-                let newRealmPodcasts = paginationData.podcasts.map { Podcast(from: $0) }.map({ PodcastRealm(from: $0) })
-                self.savePodcastsToRealm(newRealmPodcasts)
+                self.repository.save(paginationData.podcasts.map { Podcast(from: $0) })
                 self.podcasts = loadPodcastsFromRealm()
                 
                 if (isBefore ?? true) {
@@ -74,17 +69,6 @@ final class PodcastEpisodesViewModel: ObservableObject {
             case .failure(let error):
                 self.errorMessage = error.localizedDescription
             }
-        }
-    }
-    
-    private func savePodcastsToRealm(_ newPodcasts: [PodcastRealm]) {
-        guard let realm else { return }
-        do {
-            try realm.write {
-                newPodcasts.forEach { realm.add($0, update: .modified) }
-            }
-        } catch {
-            debugPrint("Error saving podcasts to Realm: \(error.localizedDescription)")
         }
     }
     

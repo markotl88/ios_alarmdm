@@ -31,10 +31,14 @@ struct AlarmDMApp: SwiftUI.App {
     private func setupRealm() {
         // Set up Realm configuration with schema version and migration block if needed
         let config = Realm.Configuration(
-            schemaVersion: 1, // Increment this when making changes to the Realm schema
+            schemaVersion: 2, // Increment this when making changes to the Realm schema
             migrationBlock: { migration, oldSchemaVersion in
-                if oldSchemaVersion < 1 {
-                    // Perform necessary migration steps if needed
+                if oldSchemaVersion < 2 {
+                    // Episode ids used to be random UUIDs regenerated on every fetch, so
+                    // older databases hold duplicate rows keyed by ids that no longer
+                    // match anything. Clear them; the list refills from the API on launch.
+                    migration.deleteData(forType: PodcastRealm.className())
+                    migration.deleteData(forType: BookmarkRealm.className())
                 }
             }
         )
