@@ -14,6 +14,7 @@ import UIKit
 struct SupportView: View {
 
     @State private var didCopyAccount = false
+    @State private var isShowingFullscreenQR = false
 
     private enum Donation {
         static let patreon = URL(string: "https://www.patreon.com/daskoimladja")!
@@ -113,19 +114,29 @@ struct SupportView: View {
 
             if let qr = UIImage(named: "img_qr_donacije") {
                 VStack(spacing: 8) {
-                    Image(uiImage: qr)
-                        .resizable()
-                        .interpolation(.none)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(maxWidth: 220)
-                        .padding(12)
-                        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
+                    Button {
+                        isShowingFullscreenQR = true
+                    } label: {
+                        Image(uiImage: qr)
+                            .resizable()
+                            .interpolation(.none)
+                            .aspectRatio(contentMode: .fit)
+                            .frame(maxWidth: 220)
+                            .padding(12)
+                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Prikaži kôd preko celog ekrana")
+
                     Text("Skeniraj kôd u aplikaciji svoje banke.\nKôd nosi unapred upisan iznos od 500 RSD.")
                         .font(.caption)
                         .multilineTextAlignment(.center)
                         .foregroundColor(Color("secondaryText"))
                 }
                 .frame(maxWidth: .infinity)
+                .fullScreenCover(isPresented: $isShowingFullscreenQR) {
+                    FullscreenQRView(image: qr)
+                }
             }
         }
         .padding(16)
@@ -168,4 +179,53 @@ struct SupportView: View {
 
 #Preview {
     NavigationStack { SupportView() }
+}
+
+// MARK: - Fullscreen QR
+
+/// Big and bright, so someone else can scan it off the screen. Phones dim
+/// themselves and a dim screen is the usual reason a scan fails.
+private struct FullscreenQRView: View {
+    let image: UIImage
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var previousBrightness = UIScreen.main.brightness
+
+    var body: some View {
+        ZStack {
+            Color.white.ignoresSafeArea()
+
+            VStack(spacing: 24) {
+                Spacer()
+
+                Image(uiImage: image)
+                    .resizable()
+                    .interpolation(.none)
+                    .aspectRatio(contentMode: .fit)
+                    .padding(.horizontal, 32)
+
+                VStack(spacing: 4) {
+                    Text("325-9300600398707-66")
+                        .font(.callout.monospacedDigit())
+                    Text("OTP Vojvođanska banka · 500 RSD")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Button("Zatvori") { dismiss() }
+                    .font(.body.weight(.medium))
+                    .padding(.bottom, 24)
+            }
+            .foregroundColor(.black)
+        }
+        .onAppear {
+            previousBrightness = UIScreen.main.brightness
+            UIScreen.main.brightness = 1.0
+        }
+        .onDisappear {
+            UIScreen.main.brightness = previousBrightness
+        }
+    }
 }

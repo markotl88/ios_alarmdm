@@ -51,6 +51,7 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Download state
 
     @Published var isDownloaded: Bool = false
+    @Published private(set) var isFavorite: Bool = false
     @Published var isDownloading: Bool = false
     /// Download progress, 0...1. Kept under this name because PlayerView binds to it.
     @Published var progress: Double = 0.0
@@ -150,6 +151,7 @@ final class PlayerViewModel: ObservableObject {
             self.podcast = loadPodcastFromRealm(with: playing.id) ?? playing
             self.onlineStream = nil
             self.isDownloaded = self.podcast?.isDownloaded ?? false
+            self.isFavorite = self.podcast?.isFavorite ?? false
             self.showDeleteButton = self.isDownloaded
         }
     }
@@ -167,6 +169,7 @@ final class PlayerViewModel: ObservableObject {
             artworkName = "img_radio"
             isLive = true
             isDownloaded = false
+            isFavorite = false
             showDeleteButton = false
 
         case .podcast(let selected):
@@ -178,6 +181,7 @@ final class PlayerViewModel: ObservableObject {
             artworkName = selected.show.imageName
             isLive = false
             isDownloaded = podcast?.isDownloaded ?? false
+            isFavorite = podcast?.isFavorite ?? false
             showDeleteButton = isDownloaded
 
         case .none:
@@ -188,6 +192,7 @@ final class PlayerViewModel: ObservableObject {
             subtitle = ""
             isLive = false
             isDownloaded = false
+            isFavorite = false
             showDeleteButton = false
         }
 
@@ -232,6 +237,13 @@ final class PlayerViewModel: ObservableObject {
         isPresented = false
         isExpanded = false
         mode = nil
+    }
+
+    func toggleFavourite() {
+        guard let podcast else { return }
+        EpisodeLibrary.shared.toggleFavourite(podcast)
+        self.podcast = loadPodcastFromRealm(with: podcast.id) ?? podcast
+        isFavorite = self.podcast?.isFavorite ?? false
     }
 
     func toggleDeleteButton() {

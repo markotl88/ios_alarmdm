@@ -131,7 +131,11 @@ struct FullscreenPlayerView: View {
             transportControls.padding(.top, 20)
 
             if !playerViewModel.isLive {
-                downloadControl.padding(.top, 24)
+                HStack(spacing: 28) {
+                    favouriteControl
+                    downloadControl
+                }
+                .padding(.top, 24)
             }
 
             Spacer()
@@ -243,6 +247,20 @@ struct FullscreenPlayerView: View {
             .disabled(playerViewModel.isLive)
         }
         .foregroundColor(Color("primaryText"))
+    }
+
+    private var favouriteControl: some View {
+        Button {
+            playerViewModel.toggleFavourite()
+        } label: {
+            Label(
+                playerViewModel.isFavorite ? "U omiljenim" : "Omiljeno",
+                systemImage: playerViewModel.isFavorite ? "heart.fill" : "heart"
+            )
+            .font(.subheadline)
+            .foregroundColor(playerViewModel.isFavorite ? Color("primary") : Color("primaryText"))
+        }
+        .accessibilityLabel(playerViewModel.isFavorite ? "Ukloni iz omiljenih" : "Dodaj u omiljene")
     }
 
     @ViewBuilder
