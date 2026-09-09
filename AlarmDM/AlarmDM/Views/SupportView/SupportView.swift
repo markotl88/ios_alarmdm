@@ -128,10 +128,15 @@ struct SupportView: View {
                     .buttonStyle(.plain)
                     .accessibilityLabel("Prikaži kôd preko celog ekrana")
 
-                    Text("Skeniraj kôd u aplikaciji svoje banke.\nKôd nosi unapred upisan iznos od 500 RSD.")
-                        .font(.caption)
-                        .multilineTextAlignment(.center)
-                        .foregroundColor(Color("secondaryText"))
+                    VStack(spacing: 3) {
+                        Label("Klikni na kôd za skeniranje", systemImage: "arrow.up.left.and.arrow.down.right")
+                            .font(.caption.weight(.medium))
+                            .foregroundColor(Color("primaryLink"))
+                        Text("Kôd nosi unapred upisan iznos od 500 RSD.")
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                            .foregroundColor(Color("secondaryText"))
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .fullScreenCover(isPresented: $isShowingFullscreenQR) {

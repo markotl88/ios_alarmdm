@@ -8,20 +8,32 @@
 import SwiftUI
 
 struct ShowView: View {
-    @StateObject private var viewModel = ShowViewModel()
-
     var body: some View {
-        ShowListView(shows: viewModel.shows)
+        ShowListView()
             .navigationTitle("Emisije")
     }
 }
-struct ShowListView: View {
-    let shows: [Show]
 
+/// The order is fixed in `Show.featured`; everything else falls under Ostalo.
+struct ShowListView: View {
     var body: some View {
-        List(shows, id: \.self) { show in
-            NavigationLink(destination: PodcastEpisodesView(show: show)) {
-                ShowRowView(show: show)
+        List {
+            Section {
+                ForEach(Show.featured, id: \.self) { show in
+                    NavigationLink(destination: PodcastEpisodesView(show: show)) {
+                        ShowRowView(show: show)
+                    }
+                }
+            }
+
+            if !Show.other.isEmpty {
+                Section("Ostalo") {
+                    ForEach(Show.other, id: \.self) { show in
+                        NavigationLink(destination: PodcastEpisodesView(show: show)) {
+                            ShowRowView(show: show)
+                        }
+                    }
+                }
             }
         }
     }

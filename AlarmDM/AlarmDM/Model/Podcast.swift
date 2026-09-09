@@ -15,7 +15,6 @@ enum Show: String, CaseIterable, Identifiable {
     case naIviciOfsajda
     case nepopularnoMisljenje
     case sportskiPozdrav
-    case provizorniPodnevniProgram
     case jbt
     case priceUMagli
     case rastrojavanje
@@ -29,10 +28,26 @@ enum Show: String, CaseIterable, Identifiable {
 
     var id: String { self.rawValue }
 
-    /// What the Shows tab lists, ordered by how recently the show aired.
-    static var listed: [Show] {
-        allCases.filter { $0 != .ostalo }
+    /// The order the Shows tab lists them in, set by hand rather than by
+    /// episode count or recency — it is an editorial decision, not a metric.
+    static let featured: [Show] = [
+        .alarmSaDaskomIMladjom,
+        .unutrasnjaEmigracija,
+        .ljudiIzPodzemlja,
+        .vecernjaSkolaRokenrola,
+        .sportskiPozdrav,
+        .naIviciOfsajda,
+        .jbt,
+        .rastrojavanje,
+        .falis,
+    ]
+
+    /// Everything else with episodes in the feed, shown under its own heading.
+    static var other: [Show] {
+        allCases.filter { $0 != .ostalo && !featured.contains($0) }
     }
+
+    static var listed: [Show] { featured + other }
 
     var displayName: String {
         switch self {
@@ -43,7 +58,6 @@ enum Show: String, CaseIterable, Identifiable {
         case .naIviciOfsajda: return "Na ivici ofsajda"
         case .nepopularnoMisljenje: return "Nepopularno mišljenje"
         case .sportskiPozdrav: return "Sportski pozdrav"
-        case .provizorniPodnevniProgram: return "Provizorni podnevni program"
         case .jbt: return "JBT"
         case .priceUMagli: return "Priče u magli"
         case .rastrojavanje: return "Rastrojavanje"
@@ -64,7 +78,6 @@ enum Show: String, CaseIterable, Identifiable {
         case .naIviciOfsajda: return "Romantizovani fudbalski istorijat. Nedelja u 20h."
         case .nepopularnoMisljenje: return "Teme o kojima se ćuti."
         case .sportskiPozdrav: return "Sportska emisija."
-        case .provizorniPodnevniProgram: return "Podnevni program."
         case .jbt: return "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05."
         case .priceUMagli: return "Radio-drama."
         case .rastrojavanje: return "Četvrtkom o važnim temama."
@@ -86,7 +99,6 @@ enum Show: String, CaseIterable, Identifiable {
         case .vecernjaSkolaRokenrola: return "img_vecernja_skola_rokenrola"
         case .naIviciOfsajda: return "img_nio"
         case .sportskiPozdrav: return "img_sportski_pozdrav"
-        case .provizorniPodnevniProgram: return "img_unutrasnja_emigracija"
         case .rastrojavanje: return "img_rastrojavanje"
         case .topleLjuckePrice: return "img_tljp"
         case .punaUstaPoezije: return "img_pup"

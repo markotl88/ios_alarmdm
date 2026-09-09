@@ -70,7 +70,7 @@ struct SettingsView: View {
     private enum Links {
         static let about = URL(string: "https://www.daskoimladja.com/o-nama.php")!
         static let shop = URL(string: "https://daskoimladja.bigcartel.com/")!
-        static let authorEmail = "markostajic@gmail.com"
+        static let authorEmail = "marko.stajic@gmail.com"
     }
 
     var body: some View {

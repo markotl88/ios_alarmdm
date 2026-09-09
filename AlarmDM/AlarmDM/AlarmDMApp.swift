@@ -31,8 +31,18 @@ struct AlarmDMApp: SwiftUI.App {
     private func setupRealm() {
         // Set up Realm configuration with schema version and migration block if needed
         let config = Realm.Configuration(
-            schemaVersion: 2, // Increment this when making changes to the Realm schema
+            schemaVersion: 3, // Increment this when making changes to the Realm schema
             migrationBlock: { migration, oldSchemaVersion in
+                if oldSchemaVersion < 3 {
+                    // Provizorni podnevni program turned out to be Unutrašnja
+                    // emigracija under an older name. Rows cached before the
+                    // backend was updated still carry the retired key.
+                    migration.enumerateObjects(ofType: PodcastRealm.className()) { _, newObject in
+                        if newObject?["show"] as? String == "provizorniPodnevniProgram" {
+                            newObject?["show"] = "unutrasnjaEmigracija"
+                        }
+                    }
+                }
                 if oldSchemaVersion < 2 {
                     // Episode ids used to be random UUIDs regenerated on every fetch, so
                     // older databases hold duplicate rows keyed by ids that no longer
