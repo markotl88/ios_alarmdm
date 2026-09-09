@@ -23,7 +23,7 @@ struct RadioView: View {
                         .clipped()
                         .cornerRadius(12)
 
-                    Text("ALARM sa Daškom i Mlađom")
+                    Text("Internet radio Daško i Mlađa")
                         .font(.headline)
 
                     Text("Svakog radnog dana 07-10h. Dobra muzika non-stop!")
@@ -101,42 +101,6 @@ struct RadioView: View {
     }
 }
 
-/*
-struct RadioView: View {
-    @StateObject private var viewModel = RadioViewModel()
-    @EnvironmentObject private var playerViewModel: PlayerViewModel
-    
-    var body: some View {
-        GeometryReader { proxy in
-            VStack {
-                Text("Radio uživo")
-                    .font(.title)
-                    .padding()
-                
-                Text("ALARM sa Daškom i Mlađom, svakog radnog dana 07-10h. Dobra muzika non-stop!")
-                    .padding()
-                
-                Spacer()
-                
-                HStack {
-                    Button(action: {
-                        debugPrint("Play")
-                        playerViewModel.mode = .radio(stream: viewModel.livestreamUrl)
-                    }) {
-                        Image(systemName: "play.circle.fill")
-                            .font(.largeTitle)
-                    }
-                }
-                .padding()
-                
-                Spacer()
-            }
-            .preference(key: InnerContentSize.self, value: [proxy.frame(in: CoordinateSpace.global)])
-            .padding()
-        }
-    }
-}
- */
 
 
 
