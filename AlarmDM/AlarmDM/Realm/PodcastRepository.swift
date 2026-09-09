@@ -70,6 +70,16 @@ final class PodcastRepository {
         save([podcast])
     }
 
+    func setFavorite(_ isFavorite: Bool, for id: UUID) {
+        guard let realm,
+              let object = realm.object(ofType: PodcastRealm.self, forPrimaryKey: id.uuidString) else { return }
+        do {
+            try realm.write { object.isFavorite = isFavorite }
+        } catch {
+            debugPrint("Error updating favourite: \(error.localizedDescription)")
+        }
+    }
+
     /// Clears the local file reference on every row, after the files themselves
     /// are gone. Without this the app keeps claiming episodes are downloaded.
     func clearAllDownloadReferences() {

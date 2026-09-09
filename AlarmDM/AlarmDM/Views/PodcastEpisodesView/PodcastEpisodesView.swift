@@ -32,31 +32,98 @@ struct PodcastEpisodesView: View {
     }
 
     private var episodeList: some View {
-        List {
-            ForEach(viewModel.podcasts) { podcast in
-                PodcastRowView(podcast: podcast)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        playerViewModel.mode = .podcast(podcast: podcast)
-                        playerViewModel.togglePlayPause()
-                    }
-                    .onAppear {
-                        if podcast == viewModel.podcasts.last {
-                            viewModel.fetchDataIfNeeded(currentItem: podcast)
-                        }
-                    }
-            }
+        VStack(spacing: 0) {
+            filterBar
 
-            if viewModel.isLoadingMore {
-                HStack {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
+            List {
+                ForEach(viewModel.visiblePodcasts) { podcast in
+                    PodcastRowView(podcast: podcast, showsMusicVariant: viewModel.hasBothMusicVariants)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            playerViewModel.mode = .podcast(podcast: podcast)
+                            playerViewModel.togglePlayPause()
+                        }
+                        .onAppear {
+                            if podcast == viewModel.podcasts.last {
+                                viewModel.fetchDataIfNeeded(currentItem: podcast)
+                            }
+                        }
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                viewModel.toggleFavourite(podcast)
+                            } label: {
+                                Label(
+                                    podcast.isFavorite ? "Ukloni" : "Omiljeno",
+                                    systemImage: podcast.isFavorite ? "heart.slash" : "heart"
+                                )
+                            }
+                            .tint(Color("primary"))
+                        }
+                }
+
+                if viewModel.isLoadingMore {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
+                    }
+                }
+            }
+            .listStyle(.plain)
+            .refreshable { viewModel.fetchData() }
+            .overlay {
+                if viewModel.visiblePodcasts.isEmpty && !viewModel.podcasts.isEmpty {
+                    filteredEmptyState
                 }
             }
         }
-        .listStyle(.plain)
-        .refreshable { viewModel.fetchData() }
+    }
+
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(viewModel.availableFilters) { filter in
+                    let isActive = viewModel.activeFilter == filter
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) { viewModel.toggle(filter) }
+                    } label: {
+                        Label(filter.title, systemImage: filter.systemImage)
+                            .font(.footnote.weight(isActive ? .semibold : .regular))
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 7)
+                            .background(
+                                Capsule().fill(
+                                    isActive ? Color("primary") : Color("primary").opacity(0.10)
+                                )
+                            )
+                            .foregroundColor(isActive ? .white : Color("primaryText"))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(isActive ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
+        }
+        .background(Color("background"))
+    }
+
+    private var filteredEmptyState: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "line.3.horizontal.decrease.circle")
+                .font(.largeTitle)
+                .foregroundColor(.secondary)
+            Text("Nijedna epizoda ne odgovara filteru.")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Button("Prikaži sve") {
+                withAnimation { viewModel.activeFilter = nil }
+            }
+            .font(.subheadline)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color("background"))
     }
 
     @ViewBuilder
@@ -88,6 +155,9 @@ struct PodcastEpisodesView: View {
 /// Shared by the Radio tab and the episode list.
 struct PodcastRowView: View {
     let podcast: Podcast
+    /// Only true inside a show that publishes both cuts, so the badge means
+    /// something instead of appearing on every row.
+    var showsMusicVariant: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -98,9 +168,19 @@ struct PodcastRowView: View {
                 .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(podcast.title)
-                    .font(.headline)
-                    .lineLimit(2)
+                HStack(spacing: 6) {
+                    Text(podcast.title)
+                        .font(.headline)
+                        .lineLimit(2)
+
+                    if showsMusicVariant {
+                        Image(systemName: podcast.isWithMusic ? "music.note" : "music.note.slash")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .accessibilityLabel(podcast.isWithMusic ? "Sa muzikom" : "Bez muzike")
+                    }
+                }
+
                 Text(podcast.subtitle)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
@@ -109,11 +189,19 @@ struct PodcastRowView: View {
 
             Spacer(minLength: 0)
 
-            if podcast.isDownloaded {
-                Image(systemName: "arrow.down.circle.fill")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-                    .accessibilityLabel("Preuzeto")
+            VStack(spacing: 6) {
+                if podcast.isFavorite {
+                    Image(systemName: "heart.fill")
+                        .font(.footnote)
+                        .foregroundColor(Color("primary"))
+                        .accessibilityLabel("Omiljeno")
+                }
+                if podcast.isDownloaded {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.footnote)
+                        .foregroundColor(.secondary)
+                        .accessibilityLabel("Preuzeto")
+                }
             }
         }
         .padding(.vertical, 6)
