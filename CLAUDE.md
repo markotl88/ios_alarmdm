@@ -32,8 +32,15 @@ AlarmDM is a SwiftUI podcast/radio streaming app for the "Daško i Mlađa" radio
 - `APIRouter` - Endpoint definitions for Firebase functions, livestream, etc.
 
 **Player** (`AlarmDM/Player/`)
-- `AudioPlayer` protocol - Abstraction for audio playback
-- `PodcastAudioPlayer` - Implementation using AVPlayer (streaming) and AVAudioPlayer (local files), seamlessly switches between stream and downloaded file during playback
+- `PlaybackEngine` - **The single source of truth for playback.** One AVPlayer, one
+  audio session, one Now Playing info centre, remote commands registered once.
+  Both the SwiftUI app and the CarPlay scene drive `PlaybackEngine.shared`, so the
+  phone and the car can never disagree or play two streams at once.
+- `PlaybackSource` - `.radio(url:)` or `.podcast(Podcast)`; resolves to a local file
+  when the episode is downloaded, otherwise streams.
+- `switchToLocalFile(_:)` - swaps a streaming episode for its finished download
+  without losing position.
+- `AudioPlayer` / `PodcastAudioPlayer` - legacy, no longer used by any view.
 
 **Persistence** (`AlarmDM/Realm/`)
 - Uses RealmSwift for local storage
@@ -55,12 +62,19 @@ Uses MVVM pattern with SwiftUI:
 
 **PlayerMode enum** - Distinguishes between live radio streaming and podcast playback
 
+`PlayerViewModel` is a thin facade over `PlaybackEngine.shared`: it owns presentation
+and download state and mirrors playback state, so playback started from CarPlay or the
+lock screen shows up correctly in the app.
+
 ### CarPlay Integration
 
 `CarPlaySceneDelegate.swift` implements `CPTemplateApplicationSceneDelegate`:
-- Tab bar with Radio and Shows tabs
-- `RadioPlayer` singleton for CarPlay audio
+- Tab bar with Radio and Emisije tabs
+- Every action goes through `PlaybackEngine.shared`; CarPlay owns no player
+- Observes the engine to keep the radio row's state in sync
 - `PodcastRepository` for fetching latest episodes from Realm
+- Entitlement: `com.apple.developer.carplay-audio` only (the deprecated
+  `playable-content` key was removed)
 
 ### Key Dependencies
 

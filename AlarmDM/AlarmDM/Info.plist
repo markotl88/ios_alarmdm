@@ -40,9 +40,5 @@
 	<array>
 		<string>audio</string>
 	</array>
-	<key>UISupportedExternalAccessoryProtocols</key>
-	<array>
-		<string>com.apple.externalaccessory.protocol.carplay-audio</string>
-	</array>
 </dict>
 </plist>

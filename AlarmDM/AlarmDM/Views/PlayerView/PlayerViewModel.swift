@@ -2,9 +2,11 @@
 //  PlayerViewModel.swift
 //  AlarmDM
 //
-//  Created by Marko Stajic on 25.10.2024.
+//  A thin, observable façade over PlaybackEngine.shared. It owns the UI-only
+//  concerns (presentation, download progress, Realm bookkeeping) and mirrors
+//  playback state from the engine, so the phone UI and the CarPlay scene can
+//  never disagree about what is playing.
 //
-
 
 import Foundation
 import Combine
@@ -15,9 +17,9 @@ enum PlayerMode: Equatable, Identifiable {
     var id: UUID {
         switch self {
         case .radio:
-            return UUID(uuidString: "00000000-0000-0000-0000-000000000001")! // Fixed UUID for radio mode
+            return UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
         case .podcast(let podcast):
-            return podcast.id // Use podcast ID if it's already a UUID
+            return podcast.id
         }
     }
 
@@ -25,110 +27,270 @@ enum PlayerMode: Equatable, Identifiable {
     case podcast(podcast: Podcast)
 }
 
-class PlayerViewModel: ObservableObject {
-    
-    private let audioPlayer: AudioPlayer
+final class PlayerViewModel: ObservableObject {
+
+    // MARK: - Presentation state
+
     @Published var isPresented = false
+    @Published var isExpanded = false
+
+    // MARK: - Playback state (mirrored from the engine)
+
+    @Published private(set) var isPlaying = false
+    @Published private(set) var isBuffering = false
+    @Published private(set) var currentTime: TimeInterval = 0
+    @Published private(set) var duration: TimeInterval = 0
+    @Published var title: String = ""
+    @Published var subtitle: String = ""
+    @Published private(set) var artworkName: String = "iTunesArtwork"
+    @Published private(set) var isLive: Bool = false
+
+    /// 0...1 position within the current episode. Live radio always reports 0.
+    var playbackProgress: Double { engine.progress }
+
+    // MARK: - Download state
+
+    @Published var isDownloaded: Bool = false
+    @Published var isDownloading: Bool = false
+    /// Download progress, 0...1. Kept under this name because PlayerView binds to it.
+    @Published var progress: Double = 0.0
+    @Published var showDeleteButton: Bool = false
+    @Published var showCheckmark: Bool = false
 
     @Published var mode: PlayerMode? {
         didSet {
-            switch mode {
-            case .radio(let stream):
-                onlineStream = stream
-                podcastId = nil
-                title = "Radio"
-                subtitle = "Uživo"
-            case .podcast(let podcast):
-                onlineStream = nil
-                podcastId = podcast.id
-                title = podcast.title
-                subtitle = podcast.subtitle
-            case .none:
-                onlineStream = nil
-                podcastId = nil
-                title = ""
-                subtitle = ""
-            }
-
-            if let podcastId = podcastId {
-                podcast = loadPodcastFromRealm(with: podcastId)
-                isDownloaded = checkIfDownloaded()
-            } else {
-                podcast = nil
-                isDownloaded = false
-            }
+            guard mode != oldValue else { return }
+            applyMode()
         }
     }
-    @Published var isDownloaded: Bool = false
-    @Published var progress: Double = 0.0
-    @Published var isExpanded: Bool = false
-    @Published var isPlaying: Bool = false
-    @Published var isDownloading: Bool = false
-    @Published var showDeleteButton: Bool = false // Manage visibility of the delete button
-    @Published var showCheckmark: Bool = false // Manage visibility of the checkmark
-    @Published var title: String = ""
-    @Published var subtitle: String = ""
-    
-    let id = UUID() // This makes the view model identifiable
-        
+
+    let id = UUID()
+
+    // MARK: - Dependencies
+
+    private let engine: PlaybackEngine
     private let fileService: FileServiceProtocol
     private let podcastService: PodcastServiceProtocol
+    private let realm = try? Realm()
+    private var cancellables = Set<AnyCancellable>()
+
     private var podcastId: UUID?
     private var podcast: Podcast?
-    private let realm = try? Realm()
     private var onlineStream: URL?
-    private var isAudioSetup: Bool = false // Flag to track if audio setup is done
+
+    // MARK: - Init
 
     init(mode: PlayerMode? = nil,
-         audioPlayer: AudioPlayer = PodcastAudioPlayer(),
+         engine: PlaybackEngine = .shared,
          podcastService: PodcastServiceProtocol = PodcastService(),
          fileService: FileServiceProtocol = FileService()) {
-        
-        self.mode = mode
-        self.audioPlayer = audioPlayer
+
+        self.engine = engine
         self.fileService = fileService
         self.podcastService = podcastService
+        self.mode = mode
 
+        bindEngine()
+        if mode != nil { applyMode() }
+    }
+
+    /// Keeps the view model in step with whatever the engine is doing — including
+    /// playback started from CarPlay or the lock screen.
+    private func bindEngine() {
+        engine.isPlayingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.isPlaying = $0 }
+            .store(in: &cancellables)
+
+        engine.isBufferingPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.isBuffering = $0 }
+            .store(in: &cancellables)
+
+        engine.currentTimePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.currentTime = $0 }
+            .store(in: &cancellables)
+
+        engine.durationPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.duration = $0 }
+            .store(in: &cancellables)
+
+        engine.sourcePublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] source in
+                guard let self, let source else { return }
+                self.title = source.title
+                self.subtitle = source.subtitle
+                self.artworkName = source.artworkName
+                self.isLive = source.isLive
+                self.isPresented = true
+                self.syncSelection(with: source)
+            }
+            .store(in: &cancellables)
+    }
+
+    /// When playback is started elsewhere (CarPlay), adopt it as this view model's selection.
+    private func syncSelection(with source: PlaybackSource) {
+        switch source {
+        case .radio(let url):
+            if case .radio = mode { return }
+            onlineStream = url
+            podcastId = nil
+            podcast = nil
+            isDownloaded = false
+        case .podcast(let playing):
+            if let podcastId, podcastId == playing.id { return }
+            self.podcastId = playing.id
+            self.podcast = loadPodcastFromRealm(with: playing.id) ?? playing
+            self.onlineStream = nil
+            self.isDownloaded = self.podcast?.isDownloaded ?? false
+            self.showDeleteButton = self.isDownloaded
+        }
+    }
+
+    // MARK: - Mode
+
+    private func applyMode() {
         switch mode {
         case .radio(let stream):
-            self.onlineStream = stream
-            self.podcastId = nil
-            self.title = "Radio"
-            self.subtitle = "Uživo"
-        case .podcast(let podcast):
-            self.onlineStream = nil
-            self.podcastId = podcast.id
-            self.title = podcast.title
-            self.subtitle = podcast.subtitle
+            onlineStream = stream ?? AppConstants.fallbackStreamURL
+            podcastId = nil
+            podcast = nil
+            title = "Radio uživo"
+            subtitle = "Daško i Mlađa"
+            artworkName = "iTunesArtwork"
+            isLive = true
+            isDownloaded = false
+            showDeleteButton = false
+
+        case .podcast(let selected):
+            onlineStream = nil
+            podcastId = selected.id
+            podcast = loadPodcastFromRealm(with: selected.id) ?? selected
+            title = selected.title
+            subtitle = selected.subtitle
+            artworkName = selected.show.imageName
+            isLive = false
+            isDownloaded = podcast?.isDownloaded ?? false
+            showDeleteButton = isDownloaded
+
         case .none:
-            self.onlineStream = nil
-            self.podcastId = nil
-            self.title = ""
-            self.subtitle = ""
+            onlineStream = nil
+            podcastId = nil
+            podcast = nil
+            title = ""
+            subtitle = ""
+            isLive = false
+            isDownloaded = false
+            showDeleteButton = false
         }
 
-        // Load initial data if needed
-        if let podcastId = podcastId {
-            self.podcast = loadPodcastFromRealm(with: podcastId)
-            self.isDownloaded = checkIfDownloaded()
+        progress = 0
+        isDownloading = false
+        showCheckmark = false
+    }
+
+    private var currentSource: PlaybackSource? {
+        switch mode {
+        case .radio:
+            guard let url = onlineStream ?? AppConstants.fallbackStreamURL else { return nil }
+            return .radio(url: url)
+        case .podcast:
+            guard let podcast else { return nil }
+            return .podcast(podcast)
+        case .none:
+            return nil
         }
     }
 
-    private func setup() {
-        if let podcastId = podcastId {
-            self.podcast = loadPodcastFromRealm(with: podcastId)
-            self.title = self.podcast?.title ?? ""
-            self.subtitle = self.podcast?.subtitle ?? ""
+    // MARK: - Transport
+
+    func togglePlayPause() {
+        guard let source = currentSource else { return }
+
+        if engine.source == source {
+            engine.toggle()
         } else {
-            self.title = "Radio"
-            self.subtitle = "Uživo"
+            engine.play(source)
         }
-        
-        self.isDownloaded = checkIfDownloaded()
+        isPresented = true
     }
+
+    func seek(to time: TimeInterval) { engine.seek(to: time) }
+    func skipForward() { engine.skip(by: 15) }
+    func skipBackward() { engine.skip(by: -15) }
+
+    /// Stops playback and dismisses the mini player. Previously this only hid the bar.
+    func stop() {
+        engine.stop()
+        isPresented = false
+        isExpanded = false
+        mode = nil
+    }
+
+    func toggleDeleteButton() {
+        showDeleteButton = podcast?.isDownloaded ?? false
+    }
+
+    // MARK: - Download
+
+    func downloadPodcast() {
+        guard let urlString = podcast?.podcastUrl, let podcastUrl = URL(string: urlString) else { return }
+
+        isDownloading = true
+        showCheckmark = false
+
+        podcastService.downloadPodcasts(from: podcastUrl, completion: { [weak self] result in
+            guard let self else { return }
+            self.isDownloading = false
+
+            switch result {
+            case .success(let location):
+                self.isDownloaded = true
+                self.podcast?.fileUrl = location.lastPathComponent
+                if let podcast = self.podcast {
+                    self.savePodcastToRealm(PodcastRealm(from: podcast))
+                    // If this episode is the one playing, continue from the local file.
+                    if self.engine.source == .podcast(podcast) || self.podcastId == podcast.id {
+                        self.engine.switchToLocalFile(location)
+                    }
+                }
+                self.showCheckmark = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                    self?.showCheckmark = false
+                    self?.showDeleteButton = true
+                }
+
+            case .failure(let error):
+                debugPrint("Error downloading file: \(error.localizedDescription)")
+            }
+        }, progressHandler: { [weak self] progress in
+            self?.progress = progress
+        })
+    }
+
+    func deletePodcast() {
+        guard let podcast, let fileName = podcast.fileUrl else { return }
+
+        switch fileService.deleteFile(with: fileName) {
+        case .success:
+            isDownloaded = false
+            showDeleteButton = false
+            self.podcast?.fileUrl = nil
+            if let updated = self.podcast {
+                savePodcastToRealm(PodcastRealm(from: updated))
+            }
+        case .failure(let error):
+            debugPrint("Error deleting file: \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Realm
 
     private func loadPodcastFromRealm(with id: UUID) -> Podcast? {
-        guard let realm = try? Realm(),
+        guard let realm,
               let podcastRealm = realm.objects(PodcastRealm.self)
                 .filter("id == %@", id.uuidString).first else {
             debugPrint("Podcast \(id) not found in Realm")
@@ -136,100 +298,7 @@ class PlayerViewModel: ObservableObject {
         }
         return Podcast(from: podcastRealm)
     }
-    
-    func toggleDeleteButton() {
-        guard let podcast = podcast else { return }
-        showDeleteButton = podcast.isDownloaded
-    }
-    
-    func setupAudioPlayer(forPodcast: Bool) {
-        
-        if forPodcast {
-            if let fileName = podcast?.fileUrl,
-               case .success(let file) = fileService.getFile(with: fileName) {
-                print("Local file found: \(file)")
-                audioPlayer.play(url: file, completion: { [weak self] isPlaying in
-                    self?.isPlaying = isPlaying
-                })
-            } else if let podcastUrl = podcast?.podcastUrl, let onlineFile = URL(string: podcastUrl) {
-                print("Local file not found, falling back to online: \(onlineFile)")
-                audioPlayer.play(url: onlineFile, completion: { [weak self] isPlaying in
-                    self?.isPlaying = isPlaying
-                })
-            } else {
-                print("Error: No file to play")
-            }
-        } else {
-            if let onlineFile = onlineStream {
-                print("Online radio is playing: \(onlineFile)")
-                audioPlayer.play(url: onlineFile, completion: { [weak self] isPlaying in
-                    self?.isPlaying = isPlaying
-                })
-            } else {
-                print("Error: No file to play")
-            }
-        }
-        
-        isAudioSetup = true
-    }
 
-    // MARK: - Play/Pause Toggle
-    func togglePlayPause() {
-        
-        if !isAudioSetup {
-            setupAudioPlayer(forPodcast: onlineStream == nil)
-        } else {
-            if isPlaying {
-                audioPlayer.pause()
-            } else {
-                audioPlayer.resume()
-            }
-            isPlaying.toggle()
-        }
-    }
-
-    // MARK: - Download Podcast
-    func downloadPodcast() {
-        guard let url = podcast?.podcastUrl, let podcastUrl = URL(string: url) else {
-            return
-        }
-        
-        isDownloading = true
-        showCheckmark = false // Ensure checkmark is hidden initially
-
-        podcastService.downloadPodcasts(from: podcastUrl,
-                                        completion: { [weak self] result in
-            guard let self else { return }
-            self.isDownloading = false
-            switch result {
-            case .success(let tempLocation):
-                
-                self.isDownloaded = true
-                self.podcast?.fileUrl = tempLocation.lastPathComponent
-                if let podcast = self.podcast {
-                    self.savePodcastToRealm(PodcastRealm(from: podcast))
-                }
-                // Show checkmark and then delete button
-                self.showCheckmark = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    self.showCheckmark = false
-                    self.showDeleteButton = true
-                }
-                if isPlaying {
-                    audioPlayer.switchToDownloadedFile(file: tempLocation, completion: { isPlaying in
-                        self.isPlaying = isPlaying
-                    })
-                }
-            case .failure(let error):
-                debugPrint("Error downloading file: \(error.localizedDescription)")
-            }
-        }, progressHandler: { [weak self] progress in
-            guard let self = self else { return }
-            self.progress = progress
-        })
-    }
-
-    // MARK: - Save Podcast to Realm
     private func savePodcastToRealm(_ newPodcast: PodcastRealm) {
         guard let realm else { return }
         do {
@@ -239,32 +308,5 @@ class PlayerViewModel: ObservableObject {
         } catch {
             debugPrint("Error saving podcast to Realm: \(error.localizedDescription)")
         }
-    }
-    
-    // MARK: - Delete Podcast
-    func deletePodcast() {
-        guard let podcast = podcast, let fileName = podcast.fileUrl else {
-            return
-        }
-
-        let result = fileService.deleteFile(with: fileName)
-        switch result {
-        case .success(let success):
-            isDownloaded = false
-            showDeleteButton = false // Hide the delete button after the file is deleted
-            self.podcast?.fileUrl = nil // Clear the file URL
-            savePodcastToRealm(PodcastRealm(from: podcast))
-        case .failure(let failure):
-            debugPrint("Error deleting file: \(failure.localizedDescription)")
-        }
-    }
-
-    // MARK: - Check if Podcast is Downloaded
-    private func checkIfDownloaded() -> Bool {
-        guard let podcastId = podcastId,
-              let podcastRealm = realm?.objects(PodcastRealm.self).filter("id == %@", podcastId.uuidString).first else {
-            return false
-        }
-        return Podcast(from: podcastRealm).isDownloaded
     }
 }
