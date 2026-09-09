@@ -80,7 +80,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func makeShowsTemplate() -> CPListTemplate {
-        let items = Show.allCases.map { show -> CPListItem in
+        let items = Show.listed.map { show -> CPListItem in
             let item = CPListItem(
                 text: show.displayName,
                 detailText: show.description,

@@ -10,63 +10,88 @@ import Foundation
 enum Show: String, CaseIterable, Identifiable {
     case alarmSaDaskomIMladjom
     case ljudiIzPodzemlja
-    case vecernjaSkolaRokenrola
-    case sportskiPozdrav
     case unutrasnjaEmigracija
+    case vecernjaSkolaRokenrola
     case naIviciOfsajda
-    case topleLjuckePrice
-    case rastrojavanje
-    case punaUstaPoezije
-    case mozemoSamoDaSeSlikamo
+    case nepopularnoMisljenje
+    case sportskiPozdrav
     case provizorniPodnevniProgram
-    
+    case jbt
+    case priceUMagli
+    case rastrojavanje
+    case topleLjuckePrice
+    case punaUstaPoezije
+    case citanjac
+    case falis
+    /// Bucket for episodes the backend could not classify. Never listed in the
+    /// Shows tab — it exists so an unknown title stops masquerading as Alarm.
+    case ostalo
+
     var id: String { self.rawValue }
-    
+
+    /// What the Shows tab lists, ordered by how recently the show aired.
+    static var listed: [Show] {
+        allCases.filter { $0 != .ostalo }
+    }
+
     var displayName: String {
         switch self {
         case .alarmSaDaskomIMladjom: return "Alarm sa Daškom i Mlađom"
         case .ljudiIzPodzemlja: return "Ljudi iz podzemlja"
-        case .naIviciOfsajda: return "Na ivici ofsajda"
-        case .rastrojavanje: return "Rastrojavanje"
-        case .vecernjaSkolaRokenrola: return "Večernja škola rokenrola"
-        case .sportskiPozdrav: return "Sportski pozdrav"
-        case .topleLjuckePrice: return "Tople Ljucke Priče"
-        case .mozemoSamoDaSeSlikamo: return "Možemo samo da se slikamo"
-        case .punaUstaPoezije: return "Puna usta poezije"
         case .unutrasnjaEmigracija: return "Unutrašnja emigracija"
+        case .vecernjaSkolaRokenrola: return "Večernja škola rokenrola"
+        case .naIviciOfsajda: return "Na ivici ofsajda"
+        case .nepopularnoMisljenje: return "Nepopularno mišljenje"
+        case .sportskiPozdrav: return "Sportski pozdrav"
         case .provizorniPodnevniProgram: return "Provizorni podnevni program"
+        case .jbt: return "JBT"
+        case .priceUMagli: return "Priče u magli"
+        case .rastrojavanje: return "Rastrojavanje"
+        case .topleLjuckePrice: return "Tople Ljucke Priče"
+        case .punaUstaPoezije: return "Puna usta poezije"
+        case .citanjac: return "Čitanjac"
+        case .falis: return "FALIŠ"
+        case .ostalo: return "Ostalo"
         }
     }
-    
+
     var description: String {
         switch self {
         case .alarmSaDaskomIMladjom: return "Svakog radnog dana od 07 do 10h."
         case .ljudiIzPodzemlja: return "Specijalizovana za punk/hardcore zvuk. Sreda u 20h."
-        case .naIviciOfsajda: return "Romantizovani fudbalski istorijat. Nedelja u 20h."
-        case .rastrojavanje: return "Četvrtkom o važnim temama."
-        case .vecernjaSkolaRokenrola: return "Rokenrol za večernje sate."
-        case .sportskiPozdrav: return "Sportska emisija. Svake nedelje u 20h."
-        case .topleLjuckePrice: return "Emisija sa toplim ljudskim pričama."
-        case .mozemoSamoDaSeSlikamo: return "Satira i humor."
-        case .punaUstaPoezije: return "Emisija posvećena poeziji."
         case .unutrasnjaEmigracija: return "Svi mi emigranti."
-        case .provizorniPodnevniProgram: return "Svi mi emigranti."
+        case .vecernjaSkolaRokenrola: return "Rokenrol za večernje sate."
+        case .naIviciOfsajda: return "Romantizovani fudbalski istorijat. Nedelja u 20h."
+        case .nepopularnoMisljenje: return "Teme o kojima se ćuti."
+        case .sportskiPozdrav: return "Sportska emisija."
+        case .provizorniPodnevniProgram: return "Podnevni program."
+        case .jbt: return "Razgovori sa gostima."
+        case .priceUMagli: return "Radio-drama."
+        case .rastrojavanje: return "Četvrtkom o važnim temama."
+        case .topleLjuckePrice: return "Emisija sa toplim ljudskim pričama."
+        case .punaUstaPoezije: return "Emisija posvećena poeziji."
+        case .citanjac: return "Čitanje uz mikrofon."
+        case .falis: return "Snimci sa festivala."
+        case .ostalo: return "Epizode van redovnih emisija."
         }
     }
-    
+
+    /// Shows added after the original artwork set fall back to the radio image
+    /// rather than rendering an empty frame.
     var imageName: String {
         switch self {
         case .alarmSaDaskomIMladjom: return "img_alarm"
         case .ljudiIzPodzemlja: return "img_ljp"
-        case .naIviciOfsajda: return "img_nio"
-        case .rastrojavanje: return "img_rastrojavanje"
-        case .vecernjaSkolaRokenrola: return "img_vecernja_skola_rokenrola"
-        case .sportskiPozdrav: return "img_sportski_pozdrav"
-        case .topleLjuckePrice: return "img_tljp"
-        case .mozemoSamoDaSeSlikamo: return "img_msdss"
-        case .punaUstaPoezije: return "img_pup"
         case .unutrasnjaEmigracija: return "img_unutrasnja_emigracija"
+        case .vecernjaSkolaRokenrola: return "img_vecernja_skola_rokenrola"
+        case .naIviciOfsajda: return "img_nio"
+        case .sportskiPozdrav: return "img_sportski_pozdrav"
         case .provizorniPodnevniProgram: return "img_unutrasnja_emigracija"
+        case .rastrojavanje: return "img_rastrojavanje"
+        case .topleLjuckePrice: return "img_tljp"
+        case .punaUstaPoezije: return "img_pup"
+        case .nepopularnoMisljenje, .jbt, .priceUMagli, .citanjac, .falis, .ostalo:
+            return "img_radio"
         }
     }
 }
@@ -118,8 +143,7 @@ extension Podcast {
         self.duration = response.duration
         self.lengthInBytes = response.lengthInBytes
         self.itunesDuration = response.itunesDuration
-        debugPrint("Response show type: \(response.showType ?? "")")
-        self.show = Show(rawValue: response.showType ?? "") ?? .alarmSaDaskomIMladjom
+        self.show = Show(rawValue: response.showType ?? "") ?? .ostalo
         self.isWithMusic = response.withMusic
     }
 }
@@ -135,7 +159,7 @@ extension Podcast {
         self.duration = podcastRealm.duration
         self.lengthInBytes = podcastRealm.lengthInBytes
         self.itunesDuration = podcastRealm.itunesDuration
-        self.show = Show(rawValue: podcastRealm.show ?? "") ?? .alarmSaDaskomIMladjom
+        self.show = Show(rawValue: podcastRealm.show ?? "") ?? .ostalo
         self.fileUrl = podcastRealm.fileUrl
         self.isFavorite = podcastRealm.isFavorite
         self.isWithMusic = podcastRealm.isWithMusic
