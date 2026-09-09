@@ -136,13 +136,6 @@ struct ContactView: View {
     }
 }
 
-struct StoreView: View {
-    var body: some View {
-        Color.green.opacity(0.5)
-        Text("Store View")
-    }
-}
-
 struct SettingsView: View {
     var body: some View {
         Color.yellow.opacity(0.5)
@@ -150,7 +143,4 @@ struct SettingsView: View {
     }
 }
 
-#Preview {
-    StoreView()
-}
 

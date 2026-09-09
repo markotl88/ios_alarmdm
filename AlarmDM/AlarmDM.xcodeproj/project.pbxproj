@@ -30,6 +30,7 @@
 		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
 		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
 		4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */; };
+		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
@@ -106,6 +107,7 @@
 		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
 		4D6677A82CC9341600EC2ADE /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 		4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
@@ -331,6 +333,7 @@
 				4D53969F2CD3FB8200CD1B71 /* CustomTabBar */,
 				4D13F44E2CCBCA5600AA52D1 /* PlayerView */,
 				4DAF9EF32C57B76200B4FA7F /* RadioView */,
+				AA000000000000000000010B /* SupportView */,
 				4D6677A22CC83D1300EC2ADE /* ShowView */,
 				4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */,
 				4D13F43D2CCA70A100AA52D1 /* MiniPodcastDetailView */,
@@ -355,6 +358,14 @@
 				4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */,
 			);
 			path = TabView;
+			sourceTree = "<group>";
+		};
+		AA000000000000000000010B /* SupportView */ = {
+			isa = PBXGroup;
+			children = (
+				AA000000000000000000010A /* SupportView.swift */,
+			);
+			path = SupportView;
 			sourceTree = "<group>";
 		};
 		4DAF9EF32C57B76200B4FA7F /* RadioView */ = {
@@ -525,6 +536,7 @@
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */,
+				AA0000000000000000000109 /* SupportView.swift in Sources */,
 				AA0000000000000000000107 /* PodcastRepository.swift in Sources */,
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
 				AA0000000000000000000101 /* PlaybackEngine.swift in Sources */,

@@ -34,7 +34,7 @@ struct NewTabContentView: View {
                     }
                 case .support:
                     NavigationStack {
-                        StoreView()
+                        SupportView()
                     }
                 case .settings:
                     NavigationStack {
@@ -165,7 +165,7 @@ struct TabContentView: View {
                 .tag(1)
 
                 NavigationStack {
-                    StoreView()
+                    SupportView()
                 }
                 .tabItem {
                     Label("Support", systemImage: "heart")
