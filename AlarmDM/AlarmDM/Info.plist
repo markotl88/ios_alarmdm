@@ -1,32 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>
-	<!-- Only HTTPS: exempt from the export compliance question. -->
-	<key>ITSAppUsesNonExemptEncryption</key>
-	<false/>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<false/>
-		<key>UISceneConfigurations</key>
-		<dict>
-			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneClassName</key>
-					<string>CPTemplateApplicationScene</string>
-					<key>UISceneConfigurationName</key>
-					<string>CarPlay</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
-				</dict>
-			</array>
-		</dict>
-	</dict>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>audio</string>
-	</array>
-</dict>
+    <dict>
+        <!-- Only HTTPS: exempt from the export compliance question. -->
+        <key>ITSAppUsesNonExemptEncryption</key>
+        <false/>
+        <key>UIApplicationSceneManifest</key>
+        <dict>
+            <key>UIApplicationSupportsMultipleScenes</key>
+            <false/>
+            <key>UISceneConfigurations</key>
+            <dict>
+                <key>CPTemplateApplicationSceneSessionRoleApplication</key>
+                <array>
+                    <dict>
+                        <key>UISceneClassName</key>
+                        <string>CPTemplateApplicationScene</string>
+                        <key>UISceneConfigurationName</key>
+                        <string>CarPlay</string>
+                        <key>UISceneDelegateClassName</key>
+                        <string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
+                    </dict>
+                </array>
+            </dict>
+        </dict>
+        <key>UIBackgroundModes</key>
+        <array>
+            <string>audio</string>
+        </array>
+        <key>UISupportedInterfaceOrientations</key>
+        <array>
+            <string>UIInterfaceOrientationPortrait</string>
+        </array>
+        <key>UISupportedInterfaceOrientations~ipad</key>
+        <array>
+            <string>UIInterfaceOrientationPortrait</string>
+            <string>UIInterfaceOrientationPortraitUpsideDown</string>
+            <string>UIInterfaceOrientationLandscapeLeft</string>
+            <string>UIInterfaceOrientationLandscapeRight</string>
+        </array>
+    </dict>
 </plist>

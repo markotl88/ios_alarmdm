@@ -30,18 +30,12 @@
 		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
 		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
 		4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */; };
-		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
-		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
-		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
-		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
-		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
 		4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */; };
 		4D9E12322DC0E54D005D99E9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E12312DC0E540005D99E9 /* AppDelegate.swift */; };
 		4D9E12352DC0E767005D99E9 /* CarPlay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D9E12342DC0E767005D99E9 /* CarPlay.framework */; };
 		4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */; };
 		4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */; };
 		4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */; };
-		AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* PrivacyInfo.xcprivacy */; };
 		4DAF9EBE2C579D5200B4FA7F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBD2C579D5200B4FA7F /* Preview Assets.xcassets */; };
 		4DAF9EC82C579D5200B4FA7F /* AlarmDMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */; };
 		4DAF9ED22C579D5200B4FA7F /* AlarmDMUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9ED12C579D5200B4FA7F /* AlarmDMUITests.swift */; };
@@ -53,6 +47,12 @@
 		4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */; };
 		4DAF9EF22C57B69000B4FA7F /* TabContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */; };
 		4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */; };
+		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
+		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
+		AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* PrivacyInfo.xcprivacy */; };
+		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
+		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
+		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -108,11 +108,6 @@
 		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
 		4D6677A82CC9341600EC2ADE /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 		4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
-		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
-		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
-		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
-		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
 		4D9E122E2DC0DEAB005D99E9 /* AlarmDM.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AlarmDM.entitlements; sourceTree = "<group>"; };
 		4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		4D9E12312DC0E540005D99E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -121,7 +116,6 @@
 		4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMApp.swift; sourceTree = "<group>"; };
 		4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesView.swift; sourceTree = "<group>"; };
 		4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AA0000000000000000000106 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4DAF9EBD2C579D5200B4FA7F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4DAF9EC32C579D5200B4FA7F /* AlarmDMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlarmDMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMTests.swift; sourceTree = "<group>"; };
@@ -136,6 +130,12 @@
 		4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentView.swift; sourceTree = "<group>"; };
 		4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentViewModel.swift; sourceTree = "<group>"; };
 		4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
+		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		AA0000000000000000000106 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
+		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
+		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -363,12 +363,13 @@
 			path = TabView;
 			sourceTree = "<group>";
 		};
-		AA000000000000000000010E /* SettingsView */ = {
+		4DAF9EF32C57B76200B4FA7F /* RadioView */ = {
 			isa = PBXGroup;
 			children = (
-				AA000000000000000000010D /* SettingsView.swift */,
+				4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */,
+				4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */,
 			);
-			path = SettingsView;
+			path = RadioView;
 			sourceTree = "<group>";
 		};
 		AA000000000000000000010B /* SupportView */ = {
@@ -379,13 +380,12 @@
 			path = SupportView;
 			sourceTree = "<group>";
 		};
-		4DAF9EF32C57B76200B4FA7F /* RadioView */ = {
+		AA000000000000000000010E /* SettingsView */ = {
 			isa = PBXGroup;
 			children = (
-				4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */,
-				4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */,
+				AA000000000000000000010D /* SettingsView.swift */,
 			);
-			path = RadioView;
+			path = SettingsView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -747,7 +747,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -780,7 +780,7 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
