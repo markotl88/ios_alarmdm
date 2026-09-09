@@ -86,7 +86,12 @@ final class PodcastEpisodesViewModel: ObservableObject {
     }
 
     func toggleFavourite(_ podcast: Podcast) {
-        repository.setFavorite(!podcast.isFavorite, for: podcast.id)
+        EpisodeLibrary.shared.toggleFavourite(podcast)
+        podcasts = loadPodcastsFromRealm()
+    }
+
+    func deleteDownload(_ podcast: Podcast) {
+        EpisodeLibrary.shared.deleteDownload(podcast)
         podcasts = loadPodcastsFromRealm()
     }
     private var currentPage = 1

@@ -49,6 +49,16 @@ final class RadioViewModel: ObservableObject {
         }
     }
 
+    func toggleFavourite(_ podcast: Podcast) {
+        EpisodeLibrary.shared.toggleFavourite(podcast)
+        latestPodcasts = repository.latestPodcasts(limit: 20)
+    }
+
+    func deleteDownload(_ podcast: Podcast) {
+        EpisodeLibrary.shared.deleteDownload(podcast)
+        latestPodcasts = repository.latestPodcasts(limit: 20)
+    }
+
     private func fetchLivestreamUrl() {
         podcastService.getLivestream { [weak self] result in
             switch result {

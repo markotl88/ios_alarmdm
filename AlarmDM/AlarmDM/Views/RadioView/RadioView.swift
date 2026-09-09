@@ -59,6 +59,15 @@ struct RadioView: View {
                                 playerViewModel.mode = .podcast(podcast: podcast)
                                 playerViewModel.togglePlayPause()
                             }
+                            .episodeRowActions(
+                                podcast: podcast,
+                                play: {
+                                    playerViewModel.mode = .podcast(podcast: podcast)
+                                    playerViewModel.togglePlayPause()
+                                },
+                                toggleFavourite: { viewModel.toggleFavourite(podcast) },
+                                deleteDownload: { viewModel.deleteDownload(podcast) }
+                            )
                     }
                 }
             }

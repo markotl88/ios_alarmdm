@@ -80,6 +80,16 @@ final class PodcastRepository {
         }
     }
 
+    func clearDownloadReference(for id: UUID) {
+        guard let realm,
+              let object = realm.object(ofType: PodcastRealm.self, forPrimaryKey: id.uuidString) else { return }
+        do {
+            try realm.write { object.fileUrl = nil }
+        } catch {
+            debugPrint("Error clearing download reference: \(error.localizedDescription)")
+        }
+    }
+
     /// Clears the local file reference on every row, after the files themselves
     /// are gone. Without this the app keeps claiming episodes are downloaded.
     func clearAllDownloadReferences() {
@@ -95,4 +105,41 @@ final class PodcastRepository {
         }
     }
 
+}
+
+// MARK: - Episode actions
+
+/// Favouriting and deleting a download touch both the file system and Realm,
+/// and both the Radio tab and a show's list offer them. Kept in one place so
+/// the two screens cannot drift apart.
+struct EpisodeLibrary {
+
+    static let shared = EpisodeLibrary()
+
+    private let repository = PodcastRepository.shared
+    private let fileService: FileServiceProtocol
+
+    init(fileService: FileServiceProtocol = FileService()) {
+        self.fileService = fileService
+    }
+
+    func toggleFavourite(_ podcast: Podcast) {
+        repository.setFavorite(!podcast.isFavorite, for: podcast.id)
+    }
+
+    /// Deleting while the episode is playing is safe: the player holds the file
+    /// open and keeps reading it until it is done.
+    @discardableResult
+    func deleteDownload(_ podcast: Podcast) -> Bool {
+        guard let fileName = podcast.fileUrl else { return false }
+
+        switch fileService.deleteFile(with: fileName) {
+        case .success:
+            repository.clearDownloadReference(for: podcast.id)
+            return true
+        case .failure(let error):
+            debugPrint("Error deleting download: \(error.localizedDescription)")
+            return false
+        }
+    }
 }

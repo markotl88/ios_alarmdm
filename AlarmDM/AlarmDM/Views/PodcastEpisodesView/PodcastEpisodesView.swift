@@ -48,17 +48,15 @@ struct PodcastEpisodesView: View {
                                 viewModel.fetchDataIfNeeded(currentItem: podcast)
                             }
                         }
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                viewModel.toggleFavourite(podcast)
-                            } label: {
-                                Label(
-                                    podcast.isFavorite ? "Ukloni" : "Omiljeno",
-                                    systemImage: podcast.isFavorite ? "heart.slash" : "heart"
-                                )
-                            }
-                            .tint(Color("primary"))
-                        }
+                        .episodeRowActions(
+                            podcast: podcast,
+                            play: {
+                                playerViewModel.mode = .podcast(podcast: podcast)
+                                playerViewModel.togglePlayPause()
+                            },
+                            toggleFavourite: { viewModel.toggleFavourite(podcast) },
+                            deleteDownload: { viewModel.deleteDownload(podcast) }
+                        )
                 }
 
                 if viewModel.isLoadingMore {
@@ -256,5 +254,81 @@ struct ShimmerEffect: ViewModifier {
 extension View {
     func shimmering() -> some View {
         self.modifier(ShimmerEffect())
+    }
+}
+
+// MARK: - Row actions
+
+/// Swipe and long press carry the same actions. Swipe is fast for anyone who
+/// knows it is there; the context menu is how everyone else finds it, which is
+/// the same pairing Apple's own Podcasts app uses.
+struct EpisodeRowActions: ViewModifier {
+    let podcast: Podcast
+    let play: () -> Void
+    let toggleFavourite: () -> Void
+    let deleteDownload: () -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .swipeActions(edge: .leading, allowsFullSwipe: true) {
+                Button {
+                    toggleFavourite()
+                } label: {
+                    Label(
+                        podcast.isFavorite ? "Ukloni" : "Omiljeno",
+                        systemImage: podcast.isFavorite ? "heart.slash" : "heart"
+                    )
+                }
+                .tint(Color("primary"))
+            }
+            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                if podcast.isDownloaded {
+                    Button(role: .destructive) {
+                        deleteDownload()
+                    } label: {
+                        Label("Obriši", systemImage: "trash")
+                    }
+                }
+            }
+            .contextMenu {
+                Button {
+                    play()
+                } label: {
+                    Label("Pusti", systemImage: "play.fill")
+                }
+
+                Button {
+                    toggleFavourite()
+                } label: {
+                    Label(
+                        podcast.isFavorite ? "Ukloni iz omiljenih" : "Dodaj u omiljene",
+                        systemImage: podcast.isFavorite ? "heart.slash" : "heart"
+                    )
+                }
+
+                if podcast.isDownloaded {
+                    Button(role: .destructive) {
+                        deleteDownload()
+                    } label: {
+                        Label("Obriši preuzeto", systemImage: "trash")
+                    }
+                }
+            }
+    }
+}
+
+extension View {
+    func episodeRowActions(
+        podcast: Podcast,
+        play: @escaping () -> Void,
+        toggleFavourite: @escaping () -> Void,
+        deleteDownload: @escaping () -> Void
+    ) -> some View {
+        modifier(EpisodeRowActions(
+            podcast: podcast,
+            play: play,
+            toggleFavourite: toggleFavourite,
+            deleteDownload: deleteDownload
+        ))
     }
 }
