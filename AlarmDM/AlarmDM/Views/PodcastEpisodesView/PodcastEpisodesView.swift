@@ -9,31 +9,13 @@ import SwiftUI
 
 struct PodcastEpisodesView: View {
     
-    @StateObject private var viewModel: PodcastEpisodesViewModel
-    @State private var currentViewModel: PodcastDetailViewModel? = nil
-    
-    init(viewModel: PodcastEpisodesViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
-    }
+    @ObservedObject var viewModel: PodcastEpisodesViewModel
+    @EnvironmentObject private var playerViewModel: PlayerViewModel
     
     var body: some View {
         ZStack {
             podcastList
-            
-            if let currentViewModel = currentViewModel {
-                VStack {
-                    Spacer()
-                    MiniPlayerView(viewModel: currentViewModel)
-                }
-            }
         }
-        .overlay(
-            currentViewModel.map { viewModel in
-                PodcastDetailModalView(viewModel: viewModel)
-                    .background(Color.black.opacity(0.4))
-                    .edgesIgnoringSafeArea(.all)
-            }
-        )
     }
     
     // Extracted the List into a computed property
@@ -42,8 +24,9 @@ struct PodcastEpisodesView: View {
             ForEach(viewModel.podcasts) { podcast in
                 PodcastRowView(podcast: podcast)
                     .onTapGesture {
-                        let detailViewModel = PodcastDetailViewModel(podcastId: podcast.id, onlineStream: nil)
-                        currentViewModel = detailViewModel
+                        print("Do nothing")
+//                        playerViewModel.mode = .podcast(podcast: podcast)
+//                        playerViewModel.isPresented = true
                     }
                     .onAppear {
                         // Trigger fetching more data when this podcast appears
@@ -54,13 +37,13 @@ struct PodcastEpisodesView: View {
             }
             
             // Show placeholder cells for loading if there is more data to fetch
-            if viewModel.isLoadingMore && viewModel.hasMoreData {
-                ForEach(0..<5, id: \.self) { _ in
-                    PlaceholderView()
-                        .redacted(reason: .placeholder)
-                        .shimmering() // Add blinking animation
-                }
-            }
+//            if viewModel.isLoadingMore && viewModel.hasMoreData {
+//                ForEach(0..<5, id: \.self) { _ in
+//                    PlaceholderView()
+//                        .redacted(reason: .placeholder)
+//                        .shimmering() // Add blinking animation
+//                }
+//            }
         }
         .navigationTitle("Podcasts")
         .onAppear {
@@ -77,11 +60,19 @@ struct PodcastRowView: View {
     let podcast: Podcast
     
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(podcast.title)
-                .font(.headline)
-            Text(podcast.subtitle)
-                .font(.subheadline)
+        HStack {
+            Image(podcast.show.imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 50, height: 50)
+                .cornerRadius(8)
+
+            VStack(alignment: .leading) {
+                Text(podcast.title)
+                    .font(.headline)
+                Text(podcast.subtitle)
+                    .font(.subheadline)
+            }
         }
     }
 }

@@ -10,12 +10,13 @@ import RealmSwift
 
 @main
 struct AlarmDMApp: SwiftUI.App {
-    
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     // MARK: - Public properties
     
     var body: some Scene {
         WindowGroup {
-            TabContentView()
+            NewTabContentView()
         }
     }
 

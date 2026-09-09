@@ -8,13 +8,16 @@
 
 /* Begin PBXBuildFile section */
 		4D13F43B2CCA65E400AA52D1 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */; };
-		4D13F4412CCA746200AA52D1 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4402CCA746200AA52D1 /* HomeView.swift */; };
-		4D13F4432CCA75B200AA52D1 /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4422CCA75B200AA52D1 /* HomeViewModel.swift */; };
 		4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */; };
-		4D13F4472CCA82A500AA52D1 /* PodcastDetailModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4462CCA82A500AA52D1 /* PodcastDetailModalView.swift */; };
+		4D13F4502CCBCA6900AA52D1 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */; };
+		4D13F4522CCBCA7800AA52D1 /* PlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */; };
+		4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */; };
+		4D13F4582CCBD37C00AA52D1 /* PlayerModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */; };
 		4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */; };
-		4D66778C2CC66CA400EC2ADE /* PodcastDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */; };
-		4D66778E2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */; };
+		4D5396A32CD3FB9000CD1B71 /* CustomTabBarContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A12CD3FB9000CD1B71 /* CustomTabBarContainerView.swift */; };
+		4D5396A42CD3FB9000CD1B71 /* CustomTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A02CD3FB9000CD1B71 /* CustomTabBarView.swift */; };
+		4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */; };
+		4D5396A72CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A62CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift */; };
 		4D6677902CC6703600EC2ADE /* MiniPodcastDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */; };
 		4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; };
 		4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */; };
@@ -27,6 +30,9 @@
 		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
 		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
 		4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */; };
+		4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */; };
+		4D9E12322DC0E54D005D99E9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E12312DC0E540005D99E9 /* AppDelegate.swift */; };
+		4D9E12352DC0E767005D99E9 /* CarPlay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D9E12342DC0E767005D99E9 /* CarPlay.framework */; };
 		4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */; };
 		4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */; };
 		4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */; };
@@ -76,13 +82,16 @@
 
 /* Begin PBXFileReference section */
 		4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
-		4D13F4402CCA746200AA52D1 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		4D13F4422CCA75B200AA52D1 /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioViewModel.swift; sourceTree = "<group>"; };
-		4D13F4462CCA82A500AA52D1 /* PodcastDetailModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDetailModalView.swift; sourceTree = "<group>"; };
+		4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
+		4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
+		4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
+		4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerModalView.swift; sourceTree = "<group>"; };
 		4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPodcastService.swift; sourceTree = "<group>"; };
-		4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDetailView.swift; sourceTree = "<group>"; };
-		4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastDetailViewModel.swift; sourceTree = "<group>"; };
+		4D5396A02CD3FB9000CD1B71 /* CustomTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarView.swift; sourceTree = "<group>"; };
+		4D5396A12CD3FB9000CD1B71 /* CustomTabBarContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarContainerView.swift; sourceTree = "<group>"; };
+		4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
+		4D5396A62CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItemsPreferenceKey.swift; sourceTree = "<group>"; };
 		4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPodcastDetailView.swift; sourceTree = "<group>"; };
 		4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Podcast+Realm.swift"; sourceTree = "<group>"; };
 		4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+Realm.swift"; sourceTree = "<group>"; };
@@ -93,6 +102,10 @@
 		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
 		4D6677A82CC9341600EC2ADE /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
 		4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
+		4D9E122E2DC0DEAB005D99E9 /* AlarmDM.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AlarmDM.entitlements; sourceTree = "<group>"; };
+		4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
+		4D9E12312DC0E540005D99E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		4D9E12342DC0E767005D99E9 /* CarPlay.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CarPlay.framework; path = System/Library/Frameworks/CarPlay.framework; sourceTree = SDKROOT; };
 		4DAF9EB32C579D5100B4FA7F /* AlarmDM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AlarmDM.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMApp.swift; sourceTree = "<group>"; };
 		4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesView.swift; sourceTree = "<group>"; };
@@ -118,6 +131,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				4D9E12352DC0E767005D99E9 /* CarPlay.framework in Frameworks */,
 				4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -163,13 +177,26 @@
 			path = Helpers;
 			sourceTree = "<group>";
 		};
-		4D13F43F2CCA744800AA52D1 /* HomeView */ = {
+		4D13F44E2CCBCA5600AA52D1 /* PlayerView */ = {
 			isa = PBXGroup;
 			children = (
-				4D13F4402CCA746200AA52D1 /* HomeView.swift */,
-				4D13F4422CCA75B200AA52D1 /* HomeViewModel.swift */,
+				4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */,
+				4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */,
+				4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */,
+				4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */,
 			);
-			path = HomeView;
+			path = PlayerView;
+			sourceTree = "<group>";
+		};
+		4D53969F2CD3FB8200CD1B71 /* CustomTabBar */ = {
+			isa = PBXGroup;
+			children = (
+				4D5396A02CD3FB9000CD1B71 /* CustomTabBarView.swift */,
+				4D5396A12CD3FB9000CD1B71 /* CustomTabBarContainerView.swift */,
+				4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */,
+				4D5396A62CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift */,
+			);
+			path = CustomTabBar;
 			sourceTree = "<group>";
 		};
 		4D6677942CC7AA9500EC2ADE /* Realm */ = {
@@ -200,14 +227,12 @@
 			path = ShowView;
 			sourceTree = "<group>";
 		};
-		4D6677A72CC84DD400EC2ADE /* PodcastDetailView */ = {
+		4D9E12332DC0E767005D99E9 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				4D13F4462CCA82A500AA52D1 /* PodcastDetailModalView.swift */,
-				4D66778B2CC66CA400EC2ADE /* PodcastDetailView.swift */,
-				4D66778D2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift */,
+				4D9E12342DC0E767005D99E9 /* CarPlay.framework */,
 			);
-			path = PodcastDetailView;
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		4DAF9EAA2C579D5100B4FA7F = {
@@ -216,6 +241,7 @@
 				4DAF9EB52C579D5100B4FA7F /* AlarmDM */,
 				4DAF9EC62C579D5200B4FA7F /* AlarmDMTests */,
 				4DAF9ED02C579D5200B4FA7F /* AlarmDMUITests */,
+				4D9E12332DC0E767005D99E9 /* Frameworks */,
 				4DAF9EB42C579D5100B4FA7F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -233,12 +259,15 @@
 		4DAF9EB52C579D5100B4FA7F /* AlarmDM */ = {
 			isa = PBXGroup;
 			children = (
+				4D9E122E2DC0DEAB005D99E9 /* AlarmDM.entitlements */,
 				4D13F43C2CCA709800AA52D1 /* Player */,
 				4D13F43E2CCA70AF00AA52D1 /* Helpers */,
 				4D6677992CC7B06000EC2ADE /* Model */,
 				4D6677942CC7AA9500EC2ADE /* Realm */,
 				4DAF9EEA2C57B64C00B4FA7F /* Views */,
 				4DAF9EE92C57B40B00B4FA7F /* Info.plist */,
+				4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */,
+				4D9E12312DC0E540005D99E9 /* AppDelegate.swift */,
 				4DAF9EE02C579D8E00B4FA7F /* ServiceLayer */,
 				4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */,
 				4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */,
@@ -287,11 +316,11 @@
 		4DAF9EEA2C57B64C00B4FA7F /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				4D13F43F2CCA744800AA52D1 /* HomeView */,
+				4D53969F2CD3FB8200CD1B71 /* CustomTabBar */,
+				4D13F44E2CCBCA5600AA52D1 /* PlayerView */,
 				4DAF9EF32C57B76200B4FA7F /* RadioView */,
 				4D6677A22CC83D1300EC2ADE /* ShowView */,
 				4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */,
-				4D6677A72CC84DD400EC2ADE /* PodcastDetailView */,
 				4D13F43D2CCA70A100AA52D1 /* MiniPodcastDetailView */,
 				4DAF9EEC2C57B66100B4FA7F /* TabView */,
 			);
@@ -463,31 +492,36 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4D66778E2CC66D5E00EC2ADE /* PodcastDetailViewModel.swift in Sources */,
+				4D9E12322DC0E54D005D99E9 /* AppDelegate.swift in Sources */,
 				4D66779F2CC7B5E100EC2ADE /* PodcastResponse.swift in Sources */,
 				4DAF9EF22C57B69000B4FA7F /* TabContentViewModel.swift in Sources */,
 				4DAF9EE22C579E3100B4FA7F /* NetworkManager.swift in Sources */,
 				4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */,
+				4D13F4522CCBCA7800AA52D1 /* PlayerViewModel.swift in Sources */,
 				4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */,
 				4D66779D2CC7B07A00EC2ADE /* Bookmark.swift in Sources */,
+				4D5396A32CD3FB9000CD1B71 /* CustomTabBarContainerView.swift in Sources */,
+				4D5396A42CD3FB9000CD1B71 /* CustomTabBarView.swift in Sources */,
+				4D5396A72CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift in Sources */,
+				4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */,
+				4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */,
 				4DAF9EE62C57AE5000B4FA7F /* Parser.swift in Sources */,
 				4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */,
 				4D66779B2CC7B06B00EC2ADE /* Podcast.swift in Sources */,
 				4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */,
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
-				4D13F4472CCA82A500AA52D1 /* PodcastDetailModalView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */,
+				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,
 				4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */,
 				4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */,
+				4D13F4582CCBD37C00AA52D1 /* PlayerModalView.swift in Sources */,
 				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,
+				4D13F4502CCBCA6900AA52D1 /* PlayerView.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
 				4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */,
 				4D6677902CC6703600EC2ADE /* MiniPodcastDetailView.swift in Sources */,
-				4D13F4432CCA75B200AA52D1 /* HomeViewModel.swift in Sources */,
 				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,
-				4D66778C2CC66CA400EC2ADE /* PodcastDetailView.swift in Sources */,
-				4D13F4412CCA746200AA52D1 /* HomeView.swift in Sources */,
 				4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -649,25 +683,29 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AlarmDM/AlarmDM.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"AlarmDM/Preview Content\"";
 				DEVELOPMENT_TEAM = 2QB89332G7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AlarmDM/Info.plist;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.97;
 				PRODUCT_BUNDLE_IDENTIFIER = com.msorg.daskoimladja.develop;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -679,25 +717,29 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AlarmDM/AlarmDM.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_ASSET_PATHS = "\"AlarmDM/Preview Content\"";
 				DEVELOPMENT_TEAM = 2QB89332G7;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = AlarmDM/Info.plist;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.msorg.daskoimladja.develop;
+				MARKETING_VERSION = 2.97;
+				PRODUCT_BUNDLE_IDENTIFIER = com.msorg.daskoimladja;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

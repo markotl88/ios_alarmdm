@@ -10,6 +10,7 @@ import SwiftUI
 class ShowViewModel: ObservableObject {
     @Published var shows: [Show] = [
         .alarmSaDaskomIMladjom,
+        .provizorniPodnevniProgram,
         .ljudiIzPodzemlja,
         .vecernjaSkolaRokenrola,
         .unutrasnjaEmigracija,

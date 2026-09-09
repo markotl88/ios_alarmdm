@@ -8,9 +8,5 @@
 import Foundation
 
 class TabContentViewModel: ObservableObject {
-    @Published var selectedTab: Tab = .radio
-    
-    enum Tab {
-        case radio, contact, store, settings
-    }
+//    @Published var selectedTab: TabBarItem = .rad
 }

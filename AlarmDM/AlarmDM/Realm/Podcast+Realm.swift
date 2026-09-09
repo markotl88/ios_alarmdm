@@ -40,7 +40,7 @@ extension PodcastRealm {
         self.duration = podcast.duration
         self.lengthInBytes = podcast.lengthInBytes
         self.itunesDuration = podcast.itunesDuration
-        self.show = podcast.show?.rawValue
+        self.show = podcast.show.rawValue
         self.fileUrl = podcast.fileUrl
         self.isFavorite = podcast.isFavorite
         self.isWithMusic = podcast.isWithMusic

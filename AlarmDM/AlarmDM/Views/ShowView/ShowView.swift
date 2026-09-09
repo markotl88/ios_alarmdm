@@ -9,22 +9,22 @@ import SwiftUI
 
 struct ShowView: View {
     @StateObject private var viewModel = ShowViewModel()
-
+    @EnvironmentObject private var playerViewModel: PlayerViewModel
+    
     var body: some View {
-        NavigationView {
-            VStack {
-                ShowListView(shows: viewModel.shows)
-                    .background(Color("background").edgesIgnoringSafeArea(.all)) // Background color from assets
-            }
-        }
+        ShowListView(shows: viewModel.shows)
+            .navigationTitle("Emisije")
+            .background(Color("background").edgesIgnoringSafeArea(.all))
     }
 }
 struct ShowListView: View {
     let shows: [Show]
+    @EnvironmentObject private var playerViewModel: PlayerViewModel
 
     var body: some View {
         List(shows, id: \.self) { show in
-            NavigationLink(destination: PodcastEpisodesView(viewModel: PodcastEpisodesViewModel(show: show))) {
+            let viewModel = PodcastEpisodesViewModel(show: show)
+            NavigationLink(destination: PodcastEpisodesView(viewModel: viewModel)) {
                 ShowRowView(show: show)
                     .listRowBackground(Color("background")) // List row background color
             }
@@ -34,7 +34,8 @@ struct ShowListView: View {
 }
 struct ShowRowView: View {
     let show: Show
-    
+    @EnvironmentObject private var playerViewModel: PlayerViewModel
+
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             // Show Image

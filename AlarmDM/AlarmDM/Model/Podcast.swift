@@ -18,6 +18,7 @@ enum Show: String, CaseIterable, Identifiable {
     case rastrojavanje
     case punaUstaPoezije
     case mozemoSamoDaSeSlikamo
+    case provizorniPodnevniProgram
     
     var id: String { self.rawValue }
     
@@ -33,6 +34,7 @@ enum Show: String, CaseIterable, Identifiable {
         case .mozemoSamoDaSeSlikamo: return "Možemo samo da se slikamo"
         case .punaUstaPoezije: return "Puna usta poezije"
         case .unutrasnjaEmigracija: return "Unutrašnja emigracija"
+        case .provizorniPodnevniProgram: return "Provizorni podnevni program"
         }
     }
     
@@ -48,6 +50,7 @@ enum Show: String, CaseIterable, Identifiable {
         case .mozemoSamoDaSeSlikamo: return "Satira i humor."
         case .punaUstaPoezije: return "Emisija posvećena poeziji."
         case .unutrasnjaEmigracija: return "Svi mi emigranti."
+        case .provizorniPodnevniProgram: return "Svi mi emigranti."
         }
     }
     
@@ -63,6 +66,7 @@ enum Show: String, CaseIterable, Identifiable {
         case .mozemoSamoDaSeSlikamo: return "img_msdss"
         case .punaUstaPoezije: return "img_pup"
         case .unutrasnjaEmigracija: return "img_unutrasnja_emigracija"
+        case .provizorniPodnevniProgram: return "img_unutrasnja_emigracija"
         }
     }
 }
@@ -78,7 +82,7 @@ struct Podcast: Identifiable, Equatable {
     var lengthInBytes = 0.0
     var itunesDuration = ""
     
-    var show: Show?
+    var show: Show
     var fileUrl: String?
     var isFavorite = false
     var isWithMusic = false
@@ -86,6 +90,19 @@ struct Podcast: Identifiable, Equatable {
         fileUrl != nil
     }
     var bookmarks: [Bookmark]?
+}
+
+extension Podcast {
+    var durationInSeconds: Double {
+        // ako imaš string tipa "24:35"
+        let components = itunesDuration.split(separator: ":").compactMap { Double($0) }
+        switch components.count {
+        case 3: return components[0] * 3600 + components[1] * 60 + components[2]
+        case 2: return components[0] * 60 + components[1]
+        case 1: return components[0]
+        default: return 0
+        }
+    }
 }
 
 extension Podcast {
@@ -98,7 +115,8 @@ extension Podcast {
         self.duration = response.duration
         self.lengthInBytes = response.lengthInBytes
         self.itunesDuration = response.itunesDuration
-        self.show = Show(rawValue: response.showType ?? "")
+        debugPrint("Response show type: \(response.showType ?? "")")
+        self.show = Show(rawValue: response.showType ?? "") ?? .alarmSaDaskomIMladjom
         self.isWithMusic = response.withMusic
     }
 }
@@ -114,7 +132,7 @@ extension Podcast {
         self.duration = podcastRealm.duration
         self.lengthInBytes = podcastRealm.lengthInBytes
         self.itunesDuration = podcastRealm.itunesDuration
-        self.show = Show(rawValue: podcastRealm.show ?? "")
+        self.show = Show(rawValue: podcastRealm.show ?? "") ?? .alarmSaDaskomIMladjom
         self.fileUrl = podcastRealm.fileUrl
         self.isFavorite = podcastRealm.isFavorite
         self.isWithMusic = podcastRealm.isWithMusic
