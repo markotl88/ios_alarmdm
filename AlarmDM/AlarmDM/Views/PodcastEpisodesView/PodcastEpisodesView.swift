@@ -23,10 +23,10 @@ struct PodcastEpisodesView: View {
         List {
             ForEach(viewModel.podcasts) { podcast in
                 PodcastRowView(podcast: podcast)
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        print("Do nothing")
-//                        playerViewModel.mode = .podcast(podcast: podcast)
-//                        playerViewModel.isPresented = true
+                        playerViewModel.mode = .podcast(podcast: podcast)
+                        playerViewModel.togglePlayPause()
                     }
                     .onAppear {
                         // Trigger fetching more data when this podcast appears
@@ -45,7 +45,7 @@ struct PodcastEpisodesView: View {
 //                }
 //            }
         }
-        .navigationTitle("Podcasts")
+        .navigationTitle(viewModel.showTitle)
         .onAppear {
             viewModel.fetchData()  // Initial fetch
         }

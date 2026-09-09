@@ -17,6 +17,8 @@ final class PodcastEpisodesViewModel: ObservableObject {
     
     private let podcastService: PodcastServiceProtocol
     private let selectedShow: Show
+
+    var showTitle: String { selectedShow.displayName }
     private var currentPage = 1
     private var totalPages: Int = 1
     private let repository = PodcastRepository.shared
