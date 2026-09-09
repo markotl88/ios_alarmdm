@@ -14,7 +14,7 @@ struct ShowView: View {
     }
 }
 
-/// The order is fixed in `Show.featured`; everything else falls under Ostalo.
+/// The order is fixed in `Show.featured`; everything else falls under Arhiva.
 struct ShowListView: View {
     var body: some View {
         List {
@@ -26,9 +26,9 @@ struct ShowListView: View {
                 }
             }
 
-            if !Show.other.isEmpty {
-                Section("Ostalo") {
-                    ForEach(Show.other, id: \.self) { show in
+            if !Show.archived.isEmpty {
+                Section("Arhiva") {
+                    ForEach(Show.archived, id: \.self) { show in
                         NavigationLink(destination: PodcastEpisodesView(show: show)) {
                             ShowRowView(show: show)
                         }

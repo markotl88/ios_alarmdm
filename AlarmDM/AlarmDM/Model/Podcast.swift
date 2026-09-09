@@ -37,17 +37,16 @@ enum Show: String, CaseIterable, Identifiable {
         .vecernjaSkolaRokenrola,
         .sportskiPozdrav,
         .naIviciOfsajda,
+        .nepopularnoMisljenje,
         .jbt,
-        .rastrojavanje,
-        .falis,
     ]
 
-    /// Everything else with episodes in the feed, shown under its own heading.
-    static var other: [Show] {
+    /// Shows that have stopped publishing, or one-offs. Listed under Arhiva.
+    static var archived: [Show] {
         allCases.filter { $0 != .ostalo && !featured.contains($0) }
     }
 
-    static var listed: [Show] { featured + other }
+    static var listed: [Show] { featured + archived }
 
     var displayName: String {
         switch self {
