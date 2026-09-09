@@ -75,7 +75,7 @@ class PlayerViewModel: ObservableObject {
     private let podcastService: PodcastServiceProtocol
     private var podcastId: UUID?
     private var podcast: Podcast?
-    private let realm = try! Realm()
+    private let realm = try? Realm()
     private var onlineStream: URL?
     private var isAudioSetup: Bool = false // Flag to track if audio setup is done
 
@@ -127,12 +127,12 @@ class PlayerViewModel: ObservableObject {
         self.isDownloaded = checkIfDownloaded()
     }
 
-    private func loadPodcastFromRealm(with id: UUID) -> Podcast {
-        let realm = try! Realm()
-
-        guard let podcastRealm = realm.objects(PodcastRealm.self)
-            .filter("id == %@", id.uuidString).first else {
-            fatalError("Podcast can't be loaded from Realm")
+    private func loadPodcastFromRealm(with id: UUID) -> Podcast? {
+        guard let realm = try? Realm(),
+              let podcastRealm = realm.objects(PodcastRealm.self)
+                .filter("id == %@", id.uuidString).first else {
+            debugPrint("Podcast \(id) not found in Realm")
+            return nil
         }
         return Podcast(from: podcastRealm)
     }
@@ -231,8 +231,13 @@ class PlayerViewModel: ObservableObject {
 
     // MARK: - Save Podcast to Realm
     private func savePodcastToRealm(_ newPodcast: PodcastRealm) {
-        try! realm.write {
-            realm.add(newPodcast, update: .modified)
+        guard let realm else { return }
+        do {
+            try realm.write {
+                realm.add(newPodcast, update: .modified)
+            }
+        } catch {
+            debugPrint("Error saving podcast to Realm: \(error.localizedDescription)")
         }
     }
     
@@ -256,7 +261,8 @@ class PlayerViewModel: ObservableObject {
 
     // MARK: - Check if Podcast is Downloaded
     private func checkIfDownloaded() -> Bool {
-        guard let podcastId = podcastId, let podcastRealm = realm.objects(PodcastRealm.self).filter("id == %@", podcastId.uuidString).first else {
+        guard let podcastId = podcastId,
+              let podcastRealm = realm?.objects(PodcastRealm.self).filter("id == %@", podcastId.uuidString).first else {
             return false
         }
         return Podcast(from: podcastRealm).isDownloaded

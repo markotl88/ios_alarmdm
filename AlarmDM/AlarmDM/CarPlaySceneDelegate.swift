@@ -252,12 +252,14 @@ import RealmSwift
 final class PodcastRepository {
     static let shared = PodcastRepository()
     
-    private let realm = try! Realm()
-    
     func latestPodcasts(limit: Int = 10) -> [Podcast] {
+        guard let realm = try? Realm() else {
+            debugPrint("Realm unavailable, returning no podcasts")
+            return []
+        }
         let podcastRealms = realm.objects(PodcastRealm.self)
             .sorted(byKeyPath: "createdAt", ascending: false)
-        
+
         return Array(podcastRealms.prefix(limit)).map { Podcast(from: $0) }
     }
 }
