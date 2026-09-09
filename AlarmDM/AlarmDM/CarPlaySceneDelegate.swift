@@ -8,6 +8,7 @@
 //
 
 import CarPlay
+import UIKit
 import AVFoundation
 import MediaPlayer
 import Combine
@@ -58,7 +59,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func makeRadioTemplate() -> CPListTemplate {
-        let item = CPListItem(text: "Radio uživo", detailText: radioDetailText)
+        let item = CPListItem(
+            text: "Radio uživo",
+            detailText: radioDetailText,
+            image: UIImage(named: "img_radio")?.fittedToCarPlayListItem()
+        )
         item.handler = { [weak self] _, completion in
             self?.toggleRadio()
             completion()
@@ -84,7 +89,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             let item = CPListItem(
                 text: show.displayName,
                 detailText: show.description,
-                image: UIImage(named: show.imageName)
+                image: UIImage(named: show.imageName)?.fittedToCarPlayListItem()
             )
             item.handler = { [weak self] _, completion in
                 self?.pushEpisodes(for: show)
@@ -122,7 +127,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let item = CPListItem(
             text: podcast.title,
             detailText: detail,
-            image: UIImage(named: podcast.show.imageName)
+            image: UIImage(named: podcast.show.imageName)?.fittedToCarPlayListItem()
         )
 
         if case .podcast(let playing) = engine.source, playing.id == podcast.id {
@@ -184,5 +189,23 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return engine.isPlaying ? "Zaustavi" : "Nastavi"
         }
         return "Pusti"
+    }
+}
+
+// MARK: - Artwork sizing
+
+private extension UIImage {
+    /// CarPlay renders list thumbnails at a fixed size and scales anything larger
+    /// on every draw. The show covers are 1024², so they are resized once here.
+    func fittedToCarPlayListItem() -> UIImage {
+        let target = CPListItem.maximumImageSize
+        guard size.width > target.width || size.height > target.height else { return self }
+
+        let scale = min(target.width / size.width, target.height / size.height)
+        let fitted = CGSize(width: size.width * scale, height: size.height * scale)
+
+        return UIGraphicsImageRenderer(size: fitted).image { _ in
+            draw(in: CGRect(origin: .zero, size: fitted))
+        }
     }
 }
