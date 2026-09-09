@@ -58,7 +58,7 @@ struct RadioView: View {
                     emptyState
                 } else {
                     ForEach(viewModel.visiblePodcasts, id: \.id) { podcast in
-                        PodcastRowView(podcast: podcast)
+                        PodcastRowView(podcast: podcast, showsMusicVariant: viewModel.showsMusicVariant(for: podcast))
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 playerViewModel.mode = .podcast(podcast: podcast)

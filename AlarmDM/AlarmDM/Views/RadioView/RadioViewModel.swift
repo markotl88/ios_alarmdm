@@ -44,6 +44,22 @@ final class RadioViewModel: ObservableObject {
         }
     }
 
+    /// Which shows publish both cuts, worked out from the loaded episodes. On a
+    /// mixed list the badge has to be decided per show: Alarm ships both, most
+    /// shows ship one, and a note on every row would say nothing.
+    private var showsWithBothVariants: Set<Show> {
+        var withMusic: Set<Show> = []
+        var withoutMusic: Set<Show> = []
+        for podcast in latestPodcasts {
+            if podcast.isWithMusic { withMusic.insert(podcast.show) } else { withoutMusic.insert(podcast.show) }
+        }
+        return withMusic.intersection(withoutMusic)
+    }
+
+    func showsMusicVariant(for podcast: Podcast) -> Bool {
+        showsWithBothVariants.contains(podcast.show)
+    }
+
     /// Across shows, "with music" says little — each show does its own thing.
     /// Only the two that mean the same everywhere are offered here.
     let availableFilters: [EpisodeFilter] = [.downloaded, .favourites]
