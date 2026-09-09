@@ -56,24 +56,38 @@ struct PodcastEpisodesView: View {
 }
 
 // Separate View for each podcast row
+/// Shared by the Radio tab and the episode list.
 struct PodcastRowView: View {
     let podcast: Podcast
-    
+
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
             Image(podcast.show.imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 50, height: 50)
                 .cornerRadius(8)
 
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(podcast.title)
                     .font(.headline)
+                    .lineLimit(2)
                 Text(podcast.subtitle)
                     .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+
+            if podcast.isDownloaded {
+                Image(systemName: "arrow.down.circle.fill")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
+                    .accessibilityLabel("Preuzeto")
             }
         }
+        .padding(.vertical, 6)
     }
 }
 

@@ -92,39 +92,6 @@ struct RadioView: View {
     }
 }
 
-struct PodcastRowView: View {
-    let podcast: Podcast
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(podcast.show.imageName)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 50, height: 50)
-                .cornerRadius(8)
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(podcast.title)
-                    .font(.headline)
-                    .lineLimit(2)
-                Text(podcast.subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-            }
-
-            Spacer(minLength: 0)
-
-            if podcast.isDownloaded {
-                Image(systemName: "arrow.down.circle.fill")
-                    .foregroundColor(.secondary)
-                    .font(.footnote)
-            }
-        }
-        .padding(.vertical, 6)
-    }
-}
-
 /*
 struct RadioView: View {
     @StateObject private var viewModel = RadioViewModel()
