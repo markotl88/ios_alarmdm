@@ -129,18 +129,5 @@ struct RadioView: View {
 }
  */
 
-struct ContactView: View {
-    var body: some View {
-        Color.orange.opacity(0.5)
-        Text("Contact View")
-    }
-}
-
-struct SettingsView: View {
-    var body: some View {
-        Color.yellow.opacity(0.5)
-        Text("Settings View")
-    }
-}
 
 

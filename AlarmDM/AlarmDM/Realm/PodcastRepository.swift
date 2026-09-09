@@ -69,4 +69,20 @@ final class PodcastRepository {
     func save(_ podcast: Podcast) {
         save([podcast])
     }
+
+    /// Clears the local file reference on every row, after the files themselves
+    /// are gone. Without this the app keeps claiming episodes are downloaded.
+    func clearAllDownloadReferences() {
+        guard let realm else { return }
+        do {
+            try realm.write {
+                for object in realm.objects(PodcastRealm.self).filter("fileUrl != nil") {
+                    object.fileUrl = nil
+                }
+            }
+        } catch {
+            debugPrint("Error clearing download references: \(error.localizedDescription)")
+        }
+    }
+
 }

@@ -120,8 +120,9 @@ struct SupportView: View {
                         .frame(maxWidth: 220)
                         .padding(12)
                         .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
-                    Text("Skeniraj kôd u aplikaciji svoje banke")
+                    Text("Skeniraj kôd u aplikaciji svoje banke.\nKôd nosi unapred upisan iznos od 500 RSD.")
                         .font(.caption)
+                        .multilineTextAlignment(.center)
                         .foregroundColor(Color("secondaryText"))
                 }
                 .frame(maxWidth: .infinity)
