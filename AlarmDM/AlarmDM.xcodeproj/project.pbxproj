@@ -38,6 +38,7 @@
 		4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */; };
 		4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */; };
 		4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */; };
+		AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* PrivacyInfo.xcprivacy */; };
 		4DAF9EBE2C579D5200B4FA7F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4DAF9EBD2C579D5200B4FA7F /* Preview Assets.xcassets */; };
 		4DAF9EC82C579D5200B4FA7F /* AlarmDMTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */; };
 		4DAF9ED22C579D5200B4FA7F /* AlarmDMUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9ED12C579D5200B4FA7F /* AlarmDMUITests.swift */; };
@@ -114,6 +115,7 @@
 		4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMApp.swift; sourceTree = "<group>"; };
 		4DAF9EB82C579D5100B4FA7F /* PodcastEpisodesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesView.swift; sourceTree = "<group>"; };
 		4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000000000000000000106 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4DAF9EBD2C579D5200B4FA7F /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		4DAF9EC32C579D5200B4FA7F /* AlarmDMTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AlarmDMTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMTests.swift; sourceTree = "<group>"; };
@@ -277,6 +279,7 @@
 				4DAF9EE02C579D8E00B4FA7F /* ServiceLayer */,
 				4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */,
 				4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */,
+				AA0000000000000000000106 /* PrivacyInfo.xcprivacy */,
 				4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */,
 				4DAF9EBC2C579D5200B4FA7F /* Preview Content */,
 			);
@@ -474,6 +477,7 @@
 				4D13F43B2CCA65E400AA52D1 /* Colors.xcassets in Resources */,
 				4DAF9EBE2C579D5200B4FA7F /* Preview Assets.xcassets in Resources */,
 				4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */,
+				AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

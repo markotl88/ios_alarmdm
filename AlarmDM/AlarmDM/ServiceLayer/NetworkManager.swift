@@ -243,6 +243,13 @@ final class NetworkManager: NetworkManaging {
 
                     try fileManager.moveItem(at: localURL, to: destinationURL)
 
+                    // Downloaded episodes are re-downloadable content: keep them out of
+                    // iCloud backups (App Store review flags apps that back up caches).
+                    var resourceValues = URLResourceValues()
+                    resourceValues.isExcludedFromBackup = true
+                    var mutableURL = destinationURL
+                    try? mutableURL.setResourceValues(resourceValues)
+
                     DispatchQueue.main.async {
                         completion(.success(destinationURL))
                     }
