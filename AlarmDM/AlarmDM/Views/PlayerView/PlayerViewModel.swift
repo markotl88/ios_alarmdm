@@ -42,7 +42,7 @@ final class PlayerViewModel: ObservableObject {
     @Published private(set) var duration: TimeInterval = 0
     @Published var title: String = ""
     @Published var subtitle: String = ""
-    @Published private(set) var artworkName: String = "iTunesArtwork"
+    @Published private(set) var artworkName: String = "img_radio"
     @Published private(set) var isLive: Bool = false
 
     /// 0...1 position within the current episode. Live radio always reports 0.
@@ -164,7 +164,7 @@ final class PlayerViewModel: ObservableObject {
             podcast = nil
             title = "Radio uživo"
             subtitle = "Daško i Mlađa"
-            artworkName = "iTunesArtwork"
+            artworkName = "img_radio"
             isLive = true
             isDownloaded = false
             showDeleteButton = false

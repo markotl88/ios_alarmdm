@@ -39,7 +39,7 @@ enum PlaybackSource: Equatable {
 
     var artworkName: String {
         switch self {
-        case .radio: return "iTunesArtwork"
+        case .radio: return "img_radio"
         case .podcast(let podcast): return podcast.show.imageName
         }
     }

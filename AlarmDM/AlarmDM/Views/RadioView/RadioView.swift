@@ -16,7 +16,7 @@ struct RadioView: View {
             // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Image("iTunesArtwork")
+                    Image("img_radio_wide")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 180)
