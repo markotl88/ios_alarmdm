@@ -8,18 +8,30 @@
 import SwiftUI
 
 struct PodcastEpisodesView: View {
-    
-    @ObservedObject var viewModel: PodcastEpisodesViewModel
+
+    @StateObject private var viewModel: PodcastEpisodesViewModel
     @EnvironmentObject private var playerViewModel: PlayerViewModel
-    
-    var body: some View {
-        ZStack {
-            podcastList
-        }
+
+    /// Owns its view model. It used to be created inline in ShowListView's body and
+    /// held with @ObservedObject, so every re-render threw away the fetched episodes.
+    init(show: Show) {
+        _viewModel = StateObject(wrappedValue: PodcastEpisodesViewModel(show: show))
     }
-    
-    // Extracted the List into a computed property
-    private var podcastList: some View {
+
+    var body: some View {
+        Group {
+            if viewModel.podcasts.isEmpty {
+                emptyState
+            } else {
+                episodeList
+            }
+        }
+        .navigationTitle(viewModel.showTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { viewModel.fetchData() }
+    }
+
+    private var episodeList: some View {
         List {
             ForEach(viewModel.podcasts) { podcast in
                 PodcastRowView(podcast: podcast)
@@ -29,29 +41,46 @@ struct PodcastEpisodesView: View {
                         playerViewModel.togglePlayPause()
                     }
                     .onAppear {
-                        // Trigger fetching more data when this podcast appears
                         if podcast == viewModel.podcasts.last {
                             viewModel.fetchDataIfNeeded(currentItem: podcast)
                         }
                     }
             }
-            
-            // Show placeholder cells for loading if there is more data to fetch
-//            if viewModel.isLoadingMore && viewModel.hasMoreData {
-//                ForEach(0..<5, id: \.self) { _ in
-//                    PlaceholderView()
-//                        .redacted(reason: .placeholder)
-//                        .shimmering() // Add blinking animation
-//                }
-//            }
+
+            if viewModel.isLoadingMore {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+            }
         }
-        .navigationTitle(viewModel.showTitle)
-        .onAppear {
-            viewModel.fetchData()  // Initial fetch
+        .listStyle(.plain)
+        .refreshable { viewModel.fetchData() }
+    }
+
+    @ViewBuilder
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            if viewModel.isLoadingMore {
+                ProgressView()
+                Text("Učitavanje epizoda…")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            } else {
+                Image(systemName: "waveform.slash")
+                    .font(.largeTitle)
+                    .foregroundColor(.secondary)
+                Text(viewModel.errorMessage ?? "Nema epizoda za ovu emisiju.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                Button("Pokušaj ponovo") { viewModel.fetchData() }
+                    .font(.subheadline)
+            }
         }
-        .alert(isPresented: .constant(viewModel.errorMessage != nil)) {
-            Alert(title: Text("Error"), message: Text(viewModel.errorMessage ?? "Unknown error"), dismissButton: .default(Text("OK")))
-        }
+        .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

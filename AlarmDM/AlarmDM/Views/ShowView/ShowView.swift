@@ -23,8 +23,7 @@ struct ShowListView: View {
 
     var body: some View {
         List(shows, id: \.self) { show in
-            let viewModel = PodcastEpisodesViewModel(show: show)
-            NavigationLink(destination: PodcastEpisodesView(viewModel: viewModel)) {
+            NavigationLink(destination: PodcastEpisodesView(show: show)) {
                 ShowRowView(show: show)
                     .listRowBackground(Color("background")) // List row background color
             }
