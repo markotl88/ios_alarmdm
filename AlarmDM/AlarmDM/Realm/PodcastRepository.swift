@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import Combine
 import RealmSwift
 
 final class PodcastRepository {
@@ -112,9 +113,15 @@ final class PodcastRepository {
 /// Favouriting and deleting a download touch both the file system and Realm,
 /// and both the Radio tab and a show's list offer them. Kept in one place so
 /// the two screens cannot drift apart.
-struct EpisodeLibrary {
+final class EpisodeLibrary {
 
     static let shared = EpisodeLibrary()
+
+    /// Fires whenever an episode's local state changes. Lists hold snapshots
+    /// taken from Realm when they appeared, so without this a download made
+    /// from the player leaves every visible row still claiming it is not
+    /// downloaded — and the Preuzeto filter cannot see it.
+    let didChange = PassthroughSubject<Void, Never>()
 
     private let repository = PodcastRepository.shared
     private let fileService: FileServiceProtocol
@@ -123,8 +130,15 @@ struct EpisodeLibrary {
         self.fileService = fileService
     }
 
+    /// Called by whoever wrote to Realm outside this type — the player, after
+    /// a download finishes.
+    func episodeDidChange() {
+        didChange.send()
+    }
+
     func toggleFavourite(_ podcast: Podcast) {
         repository.setFavorite(!podcast.isFavorite, for: podcast.id)
+        didChange.send()
     }
 
     /// Deleting while the episode is playing is safe: the player holds the file
@@ -136,6 +150,7 @@ struct EpisodeLibrary {
         switch fileService.deleteFile(with: fileName) {
         case .success:
             repository.clearDownloadReference(for: podcast.id)
+            didChange.send()
             return true
         case .failure(let error):
             debugPrint("Error deleting download: \(error.localizedDescription)")

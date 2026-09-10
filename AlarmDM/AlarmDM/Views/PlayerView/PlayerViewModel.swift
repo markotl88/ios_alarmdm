@@ -273,6 +273,7 @@ final class PlayerViewModel: ObservableObject {
                         self.engine.switchToLocalFile(location)
                     }
                 }
+                EpisodeLibrary.shared.episodeDidChange()
                 self.showCheckmark = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                     self?.showCheckmark = false
@@ -298,6 +299,7 @@ final class PlayerViewModel: ObservableObject {
             if let updated = self.podcast {
                 savePodcastToRealm(PodcastRealm(from: updated))
             }
+            EpisodeLibrary.shared.episodeDidChange()
         case .failure(let error):
             debugPrint("Error deleting file: \(error.localizedDescription)")
         }

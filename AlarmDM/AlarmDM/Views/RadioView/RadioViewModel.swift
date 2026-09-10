@@ -23,11 +23,20 @@ final class RadioViewModel: ObservableObject {
 
     private let podcastService: PodcastServiceProtocol
     private let repository = PodcastRepository.shared
+    private var cancellables = Set<AnyCancellable>()
 
     init(podcastService: PodcastServiceProtocol = PodcastService()) {
         self.podcastService = podcastService
         fetchLivestreamUrl()
         loadCached()
+
+        EpisodeLibrary.shared.didChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.latestPodcasts = self.repository.latestPodcasts(limit: self.displayLimit)
+            }
+            .store(in: &cancellables)
     }
 
     /// Whatever is already on disk shows instantly; the network refresh follows.
@@ -135,12 +144,10 @@ final class RadioViewModel: ObservableObject {
 
     func toggleFavourite(_ podcast: Podcast) {
         EpisodeLibrary.shared.toggleFavourite(podcast)
-        latestPodcasts = repository.latestPodcasts(limit: displayLimit)
     }
 
     func deleteDownload(_ podcast: Podcast) {
         EpisodeLibrary.shared.deleteDownload(podcast)
-        latestPodcasts = repository.latestPodcasts(limit: displayLimit)
     }
 
     private func fetchLivestreamUrl() {

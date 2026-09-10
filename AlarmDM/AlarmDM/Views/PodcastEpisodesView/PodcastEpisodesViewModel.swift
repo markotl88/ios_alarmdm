@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 import RealmSwift
 
 /// The episode list filters. Only ever shown inside a single show — the Radio
@@ -87,12 +88,10 @@ final class PodcastEpisodesViewModel: ObservableObject {
 
     func toggleFavourite(_ podcast: Podcast) {
         EpisodeLibrary.shared.toggleFavourite(podcast)
-        podcasts = loadPodcastsFromRealm()
     }
 
     func deleteDownload(_ podcast: Podcast) {
         EpisodeLibrary.shared.deleteDownload(podcast)
-        podcasts = loadPodcastsFromRealm()
     }
     private var currentPage = 1
     private var totalPages: Int = 1
