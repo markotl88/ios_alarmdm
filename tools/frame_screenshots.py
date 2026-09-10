@@ -25,13 +25,15 @@ CAPTIONS = {
     "01-radio": "Radio uživo,\nceo dan",
     "02-emisije": "Sve emisije\nna jednom mestu",
     "03-player": "Preuzmi i slušaj\nbez interneta",
-    "04-epizode": "Sa muzikom\nili bez nje",
+    "04-epizode": "Sa muzikom\nili bez",
     "05-podrzi": "Podrži Daška\ni Mlađu",
 }
 
+# Source folder -> the sizes to render from it. Older app records still expose
+# the 6.5-inch and 12.9-inch slots in App Store Connect, so both are produced.
 TARGETS = {
-    "iphone-6.9": (1320, 2868),
-    "ipad-13": (2064, 2752),
+    "iphone-6.9": [("iphone-6.9", (1320, 2868)), ("iphone-6.5", (1284, 2778))],
+    "ipad-13": [("ipad-13", (2064, 2752)), ("ipad-12.9", (2048, 2732))],
 }
 
 FONT_PATHS = [
@@ -106,22 +108,23 @@ def main():
                         else pathlib.Path.home() / "Desktop/AlarmDM-screenshots")
     made = 0
 
-    for folder, size in TARGETS.items():
+    for folder, variants in TARGETS.items():
         src = root / folder
         if not src.is_dir():
             continue
-        out = root / "framed" / folder
-        out.mkdir(parents=True, exist_ok=True)
 
         for png in sorted(src.glob("*.png")):
             caption = CAPTIONS.get(png.stem)
             if caption is None:
                 print(f"  preskočeno (nema natpisa): {png.name}")
                 continue
-            framed = frame(Image.open(png).convert("RGB"), caption, size)
-            framed.save(out / png.name)
-            print(f"  ✓ {folder}/{png.name}  {framed.size[0]}×{framed.size[1]}")
-            made += 1
+            for out_name, size in variants:
+                out = root / "framed" / out_name
+                out.mkdir(parents=True, exist_ok=True)
+                framed = frame(Image.open(png).convert("RGB"), caption, size)
+                framed.save(out / png.name)
+                print(f"  ✓ {out_name}/{png.name}  {framed.size[0]}×{framed.size[1]}")
+                made += 1
 
     print(f"\n{made} slika u {root / 'framed'}")
 
