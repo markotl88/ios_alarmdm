@@ -23,19 +23,24 @@ SHOTS=(
   "05-podrzi:Tab Podrži"
 )
 
-# Several device generations share a screen size. First one installed wins.
-IPHONE_CANDIDATES=("iPhone 17 Pro Max" "iPhone 16 Pro Max" "iPhone 15 Pro Max" "iPhone 14 Pro Max")
-IPAD_CANDIDATES=("iPad Pro 13-inch" "iPad Pro (12.9-inch)")
+# Several device generations share a screen size and all give the same pixels,
+# so any of these will do. Override either with an env var when the guess is
+# wrong:  IPAD_DEVICE="iPad Pro 13-inch (M5)" ./tools/screenshots.sh
+IPHONE_CANDIDATES=("${IPHONE_DEVICE:-}" "iPhone 17 Pro Max" "iPhone 16 Pro Max" "iPhone 15 Pro Max" "iPhone 14 Pro Max")
+IPAD_CANDIDATES=("${IPAD_DEVICE:-}" "iPad Pro 13-inch" "iPad Pro (12.9-inch)")
 
 available_devices() {
   xcrun simctl list devices available | grep -E "^ +(iPhone|iPad)" | sed 's/^ *//'
 }
 
-# Prints "UDID<TAB>Name" for the first candidate that is installed.
+# Prints "UDID<TAB>Name" for the first candidate that is installed. Within one
+# candidate the LAST match wins, because simctl lists generations oldest first
+# and a prefix like "iPad Pro 13-inch" matches both the M4 and the M5.
 resolve_device() {
   local candidate line udid name
   for candidate in "$@"; do
-    line=$(xcrun simctl list devices available | grep -F "$candidate (" | head -1) || true
+    [ -z "$candidate" ] && continue
+    line=$(xcrun simctl list devices available | grep -F "$candidate (" | tail -1) || true
     if [ -n "$line" ]; then
       udid=$(echo "$line" | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
       name=$(echo "$line" | sed -E 's/^ *(.*[^ ]) +\([0-9A-F-]{36}\).*/\1/')
