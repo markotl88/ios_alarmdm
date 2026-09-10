@@ -216,12 +216,15 @@ struct FullscreenPlayerView: View {
 
     private var transportControls: some View {
         HStack(spacing: 40) {
-            Button {
-                playerViewModel.skipBackward()
-            } label: {
-                Image(systemName: "gobackward.15").font(.title2)
+            // Live radio has nothing to skip through. A dimmed control still
+            // invites a tap; leaving it out says what is going on.
+            if !playerViewModel.isLive {
+                Button {
+                    playerViewModel.skipBackward()
+                } label: {
+                    Image(systemName: "gobackward.15").font(.title2)
+                }
             }
-            .disabled(playerViewModel.isLive)
 
             Button {
                 playerViewModel.togglePlayPause()
@@ -239,13 +242,15 @@ struct FullscreenPlayerView: View {
             }
             .accessibilityLabel(playerViewModel.isPlaying ? "Pauziraj" : "Pusti")
 
-            Button {
-                playerViewModel.skipForward()
-            } label: {
-                Image(systemName: "goforward.15").font(.title2)
+            if !playerViewModel.isLive {
+                Button {
+                    playerViewModel.skipForward()
+                } label: {
+                    Image(systemName: "goforward.15").font(.title2)
+                }
             }
-            .disabled(playerViewModel.isLive)
         }
+        .animation(.easeInOut(duration: 0.2), value: playerViewModel.isLive)
         .foregroundColor(Color("primaryText"))
     }
 
