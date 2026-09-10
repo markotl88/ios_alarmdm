@@ -25,7 +25,7 @@ CAPTIONS = {
     "01-radio": "Radio uživo,\nceo dan",
     "02-emisije": "Sve emisije\nna jednom mestu",
     "03-player": "Preuzmi i slušaj\nbez interneta",
-    "04-epizode": "Nađi tačno ono\nšto tražiš",
+    "04-epizode": "Sa muzikom\nili bez nje",
     "05-podrzi": "Podrži Daška\ni Mlađu",
 }
 
