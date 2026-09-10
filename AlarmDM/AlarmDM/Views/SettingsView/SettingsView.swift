@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import UIKit
 import WebKit
 
 // MARK: - View model
@@ -210,11 +211,15 @@ struct WebPageView: View {
     }
 }
 
+/// Locked to one host. The About page carries the site's own navigation and
+/// links out to Facebook, Instagram and YouTube — following those inside the
+/// app would make this a web browser, which is a different app to review and a
+/// higher age rating. Anything off-host opens in Safari instead.
 private struct WebView: UIViewRepresentable {
     let url: URL
     @Binding var isLoading: Bool
 
-    func makeCoordinator() -> Coordinator { Coordinator(isLoading: $isLoading) }
+    func makeCoordinator() -> Coordinator { Coordinator(isLoading: $isLoading, allowedHost: url.host) }
 
     func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
@@ -227,9 +232,36 @@ private struct WebView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKNavigationDelegate {
         private let isLoading: Binding<Bool>
+        private let allowedHost: String?
 
-        init(isLoading: Binding<Bool>) {
+        init(isLoading: Binding<Bool>, allowedHost: String?) {
             self.isLoading = isLoading
+            self.allowedHost = allowedHost
+        }
+
+        func webView(
+            _ webView: WKWebView,
+            decidePolicyFor navigationAction: WKNavigationAction,
+            decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+        ) {
+            guard let url = navigationAction.request.url else {
+                decisionHandler(.cancel)
+                return
+            }
+
+            let host = url.host ?? ""
+            let isAllowed = allowedHost.map { host == $0 || host.hasSuffix(".\($0)") } ?? false
+
+            if isAllowed {
+                decisionHandler(.allow)
+                return
+            }
+
+            // A tap on an outside link leaves the app rather than browsing inside it.
+            if navigationAction.navigationType == .linkActivated {
+                UIApplication.shared.open(url)
+            }
+            decisionHandler(.cancel)
         }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
