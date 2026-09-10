@@ -88,6 +88,24 @@ enum Show: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Some shows raise money on a Patreon of their own, separate from the
+    /// station's. Nil for the rest.
+    var patreonURL: URL? {
+        switch self {
+        case .unutrasnjaEmigracija: return URL(string: "https://www.patreon.com/unutrasnjaemigracija")
+        case .ljudiIzPodzemlja: return URL(string: "https://www.patreon.com/ljudiizpodzemlja")
+        case .vecernjaSkolaRokenrola: return URL(string: "https://www.patreon.com/vecernjaskola")
+        case .sportskiPozdrav: return URL(string: "https://www.patreon.com/sportskipozdrav")
+        case .naIviciOfsajda: return URL(string: "https://www.patreon.com/naiviciofsajda")
+        default: return nil
+        }
+    }
+
+    /// In the Shows tab's order, so the Podrži screen reads the same way.
+    static var withOwnPatreon: [Show] {
+        listed.filter { $0.patreonURL != nil }
+    }
+
     /// Shows added after the original artwork set fall back to the radio image
     /// rather than rendering an empty frame.
     var imageName: String {

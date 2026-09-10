@@ -19,7 +19,7 @@ struct SupportView: View {
     private enum Donation {
         static let patreon = URL(string: "https://www.patreon.com/daskoimladja")!
         static let payPal = URL(string: "https://www.paypal.com/paypalme/daskoimladja")!
-        static let bankName = "OTP Vojvođanska banka"
+        static let bankName = "OTP banka"
         static let accountNumber = "325-9300600398707-66"
     }
 
@@ -27,9 +27,16 @@ struct SupportView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 intro
+
+                sectionHeader("Daško i Mlađa")
                 patreonRow
                 payPalRow
                 bankSection
+
+                if !Show.withOwnPatreon.isEmpty {
+                    sectionHeader("Emisije")
+                    showPatreonSection
+                }
             }
             .padding(20)
         }
@@ -47,6 +54,55 @@ struct SupportView: View {
             Text("Možeš nas podržati na sledeće načine:")
                 .font(.subheadline)
                 .foregroundColor(Color("secondaryText"))
+        }
+    }
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title.uppercased())
+            .font(.caption.weight(.semibold))
+            .kerning(0.6)
+            .foregroundColor(Color("secondaryText"))
+            .padding(.top, 4)
+    }
+
+    /// Several shows raise money separately from the station.
+    private var showPatreonSection: some View {
+        VStack(spacing: 12) {
+            ForEach(Show.withOwnPatreon, id: \.self) { show in
+                if let url = show.patreonURL {
+                    Link(destination: url) {
+                        HStack(spacing: 14) {
+                            Image(show.imageName)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 44, height: 44)
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(show.displayName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(Color("primaryText"))
+                                    .lineLimit(1)
+                                Text("Patreon")
+                                    .font(.caption)
+                                    .foregroundColor(Color("secondaryText"))
+                            }
+
+                            Spacer(minLength: 0)
+
+                            Image(systemName: "arrow.up.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundColor(Color("secondaryText"))
+                        }
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color(.secondarySystemBackground))
+                        )
+                    }
+                    .accessibilityLabel("Podrži \(show.displayName) na Patreonu")
+                }
+            }
         }
     }
 
@@ -212,7 +268,7 @@ private struct FullscreenQRView: View {
                 VStack(spacing: 4) {
                     Text("325-9300600398707-66")
                         .font(.callout.monospacedDigit())
-                    Text("OTP Vojvođanska banka · 500 RSD")
+                    Text("OTP banka · 500 RSD")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
