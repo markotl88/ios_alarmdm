@@ -17,7 +17,15 @@ struct MiniPlayerView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            if !playerViewModel.isLive {
+            // The bar always ends in a 2pt strip so its height never changes: the
+            // episode's progress for a podcast, a plain rule for live radio. A
+            // brand-coloured rule across the full width would read as a
+            // finished episode.
+            if playerViewModel.isLive {
+                Rectangle()
+                    .fill(Color(.separator))
+                    .frame(height: 2)
+            } else {
                 ProgressView(value: playerViewModel.playbackProgress)
                     .progressViewStyle(.linear)
                     .tint(Color("primaryLink"))
