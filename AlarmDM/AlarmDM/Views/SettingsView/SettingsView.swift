@@ -71,6 +71,9 @@ struct SettingsView: View {
     private enum Links {
         static let about = URL(string: "https://www.daskoimladja.com/o-nama.php")!
         static let shop = URL(string: "https://daskoimladja.bigcartel.com/")!
+        static let instagram = URL(string: "https://www.instagram.com/daskoimladja")!
+        /// The studio number, as it already lives in AppConstants.
+        static let sms = URL(string: "sms:\(AppConstants.phoneNumber)")!
         static let authorEmail = "marko.stajic@gmail.com"
     }
 
@@ -129,15 +132,34 @@ struct SettingsView: View {
                 Label("O nama", systemImage: "info.circle")
             }
 
-            Link(destination: Links.shop) {
-                HStack {
-                    Label("Prodavnica", systemImage: "bag")
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.secondary)
-                }
+            Link(destination: Links.instagram) {
+                externalRow("Instagram", detail: "@daskoimladja", systemImage: "at")
             }
+
+            Link(destination: Links.shop) {
+                externalRow("Prodavnica", systemImage: "bag")
+            }
+
+            Button {
+                openURL(Links.sms)
+            } label: {
+                externalRow("Pošalji SMS", detail: "066 442 266", systemImage: "message")
+            }
+        }
+    }
+
+    /// A row that leaves the app, marked as such.
+    private func externalRow(_ title: String, detail: String? = nil, systemImage: String) -> some View {
+        HStack {
+            Label(title, systemImage: systemImage)
+            Spacer()
+            if let detail {
+                Text(detail)
+                    .foregroundColor(.secondary)
+            }
+            Image(systemName: "arrow.up.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(.secondary)
         }
     }
 
@@ -146,13 +168,7 @@ struct SettingsView: View {
             Button {
                 openURL(supportMailURL())
             } label: {
-                HStack {
-                    Label("Kontaktiraj autora", systemImage: "envelope")
-                    Spacer()
-                    Image(systemName: "arrow.up.right")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(.secondary)
-                }
+                externalRow("Kontaktiraj autora", systemImage: "envelope")
             }
 
             HStack {
