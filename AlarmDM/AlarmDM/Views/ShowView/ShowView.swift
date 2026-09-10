@@ -8,33 +8,39 @@
 import SwiftUI
 
 struct ShowView: View {
-    @StateObject private var viewModel = ShowViewModel()
-
     var body: some View {
-        NavigationView {
-            VStack {
-                ShowListView(shows: viewModel.shows)
-                    .background(Color("background").edgesIgnoringSafeArea(.all)) // Background color from assets
-            }
-        }
+        ShowListView()
+            .navigationTitle("Emisije")
     }
 }
-struct ShowListView: View {
-    let shows: [Show]
 
+/// The order is fixed in `Show.featured`; everything else falls under Arhiva.
+struct ShowListView: View {
     var body: some View {
-        List(shows, id: \.self) { show in
-            NavigationLink(destination: PodcastEpisodesView(viewModel: PodcastEpisodesViewModel(show: show))) {
-                ShowRowView(show: show)
-                    .listRowBackground(Color("background")) // List row background color
+        List {
+            Section {
+                ForEach(Show.featured, id: \.self) { show in
+                    NavigationLink(destination: PodcastEpisodesView(show: show)) {
+                        ShowRowView(show: show)
+                    }
+                }
+            }
+
+            if !Show.archived.isEmpty {
+                Section("Arhiva") {
+                    ForEach(Show.archived, id: \.self) { show in
+                        NavigationLink(destination: PodcastEpisodesView(show: show)) {
+                            ShowRowView(show: show)
+                        }
+                    }
+                }
             }
         }
-        .background(Color("background")) // Overall background
     }
 }
 struct ShowRowView: View {
     let show: Show
-    
+
     var body: some View {
         HStack(alignment: .center, spacing: 16) {
             // Show Image
@@ -48,18 +54,16 @@ struct ShowRowView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(show.displayName)
                     .font(.headline)
-                    .foregroundColor(Color("primaryText")) // Text color from assets
+                    .foregroundColor(Color("primaryText"))
                 
                 Text(show.description)
                     .font(.subheadline)
-                    .foregroundColor(Color("secondaryText")) // Secondary text color from assets
+                    .foregroundColor(Color("secondaryText"))
                     .lineLimit(3)
             }
             
             Spacer() // Push content to the left
         }
-        .background(Color("primary").opacity(0.05)) // Light background for the row
-        .cornerRadius(8)
         .padding(.vertical, 4)
     }
 }

@@ -9,70 +9,157 @@ import SwiftUI
 
 struct RadioView: View {
     @StateObject private var viewModel = RadioViewModel()
-    @State private var currentViewModel: PodcastDetailViewModel? = nil
+    @EnvironmentObject private var playerViewModel: PlayerViewModel
 
     var body: some View {
-        VStack {
-            Text("Radio uživo")
-                .font(.title)
-                .padding()
-            
-            Text("ALARM sa Daškom i Mlađom, svakog radnog dana 07-10h. Dobra muzika non-stop!")
-                .padding()
-            
-            Spacer()
-            
-            HStack {
-                Button(action: {
-                    debugPrint("Play")
-                    let detailViewModel = PodcastDetailViewModel(podcastId: nil, onlineStream: viewModel.livestreamUrl)
-                    currentViewModel = detailViewModel
-                }) {
-                    Image(systemName: "play.circle.fill")
-                        .font(.largeTitle)
+        List {
+            // MARK: - Radio uživo
+            Section(header: Text("Radio uživo")) {
+                VStack(alignment: .leading, spacing: 0) {
+                    Image("img_radio_wide")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(height: 180)
+                        .clipped()
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Internet radio Daško i Mlađa")
+                            .font(.headline)
+                        Text("Svakog radnog dana 07-10h. Dobra muzika non-stop!")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(16)
+
+                    Button {
+                        playerViewModel.mode = .radio(stream: viewModel.livestreamUrl)
+                        playerViewModel.togglePlayPause()
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
+                            Text(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
+                                .font(.headline)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color("primary"))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
                 }
+                .listRowInsets(EdgeInsets())
             }
-            .padding()
-            
-            Spacer()
-            
-            if let currentViewModel = currentViewModel {
-                VStack {
-                    Spacer()
-                    MiniPlayerView(viewModel: currentViewModel)
+
+            // MARK: - Podkasti
+            Section {
+                if viewModel.visiblePodcasts.isEmpty {
+                    emptyState
+                } else {
+                    ForEach(viewModel.visiblePodcasts, id: \.id) { podcast in
+                        PodcastRowView(podcast: podcast, showsMusicVariant: viewModel.showsMusicVariant(for: podcast))
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                playerViewModel.mode = .podcast(podcast: podcast)
+                                playerViewModel.togglePlayPause()
+                            }
+                            .episodeRowActions(
+                                podcast: podcast,
+                                play: {
+                                    playerViewModel.mode = .podcast(podcast: podcast)
+                                    playerViewModel.togglePlayPause()
+                                },
+                                toggleFavourite: { viewModel.toggleFavourite(podcast) },
+                                deleteDownload: { viewModel.deleteDownload(podcast) }
+                            )
+                            .onAppear { viewModel.loadMoreIfNeeded(currentItem: podcast) }
+                    }
+
+                    if viewModel.isLoadingMore {
+                        HStack {
+                            Spacer()
+                            ProgressView()
+                            Spacer()
+                        }
+                    }
+                }
+            } header: {
+                HStack {
+                    Text("Najnoviji podkasti")
+                    if let active = viewModel.activeFilter {
+                        Spacer()
+                        Label(active.title, systemImage: active.systemImage)
+                            .textCase(nil)
+                            .font(.caption)
+                            .foregroundColor(Color("primaryLink"))
+                    }
                 }
             }
         }
-        .padding()
-        .overlay(
-            currentViewModel.map { viewModel in
-                PodcastDetailModalView(viewModel: viewModel)
-                    .background(Color.black.opacity(0.4))
-                    .edgesIgnoringSafeArea(.all)
+        .listStyle(.insetGrouped)
+        .navigationTitle("Radio")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) { filterMenu }
+        }
+        .refreshable { viewModel.refresh() }
+        .onAppear { viewModel.refresh() }
+    }
+
+    private var isLivePlaying: Bool {
+        playerViewModel.isLive && playerViewModel.isPlaying
+    }
+
+    /// The filter lives in the toolbar rather than in a bar under the title.
+    /// Chips here would sit directly below the navigation bar once the card
+    /// scrolls away — two stacked bars saying the same thing.
+    private var filterMenu: some View {
+        Menu {
+            Picker("Filter", selection: filterBinding) {
+                Text("Sve epizode").tag(EpisodeFilter?.none)
+                ForEach(viewModel.availableFilters) { filter in
+                    Label(filter.title, systemImage: filter.systemImage)
+                        .tag(EpisodeFilter?.some(filter))
+                }
             }
+        } label: {
+            Image(systemName: viewModel.activeFilter == nil
+                  ? "line.3.horizontal.decrease.circle"
+                  : "line.3.horizontal.decrease.circle.fill")
+        }
+        .accessibilityLabel("Filtriraj epizode")
+    }
+
+    private var filterBinding: Binding<EpisodeFilter?> {
+        Binding(
+            get: { viewModel.activeFilter },
+            set: { newValue in withAnimation(.easeInOut(duration: 0.18)) { viewModel.activeFilter = newValue } }
         )
     }
-}
 
-struct ContactView: View {
-    var body: some View {
-        Text("Contact View")
+    @ViewBuilder
+    private var emptyState: some View {
+        if viewModel.isLoading {
+            HStack(spacing: 12) {
+                ProgressView()
+                Text("Učitavanje…").foregroundColor(.secondary)
+            }
+            .padding(.vertical, 8)
+        } else if let error = viewModel.errorMessage {
+            VStack(alignment: .leading, spacing: 8) {
+                Text(error).font(.subheadline).foregroundColor(.secondary)
+                Button("Pokušaj ponovo") { viewModel.refresh() }
+                    .font(.subheadline)
+            }
+            .padding(.vertical, 8)
+        } else {
+            Text("Nema podkasta za prikaz.")
+                .foregroundColor(.secondary)
+                .padding(.vertical, 8)
+        }
     }
 }
 
-struct StoreView: View {
-    var body: some View {
-        Text("Store View")
-    }
-}
 
-struct SettingsView: View {
-    var body: some View {
-        Text("Settings View")
-    }
-}
 
-#Preview {
-    StoreView()
-}
 

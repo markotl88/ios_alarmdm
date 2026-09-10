@@ -12,7 +12,11 @@ struct TabBarItemsPreferenceKey : PreferenceKey {
     static var defaultValue: [TabBarItem] = []
     
     static func reduce(value: inout [TabBarItem], nextValue: () -> [TabBarItem]) {
-        value.append(contentsOf: nextValue())
+        for item in nextValue() {
+            if !value.contains(item) {
+                value.append(item)
+            }
+        }
     }
 }
 

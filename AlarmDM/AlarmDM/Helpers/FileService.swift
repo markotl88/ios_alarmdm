@@ -10,6 +10,9 @@ import Foundation
 protocol FileServiceProtocol {
     func deleteFile(with fileName: String) -> Result<Bool, FileServiceError>
     func getFile(with fileName: String) -> Result<URL, FileServiceError>
+    func downloadedFiles() -> [URL]
+    func downloadedBytes() -> Int64
+    func deleteAllDownloads() -> Result<Int, FileServiceError>
 }
 
 enum FileServiceError: Error {
@@ -40,6 +43,40 @@ class FileService: FileServiceProtocol {
         }
     }
     
+    /// Every episode we have on disk. Downloads land in Documents as .mp3.
+    func downloadedFiles() -> [URL] {
+        guard let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first,
+              let contents = try? fileManager.contentsOfDirectory(
+                at: documentsURL,
+                includingPropertiesForKeys: [.fileSizeKey],
+                options: [.skipsHiddenFiles]
+              ) else { return [] }
+
+        return contents.filter { $0.pathExtension.lowercased() == "mp3" }
+    }
+
+    func downloadedBytes() -> Int64 {
+        downloadedFiles().reduce(into: Int64(0)) { total, url in
+            let size = (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? 0
+            total += Int64(size)
+        }
+    }
+
+    /// Returns how many files were removed.
+    func deleteAllDownloads() -> Result<Int, FileServiceError> {
+        let files = downloadedFiles()
+        var removed = 0
+        for url in files {
+            do {
+                try fileManager.removeItem(at: url)
+                removed += 1
+            } catch {
+                return .failure(.unknownError(message: error.localizedDescription))
+            }
+        }
+        return .success(removed)
+    }
+
     func getFile(with fileName: String) -> Result<URL, FileServiceError> {
         guard let documentsURL = fileManager.urls(
             for: .documentDirectory, in: .userDomainMask).first else {

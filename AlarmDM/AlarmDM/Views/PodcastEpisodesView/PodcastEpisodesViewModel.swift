@@ -6,20 +6,96 @@
 //
 
 import SwiftUI
+import Combine
 import RealmSwift
+
+/// The episode list filters. Only ever shown inside a single show — the Radio
+/// tab is a short "what is new" list where filtering would be noise.
+enum EpisodeFilter: String, CaseIterable, Identifiable {
+    case withMusic
+    case withoutMusic
+    case downloaded
+    case favourites
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .withMusic: return "Sa muzikom"
+        case .withoutMusic: return "Bez muzike"
+        case .downloaded: return "Preuzeto"
+        case .favourites: return "Omiljeno"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .withMusic: return "music.note"
+        case .withoutMusic: return "music.note.slash"
+        case .downloaded: return "arrow.down.circle"
+        case .favourites: return "heart"
+        }
+    }
+}
 
 final class PodcastEpisodesViewModel: ObservableObject {
     
     @Published var podcasts: [Podcast] = []
+    /// nil means no filter. Tapping the active chip clears it.
+    @Published var activeFilter: EpisodeFilter?
     @Published var errorMessage: String?
     @Published var isLoadingMore: Bool = false
     @Published var hasMoreData: Bool = true
     
     private let podcastService: PodcastServiceProtocol
     private let selectedShow: Show
+
+    var showTitle: String { selectedShow.displayName }
+
+    /// Episodes after the active filter. Pagination still works off `podcasts`,
+    /// so filtering never stops the list from loading more.
+    var visiblePodcasts: [Podcast] {
+        guard let activeFilter else { return podcasts }
+        switch activeFilter {
+        case .withMusic: return podcasts.filter { $0.isWithMusic }
+        case .withoutMusic: return podcasts.filter { !$0.isWithMusic }
+        case .downloaded: return podcasts.filter { $0.isDownloaded }
+        case .favourites: return podcasts.filter { $0.isFavorite }
+        }
+    }
+
+    /// Some shows publish both cuts of an episode, most do not. The music
+    /// filters and the row badge only make sense where both exist.
+    var hasBothMusicVariants: Bool {
+        var seenWithMusic = false
+        var seenWithoutMusic = false
+        for podcast in podcasts {
+            if podcast.isWithMusic { seenWithMusic = true } else { seenWithoutMusic = true }
+            if seenWithMusic && seenWithoutMusic { return true }
+        }
+        return false
+    }
+
+    var availableFilters: [EpisodeFilter] {
+        hasBothMusicVariants
+            ? EpisodeFilter.allCases
+            : [.downloaded, .favourites]
+    }
+
+    func toggle(_ filter: EpisodeFilter) {
+        activeFilter = (activeFilter == filter) ? nil : filter
+    }
+
+    func toggleFavourite(_ podcast: Podcast) {
+        EpisodeLibrary.shared.toggleFavourite(podcast)
+    }
+
+    func deleteDownload(_ podcast: Podcast) {
+        EpisodeLibrary.shared.deleteDownload(podcast)
+    }
     private var currentPage = 1
     private var totalPages: Int = 1
-    private let realm = try! Realm()
+    private let repository = PodcastRepository.shared
     private var queryDate: String?
     
     init(podcastService: PodcastServiceProtocol = PodcastService(), show: Show) {
@@ -40,10 +116,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
     
     // MARK: - Fetch Podcasts from Realm
     private func loadPodcastsFromRealm() -> [Podcast] {
-        let podcastRealms = realm.objects(PodcastRealm.self)
-            .filter("show == %@", selectedShow.rawValue)
-            .sorted(byKeyPath: "createdAt", ascending: false)
-        return podcastRealms.map { Podcast(from: $0) }
+        repository.podcasts(for: selectedShow)
     }
     
     
@@ -57,8 +130,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
             switch result {
             case .success(let paginationData):
                 
-                let newRealmPodcasts = paginationData.podcasts.map { Podcast(from: $0) }.map({ PodcastRealm(from: $0) })
-                self.savePodcastsToRealm(newRealmPodcasts)
+                self.repository.save(paginationData.podcasts.map { Podcast(from: $0) })
                 self.podcasts = loadPodcastsFromRealm()
                 
                 if (isBefore ?? true) {
@@ -73,12 +145,6 @@ final class PodcastEpisodesViewModel: ObservableObject {
             case .failure(let error):
                 self.errorMessage = error.localizedDescription
             }
-        }
-    }
-    
-    private func savePodcastsToRealm(_ newPodcasts: [PodcastRealm]) {
-        try! realm.write {
-            newPodcasts.forEach { realm.add($0, update: .modified)}
         }
     }
     
