@@ -204,7 +204,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func captureBookmark() {
-        guard BookmarkLibrary.shared.capture() != nil else { return }
+        guard BookmarkLibrary.shared.capture(origin: .car) != nil else { return }
 
         justBookmarked = true
         refreshNowPlayingButtons()

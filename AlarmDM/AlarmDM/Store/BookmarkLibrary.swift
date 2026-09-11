@@ -9,6 +9,13 @@
 import Foundation
 import Combine
 
+/// Where the button was pressed. The difference matters for what happens
+/// next, not for what gets saved.
+enum BookmarkOrigin {
+    case phone
+    case car
+}
+
 final class BookmarkLibrary {
 
     static let shared = BookmarkLibrary()
@@ -19,7 +26,7 @@ final class BookmarkLibrary {
 
     /// Fires when a bookmark was just captured, for whatever wants to
     /// acknowledge it — a flash on the button, a line in CarPlay.
-    let didCapture = PassthroughSubject<Bookmark, Never>()
+    let didCapture = PassthroughSubject<(bookmark: Bookmark, origin: BookmarkOrigin), Never>()
 
     /// You press the button after the thing has happened, never before — but
     /// only just after, since the reaction is what makes you reach for it.
@@ -40,7 +47,7 @@ final class BookmarkLibrary {
     /// Saves immediately and asks nothing. The category can be added later from
     /// the list, which is the only shape that also works while driving.
     @discardableResult
-    func capture(category: BookmarkCategory? = nil) -> Bookmark? {
+    func capture(category: BookmarkCategory? = nil, origin: BookmarkOrigin = .phone) -> Bookmark? {
         guard let source = engine.source else { return nil }
 
         let bookmark: Bookmark
@@ -75,7 +82,7 @@ final class BookmarkLibrary {
 
         repository.add(bookmark)
         didChange.send()
-        didCapture.send(bookmark)
+        didCapture.send((bookmark: bookmark, origin: origin))
         return bookmark
     }
 

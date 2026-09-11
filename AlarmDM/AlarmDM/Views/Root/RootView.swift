@@ -22,6 +22,7 @@ struct RootView: View {
     /// The bookmark confirmation lives here too, so it shows wherever the
     /// capture came from — the player, and later the car.
     @State private var capturedBookmark: Bookmark?
+    @State private var capturedFromPhone = true
     /// Set the moment the toast is touched. Typing a note takes longer than
     /// the countdown, and having it close mid-word would be worse than not
     /// offering the field at all.
@@ -82,6 +83,7 @@ struct RootView: View {
                     Spacer()
                     BookmarkToastView(
                         bookmark: bookmark,
+                        asksForNote: capturedFromPhone,
                         onCategory: { category in
                             BookmarkLibrary.shared.setCategory(category, for: bookmark.id)
                             dismissToast()
@@ -100,8 +102,10 @@ struct RootView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: playerViewModel.isExpanded)
         .environmentObject(playerViewModel)
-        .onReceive(BookmarkLibrary.shared.didCapture) { bookmark in
+        .onReceive(BookmarkLibrary.shared.didCapture) { capture in
+            let bookmark = capture.bookmark
             toastHeld = false
+            capturedFromPhone = capture.origin == .phone
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                 capturedBookmark = bookmark
             }

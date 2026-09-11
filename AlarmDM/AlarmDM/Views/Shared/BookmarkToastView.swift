@@ -12,6 +12,10 @@ import SwiftUI
 struct BookmarkToastView: View {
 
     let bookmark: Bookmark
+    /// Only when the phone is the thing being used. A keyboard rising for a
+    /// button pressed in the car helps nobody: the phone is in a cradle or a
+    /// pocket, and the sentence gets written later or not at all.
+    let asksForNote: Bool
     let onCategory: (BookmarkCategory) -> Void
     let onNote: (String) -> Void
     /// Called the moment the toast is touched, so whoever put it on screen
@@ -23,11 +27,13 @@ struct BookmarkToastView: View {
     @FocusState private var noteFocused: Bool
 
     init(bookmark: Bookmark,
+         asksForNote: Bool,
          onCategory: @escaping (BookmarkCategory) -> Void,
          onNote: @escaping (String) -> Void,
          onInteract: @escaping () -> Void,
          onDismiss: @escaping () -> Void) {
         self.bookmark = bookmark
+        self.asksForNote = asksForNote
         self.onCategory = onCategory
         self.onNote = onNote
         self.onInteract = onInteract
@@ -100,7 +106,7 @@ struct BookmarkToastView: View {
                 // own — no position in an episode, no song title. Whatever gets
                 // typed here is the only thing that row will ever say, so the
                 // field asks for it instead of waiting to be noticed.
-                guard bookmark.isLive, bookmark.note.isEmpty else { return }
+                guard asksForNote, bookmark.isLive, bookmark.note.isEmpty else { return }
                 onInteract()
                 noteFocused = true
             }
