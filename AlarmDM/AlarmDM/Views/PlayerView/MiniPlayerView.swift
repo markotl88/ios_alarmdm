@@ -107,6 +107,7 @@ struct FullscreenPlayerView: View {
 
     @State private var dragOffset: CGFloat = 0
     @State private var scrubTime: TimeInterval?
+    @State private var isScrubbing = false
 
     private var displayedTime: TimeInterval {
         scrubTime ?? playerViewModel.currentTime
@@ -226,12 +227,26 @@ struct FullscreenPlayerView: View {
             Slider(
                 value: Binding(
                     get: { displayedTime },
-                    set: { scrubTime = $0 }
+                    // Only while the gesture is live. SwiftUI calls this once
+                    // more after editing ends, which used to write the dragged
+                    // value straight back over the nil set below — and from
+                    // then on the slider showed a frozen time forever instead
+                    // of following playback.
+                    set: { newValue in
+                        guard isScrubbing else { return }
+                        scrubTime = newValue
+                    }
                 ),
                 in: 0...max(playerViewModel.duration, 1),
                 onEditingChanged: { editing in
-                    if !editing, let target = scrubTime {
-                        playerViewModel.seek(to: target)
+                    if editing {
+                        isScrubbing = true
+                        scrubTime = playerViewModel.currentTime
+                    } else {
+                        isScrubbing = false
+                        if let target = scrubTime {
+                            playerViewModel.seek(to: target)
+                        }
                         scrubTime = nil
                     }
                 }
