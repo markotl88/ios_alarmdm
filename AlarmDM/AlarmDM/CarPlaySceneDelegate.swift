@@ -190,10 +190,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return
         }
 
-        let symbol = justBookmarked ? "bookmark.fill" : "bookmark"
-        let configuration = UIImage.SymbolConfiguration(pointSize: 28, weight: .semibold, scale: .large)
-
-        if let image = UIImage(systemName: symbol, withConfiguration: configuration) {
+        if let image = UIImage.carPlayButtonSymbol(justBookmarked ? "bookmark.fill" : "bookmark") {
             let button = CPNowPlayingImageButton(image: image) { [weak self] _ in
                 self?.captureBookmark()
             }
@@ -269,6 +266,31 @@ extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
 // MARK: - Artwork sizing
 
 private extension UIImage {
+
+    /// A bookmark is taller than it is wide, and CarPlay fits button images
+    /// into a square — so the glyph came out stretched. Drawing it centred on
+    /// a square canvas keeps its own proportions and lets the empty space do
+    /// the fitting instead.
+    static func carPlayButtonSymbol(_ name: String) -> UIImage? {
+        let configuration = UIImage.SymbolConfiguration(pointSize: 22, weight: .medium)
+        guard let symbol = UIImage(systemName: name, withConfiguration: configuration) else { return nil }
+
+        let side = max(symbol.size.width, symbol.size.height)
+        let canvas = CGSize(width: side, height: side)
+
+        let squared = UIGraphicsImageRenderer(size: canvas).image { _ in
+            symbol.draw(in: CGRect(
+                x: (side - symbol.size.width) / 2,
+                y: (side - symbol.size.height) / 2,
+                width: symbol.size.width,
+                height: symbol.size.height
+            ))
+        }
+        // Rendering flattens the symbol to pixels, so the tint has to be asked
+        // for again or CarPlay would draw it black on black.
+        return squared.withRenderingMode(.alwaysTemplate)
+    }
+
     /// CarPlay renders list thumbnails at a fixed size and scales anything larger
     /// on every draw. The show covers are 1024², so they are resized once here.
     func fittedToCarPlayListItem() -> UIImage {
