@@ -53,18 +53,6 @@ struct RootView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                if let bookmark = capturedBookmark {
-                    BookmarkToastView(
-                        bookmark: bookmark,
-                        onCategory: { category in
-                            BookmarkLibrary.shared.setCategory(category, for: bookmark.id)
-                            dismissToast()
-                        },
-                        onDismiss: dismissToast
-                    )
-                    .padding(.bottom, 8)
-                }
-
                 if playerViewModel.isPresented && !playerViewModel.isExpanded {
                     MiniPlayerView()
                         .environmentObject(playerViewModel)
@@ -80,6 +68,25 @@ struct RootView: View {
                     .environmentObject(playerViewModel)
                     .transition(.move(edge: .bottom))
                     .zIndex(10)
+            }
+
+            // Above the full screen player too. The bookmark button is right
+            // there, and a confirmation you have to close the player to see is
+            // not a confirmation.
+            if let bookmark = capturedBookmark {
+                VStack {
+                    Spacer()
+                    BookmarkToastView(
+                        bookmark: bookmark,
+                        onCategory: { category in
+                            BookmarkLibrary.shared.setCategory(category, for: bookmark.id)
+                            dismissToast()
+                        },
+                        onDismiss: dismissToast
+                    )
+                    .padding(.bottom, toastBottomInset)
+                }
+                .zIndex(20)
             }
         }
         .animation(.easeInOut(duration: 0.3), value: playerViewModel.isExpanded)
@@ -119,6 +126,15 @@ struct RootView: View {
             // position is written down here rather than on the way out.
             if phase != .active { playerViewModel.rememberPlaybackPosition() }
         }
+    }
+
+    /// Sits just above whatever is at the bottom at that moment: the tab bar,
+    /// the mini player on top of it, or nothing at all when the full screen
+    /// player is covering both.
+    private var toastBottomInset: CGFloat {
+        guard !playerViewModel.isExpanded else { return 32 }
+        let miniPlayer: CGFloat = playerViewModel.isPresented ? 60 : 0
+        return 60 + miniPlayer + 8
     }
 
     private func dismissToast() {

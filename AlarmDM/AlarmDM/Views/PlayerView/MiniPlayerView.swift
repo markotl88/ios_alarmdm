@@ -38,10 +38,13 @@ struct MiniPlayerView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(playerViewModel.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(Color("primaryText"))
-                        .lineLimit(1)
+                    // One line that moves, like a chyron, rather than two that
+                    // change the bar's height depending on the episode.
+                    MarqueeText(
+                        text: playerViewModel.title,
+                        font: .subheadline.weight(.semibold)
+                    )
+                    .foregroundColor(Color("primaryText"))
 
                     // Live gets the pulsing dot and a label that scrolls when
                     // the announced track is too long for the bar.
@@ -59,6 +62,18 @@ struct MiniPlayerView: View {
                 }
 
                 Spacer(minLength: 0)
+
+                Button {
+                    playerViewModel.addBookmark()
+                } label: {
+                    Image(systemName: playerViewModel.justBookmarked ? "bookmark.fill" : "bookmark")
+                        .font(.subheadline.weight(.semibold))
+                        .frame(width: 30, height: 34)
+                        .foregroundColor(playerViewModel.justBookmarked
+                                         ? Color("primaryLink")
+                                         : Color("secondaryText"))
+                }
+                .accessibilityLabel("Zabeleži")
 
                 Button {
                     playerViewModel.togglePlayPause()
