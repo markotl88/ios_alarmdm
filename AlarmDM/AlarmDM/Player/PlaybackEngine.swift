@@ -147,9 +147,6 @@ final class PlaybackEngine: NSObject, ObservableObject {
     /// the older one cannot declare the newer one over.
     private var seekGeneration = 0
     private var metadataOutput: AVPlayerItemMetadataOutput?
-    /// Where to jump once the new item is ready. Seeking a stream that has not
-    /// finished loading is quietly dropped, so the request waits here instead.
-    private var pendingSeek: TimeInterval?
     #if DEBUG
     private var lastBufferLog: Date = .distantPast
     #endif
