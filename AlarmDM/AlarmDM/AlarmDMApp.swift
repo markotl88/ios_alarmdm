@@ -24,6 +24,9 @@ struct AlarmDMApp: SwiftUI.App {
 
     init() {
         setupRealm()
+        // Realm is still the live database; this only carries favourites and
+        // downloads across so they are waiting once the store takes over.
+        RealmImport.runIfNeeded()
     }
     
     // MARK: - Private methods
