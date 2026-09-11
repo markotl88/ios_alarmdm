@@ -225,9 +225,22 @@ final class PlaybackEngine: NSObject, ObservableObject {
 
     func seek(to time: TimeInterval) {
         guard !isLive, let player else { return }
+
         let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
-        player.seek(to: target, toleranceBefore: .zero, toleranceAfter: .zero) { [weak self] _ in
-            self?.currentTime = max(0, time)
+        // A second either way rather than an exact frame. Zero tolerance makes
+        // AVPlayer land precisely, which over a stream means waiting for data
+        // that has not arrived — going back is instant because it is already
+        // buffered, going forward stalls or is dropped. A second is nothing in
+        // a three hour show, and it is the difference between a scrubber that
+        // works and one that works sometimes.
+        let tolerance = CMTime(seconds: 1, preferredTimescale: 600)
+
+        // Shown straight away. Waiting for the seek to land leaves the slider
+        // sitting where it was for as long as the network takes.
+        currentTime = max(0, time)
+
+        player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
+            guard finished else { return }
             self?.updateNowPlayingInfo()
         }
     }

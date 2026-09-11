@@ -122,16 +122,27 @@ final class PlayerViewModel: ObservableObject {
 
         // Rounded and de-duplicated: the engine ticks twice a second, and every
         // distinct value re-renders each view observing this object.
+        // Both of these ignore the engine while it holds nothing. Subscribing
+        // hands over the current value at once — zero, at launch — and
+        // receive(on:) delivers it a runloop later, which lands after the
+        // restore has already put the saved time and duration here. Without
+        // the guard, coming back to a half finished episode showed 00:00.
         engine.currentTimePublisher
             .map { $0.rounded(.down) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.currentTime = $0 }
+            .sink { [weak self] time in
+                guard let self, self.engine.hasContent else { return }
+                self.currentTime = time
+            }
             .store(in: &cancellables)
 
         engine.durationPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.duration = $0 }
+            .sink { [weak self] duration in
+                guard let self, self.engine.hasContent else { return }
+                self.duration = duration
+            }
             .store(in: &cancellables)
 
         engine.liveTrackPublisher
@@ -281,7 +292,17 @@ final class PlayerViewModel: ObservableObject {
         isPresented = true
     }
 
-    func seek(to time: TimeInterval) { engine.seek(to: time) }
+    func seek(to time: TimeInterval) {
+        // A restored episode has nothing loaded yet, and the engine refuses to
+        // seek a player it does not have. Move the mark the first press will
+        // start from instead, so dragging works before a note is played.
+        guard engine.hasContent else {
+            restoredPosition = max(0, time)
+            currentTime = max(0, time)
+            return
+        }
+        engine.seek(to: time)
+    }
     func skipForward() { engine.skip(by: 15) }
     func skipBackward() { engine.skip(by: -15) }
 
