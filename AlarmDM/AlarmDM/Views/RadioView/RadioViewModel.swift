@@ -133,6 +133,11 @@ final class RadioViewModel: ObservableObject {
             case .success(let page):
                 self.repository.save(page.podcasts.map { Podcast(from: $0) })
                 self.latestPodcasts = self.repository.latestPodcasts(limit: self.displayLimit)
+                // An episode that just landed may be the home of a bookmark
+                // caught while it was going out live. This is the moment it
+                // becomes possible to say so, and the only one that does not
+                // depend on someone opening the right screen.
+                BookmarkLibrary.shared.reconcileLiveCaptures()
             case .failure(let error):
                 if self.latestPodcasts.isEmpty {
                     self.errorMessage = "Nije moguće učitati podkaste. Proveri internet konekciju."
