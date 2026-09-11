@@ -150,6 +150,9 @@ final class PlaybackEngine: NSObject, ObservableObject {
     /// Where to jump once the new item is ready. Seeking a stream that has not
     /// finished loading is quietly dropped, so the request waits here instead.
     private var pendingSeek: TimeInterval?
+    #if DEBUG
+    private var lastBufferLog: Date = .distantPast
+    #endif
     private var commandsConfigured = false
     private let fileService: FileServiceProtocol
 
@@ -342,6 +345,9 @@ final class PlaybackEngine: NSObject, ObservableObject {
             if !self.isSeeking {
                 self.currentTime = time.seconds.isFinite ? time.seconds : 0
             }
+            #if DEBUG
+            self.logLiveBuffer()
+            #endif
             if let itemDuration = self.player?.currentItem?.duration,
                itemDuration.isNumeric, !itemDuration.isIndefinite {
                 self.duration = itemDuration.seconds
@@ -366,6 +372,38 @@ final class PlaybackEngine: NSObject, ObservableObject {
             self.updateNowPlayingPlaybackState()
         }
     }
+
+    #if DEBUG
+    /// How much of the live stream the player is actually holding. Two answers
+    /// come out of it: whether rewinding live radio is possible at all, and how
+    /// large a window a recording buffer would have to cover to be useful.
+    ///
+    /// Reads only — no player, no session, nothing that could collide with a
+    /// source change.
+    private func logLiveBuffer() {
+        guard isLive, let item = player?.currentItem else { return }
+        guard Date().timeIntervalSince(lastBufferLog) > 5 else { return }
+        lastBufferLog = Date()
+
+        let seekable = item.seekableTimeRanges
+            .map(\.timeRangeValue)
+            .filter { $0.duration.seconds.isFinite }
+
+        let seekableText = seekable
+            .map { String(format: "%.0f…%.0f (%.0fs)", $0.start.seconds, $0.end.seconds, $0.duration.seconds) }
+            .joined(separator: ", ")
+
+        let loadedSeconds = item.loadedTimeRanges
+            .map(\.timeRangeValue.duration.seconds)
+            .filter { $0.isFinite }
+            .reduce(0, +)
+
+        debugPrint(String(format: "live buffer — seekable: [%@] loaded: %.1fs at %.1f",
+                          seekableText.isEmpty ? "none" : seekableText,
+                          loadedSeconds,
+                          currentTime))
+    }
+    #endif
 
     private func teardownPlayer() {
         if let token = timeObserverToken {
