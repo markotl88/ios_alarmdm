@@ -141,6 +141,12 @@ final class PlayerViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] duration in
                 guard let self, self.engine.hasContent else { return }
+                // A freshly created item reports zero until the file has
+                // loaded. Taking that at face value collapses the scrubber's
+                // range to nothing and flings the handle to the far end, until
+                // the real duration arrives a moment later. The feed already
+                // said how long the episode runs, so keep that instead.
+                guard duration > 0 else { return }
                 self.duration = duration
             }
             .store(in: &cancellables)
@@ -221,6 +227,7 @@ final class PlayerViewModel: ObservableObject {
             subtitle = "Daško i Mlađa"
             artworkName = "img_radio"
             isLive = true
+            duration = 0
             isDownloaded = false
             isFavorite = false
             showDeleteButton = false
@@ -233,6 +240,9 @@ final class PlayerViewModel: ObservableObject {
             subtitle = selected.subtitle
             artworkName = selected.show.imageName
             isLive = false
+            // Known before a single byte is fetched, which is what keeps the
+            // scrubber sane between pressing play and the file opening.
+            duration = podcast?.durationInSeconds ?? 0
             isDownloaded = podcast?.isDownloaded ?? false
             isFavorite = podcast?.isFavorite ?? false
             showDeleteButton = isDownloaded
