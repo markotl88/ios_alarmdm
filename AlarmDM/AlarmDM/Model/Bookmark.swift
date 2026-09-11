@@ -25,7 +25,8 @@ struct Bookmark: Identifiable, Equatable {
     var title: String
     var note: String
     var createdAt: Date
-    var duration: Double
+    /// Where in the episode the bookmark points, in seconds.
+    var position: Double
     var category: BookmarkCategory
     var podcast: Podcast?
 }
@@ -36,7 +37,7 @@ extension Bookmark {
         self.title = bookmarkRealm.title
         self.note = bookmarkRealm.note
         self.createdAt = bookmarkRealm.createdAt
-        self.duration = bookmarkRealm.duration
+        self.position = bookmarkRealm.position
         self.category = BookmarkCategory(rawValue: bookmarkRealm.category ?? "") ?? .custom
         if let podcastRealm = bookmarkRealm.parentPodcast.first {
             self.podcast = Podcast(from: podcastRealm)
