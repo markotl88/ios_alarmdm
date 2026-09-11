@@ -390,14 +390,19 @@ struct RoutePickerView: UIViewRepresentable {
 
 // MARK: - Scrubber
 
-/// The slider lives in its own view because the player above it redraws every
-/// second, and a Slider rebuilt mid-drag can lose the gesture — its
-/// onEditingChanged never reports the end, and whatever was holding the
-/// dragged value keeps holding it for good.
+/// Plain @State bound straight to the Slider, on purpose.
 ///
-/// Here the value is plain @State bound directly, so there is no custom
-/// setter to be called out of order, and incoming times are ignored while a
-/// drag is in flight instead of fighting it.
+/// It used to be a computed Binding — `scrubTime ?? currentTime` to read, the
+/// dragged value into `scrubTime` to write — and after one drag the slider
+/// stopped following playback until the player was minimised, which is when
+/// that state was destroyed. So something wrote the dragged value back after
+/// the gesture handler had cleared it. With no setter of our own there is
+/// nothing left to call out of order.
+///
+/// It lives in its own view for the second half of it: the player above
+/// redraws every second as the time advances, and the less of that reaches a
+/// live gesture the better. Incoming times are ignored entirely while a drag
+/// is in flight rather than fighting it for the value.
 struct ScrubberView: View {
 
     let currentTime: TimeInterval
@@ -410,9 +415,6 @@ struct ScrubberView: View {
     var body: some View {
         VStack(spacing: 4) {
             Slider(value: $value, in: 0...max(duration, 1)) { editing in
-                #if DEBUG
-                debugPrint("scrubber editing: \(editing) value: \(value)")
-                #endif
                 isScrubbing = editing
                 if !editing { onSeek(value) }
             }
