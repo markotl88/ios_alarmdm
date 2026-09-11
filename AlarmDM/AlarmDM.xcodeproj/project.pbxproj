@@ -42,6 +42,7 @@
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
+		AA0000000000000000000156 /* BookmarkToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000155 /* BookmarkToastView.swift */; };
 		AA0000000000000000000154 /* BookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000153 /* BookmarksViewModel.swift */; };
 		AA0000000000000000000152 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000151 /* BookmarksView.swift */; };
 		AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000143 /* BookmarkLibrary.swift */; };
@@ -131,6 +132,7 @@
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000155 /* BookmarkToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkToastView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000153 /* BookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewModel.swift; sourceTree = "<group>"; };
 		AA0000000000000000000151 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000143 /* BookmarkLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkLibrary.swift; sourceTree = "<group>"; };
@@ -347,6 +349,7 @@
 		AA0000000000000000000120 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000000000000000000155 /* BookmarkToastView.swift */,
 				AA0000000000000000000127 /* EpisodeRowActions.swift */,
 				AA0000000000000000000125 /* PodcastRowView.swift */,
 			);
@@ -560,6 +563,7 @@
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				AA000000000000000000010C /* SettingsView.swift in Sources */,
+				AA0000000000000000000156 /* BookmarkToastView.swift in Sources */,
 				AA0000000000000000000154 /* BookmarksViewModel.swift in Sources */,
 				AA0000000000000000000152 /* BookmarksView.swift in Sources */,
 				AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */,

@@ -21,10 +21,11 @@ final class BookmarkLibrary {
     /// acknowledge it — a flash on the button, a line in CarPlay.
     let didCapture = PassthroughSubject<Bookmark, Never>()
 
-    /// You press the button after the thing has happened, never before. Fifteen
-    /// seconds is the same step the skip buttons use, so the number is already
-    /// familiar from the rest of the player.
-    static let rewind: TimeInterval = 15
+    /// You press the button after the thing has happened, never before — but
+    /// only just after, since the reaction is what makes you reach for it.
+    /// Five seconds lands on the thing itself; fifteen lands on whatever came
+    /// before it.
+    static let rewind: TimeInterval = 5
 
     private let repository: BookmarkRepository
     private let engine: PlaybackEngine
