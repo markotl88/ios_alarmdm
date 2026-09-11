@@ -36,6 +36,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.interfaceController = interfaceController
         setupRootTemplates()
         observeEngine()
+        CPNowPlayingTemplate.shared.add(self)
         refreshNowPlayingButtons()
     }
 
@@ -45,6 +46,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     ) {
         cancellables.removeAll()
         bookmarkFeedback?.cancel()
+        CPNowPlayingTemplate.shared.remove(self)
         self.interfaceController = nil
         self.radioItem = nil
     }
@@ -170,21 +172,38 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     // MARK: - Bookmarks
 
-    /// One button on Now Playing, and it saves on the press. Anything that asks
-    /// a follow-up question — a category, a confirmation — is a menu to read
-    /// while driving, which is the one thing this cannot be.
+    /// It saves on the press. Anything that asks a follow-up question — a
+    /// category, a confirmation — is a menu to read while driving, which is the
+    /// one thing this cannot be.
+    ///
+    /// Two ways into the same action, because CarPlay only offers one of each.
+    /// The row under the transport controls takes images and nothing else, so
+    /// the glyph there is drawn heavy rather than at its default weight. The Up
+    /// Next slot is the only part of Now Playing that accepts a word, and a
+    /// labelled target is easier to hit without looking than a small symbol.
     private func refreshNowPlayingButtons() {
+        let template = CPNowPlayingTemplate.shared
+
         guard engine.hasContent else {
-            CPNowPlayingTemplate.shared.updateNowPlayingButtons([])
+            template.updateNowPlayingButtons([])
+            template.isUpNextButtonEnabled = false
             return
         }
 
-        guard let image = UIImage(systemName: justBookmarked ? "bookmark.fill" : "bookmark") else { return }
+        let symbol = justBookmarked ? "bookmark.fill" : "bookmark"
+        let configuration = UIImage.SymbolConfiguration(pointSize: 28, weight: .semibold, scale: .large)
 
-        let button = CPNowPlayingImageButton(image: image) { [weak self] _ in
-            self?.captureBookmark()
+        if let image = UIImage(systemName: symbol, withConfiguration: configuration) {
+            let button = CPNowPlayingImageButton(image: image) { [weak self] _ in
+                self?.captureBookmark()
+            }
+            template.updateNowPlayingButtons([button])
         }
-        CPNowPlayingTemplate.shared.updateNowPlayingButtons([button])
+
+        // The one piece of text the car can show back, so the acknowledgement
+        // is a word rather than a glyph that changed shape.
+        template.upNextTitle = justBookmarked ? "Zabeleženo" : "Zabeleži"
+        template.isUpNextButtonEnabled = true
     }
 
     private func captureBookmark() {
@@ -235,6 +254,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return engine.isPlaying ? "Zaustavi" : "Nastavi"
         }
         return "Pusti"
+    }
+}
+
+// MARK: - Now Playing observer
+
+extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
+
+    func nowPlayingTemplateUpNextButtonTapped(_ nowPlayingTemplate: CPNowPlayingTemplate) {
+        captureBookmark()
     }
 }
 
