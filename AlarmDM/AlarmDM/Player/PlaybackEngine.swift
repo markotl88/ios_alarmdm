@@ -139,6 +139,13 @@ final class PlaybackEngine: NSObject, ObservableObject {
     /// Where to jump once the new item is ready. Seeking a stream that has not
     /// finished loading is quietly dropped, so the request waits here instead.
     private var pendingSeek: TimeInterval?
+    /// Raised while a seek is in flight. The periodic observer keeps reporting
+    /// the old position until the seek lands, and letting that through drags
+    /// the slider back to where it was before the gesture.
+    private var isSeeking = false
+    /// Distinguishes a seek that finished from one a newer seek replaced, so
+    /// the older one cannot declare the newer one over.
+    private var seekGeneration = 0
     private var metadataOutput: AVPlayerItemMetadataOutput?
     private var commandsConfigured = false
     private let fileService: FileServiceProtocol
@@ -239,9 +246,15 @@ final class PlaybackEngine: NSObject, ObservableObject {
         // sitting where it was for as long as the network takes.
         currentTime = max(0, time)
 
+        seekGeneration += 1
+        let generation = seekGeneration
+        isSeeking = true
+
         player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
+            guard let self, generation == self.seekGeneration else { return }
+            self.isSeeking = false
             guard finished else { return }
-            self?.updateNowPlayingInfo()
+            self.updateNowPlayingInfo()
         }
     }
 
@@ -322,7 +335,10 @@ final class PlaybackEngine: NSObject, ObservableObject {
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
-            self.currentTime = time.seconds.isFinite ? time.seconds : 0
+            // Duration still updates: only the position is stale mid-seek.
+            if !self.isSeeking {
+                self.currentTime = time.seconds.isFinite ? time.seconds : 0
+            }
             if let itemDuration = self.player?.currentItem?.duration,
                itemDuration.isNumeric, !itemDuration.isIndefinite {
                 self.duration = itemDuration.seconds
@@ -361,6 +377,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
             player?.currentItem?.remove(metadataOutput)
             self.metadataOutput = nil
         }
+        isSeeking = false
         timeControlObservation?.invalidate()
         timeControlObservation = nil
         itemStatusObservation?.invalidate()
