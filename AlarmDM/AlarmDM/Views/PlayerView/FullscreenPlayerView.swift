@@ -182,9 +182,27 @@ struct FullscreenPlayerView: View {
                 favouriteControl
                 downloadControl
             }
+            bookmarkControl
             routeControl
         }
         .animation(.easeInOut(duration: 0.2), value: playerViewModel.isLive)
+    }
+
+    /// Present during live radio too. Half the reason for the button is
+    /// catching something said on air, where there is nothing to favourite and
+    /// nothing to download.
+    private var bookmarkControl: some View {
+        PlayerActionButton(
+            label: "Zabeleži",
+            action: { playerViewModel.addBookmark() }
+        ) {
+            Image(systemName: playerViewModel.justBookmarked ? "bookmark.fill" : "bookmark")
+                .font(.title3)
+                .foregroundColor(playerViewModel.justBookmarked ? Color("primaryLink") : Color("primaryText"))
+                .scaleEffect(playerViewModel.justBookmarked ? 1.15 : 1)
+                .animation(.spring(response: 0.3, dampingFraction: 0.6),
+                           value: playerViewModel.justBookmarked)
+        }
     }
 
     private var favouriteControl: some View {

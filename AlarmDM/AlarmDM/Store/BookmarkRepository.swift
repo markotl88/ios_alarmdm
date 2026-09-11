@@ -1,0 +1,107 @@
+//
+//  BookmarkRepository.swift
+//  AlarmDM
+//
+//  The one place that reads and writes bookmarks.
+//
+
+import Foundation
+import SwiftData
+
+final class BookmarkRepository {
+
+    static let shared = BookmarkRepository()
+
+    private let database: AppDatabase
+
+    init(database: AppDatabase = .shared) {
+        self.database = database
+    }
+
+    private var context: ModelContext { database.context }
+
+    // MARK: - Reads
+
+    /// Newest first — a bookmark is something you come back to soon after
+    /// making it, far more often than months later.
+    func all() -> [Bookmark] {
+        fetch().map(Bookmark.init(from:))
+    }
+
+    func bookmarks(for category: BookmarkCategory) -> [Bookmark] {
+        let raw = category.rawValue
+        return fetch(matching: #Predicate { $0.category == raw }).map(Bookmark.init(from:))
+    }
+
+    var isEmpty: Bool {
+        (try? context.fetchCount(FetchDescriptor<BookmarkEntity>())) ?? 0 == 0
+    }
+
+    // MARK: - Writes
+
+    func add(_ bookmark: Bookmark) {
+        // Linked to the episode when the store knows it, so a later screen can
+        // jump straight to the right spot; the title is copied either way.
+        var linked: PodcastEntity?
+        if let podcastId = bookmark.podcastId {
+            linked = podcastEntity(with: podcastId)
+        }
+        context.insert(BookmarkEntity(from: bookmark, podcast: linked))
+        commit("saving bookmark")
+    }
+
+    func setCategory(_ category: BookmarkCategory?, for id: UUID) {
+        guard let entity = entity(with: id) else { return }
+        entity.category = category?.rawValue
+        commit("updating bookmark category")
+    }
+
+    func setNote(_ note: String, for id: UUID) {
+        guard let entity = entity(with: id) else { return }
+        entity.note = note
+        commit("updating bookmark note")
+    }
+
+    func delete(_ id: UUID) {
+        guard let entity = entity(with: id) else { return }
+        context.delete(entity)
+        commit("deleting bookmark")
+    }
+
+    // MARK: - Store access
+
+    private func fetch(limit: Int? = nil,
+                       matching predicate: Predicate<BookmarkEntity>? = nil) -> [BookmarkEntity] {
+        var descriptor = FetchDescriptor<BookmarkEntity>(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = limit
+
+        do {
+            return try context.fetch(descriptor)
+        } catch {
+            debugPrint("Error reading bookmarks: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    private func entity(with id: UUID) -> BookmarkEntity? {
+        fetch(limit: 1, matching: #Predicate { $0.id == id }).first
+    }
+
+    private func podcastEntity(with id: UUID) -> PodcastEntity? {
+        var descriptor = FetchDescriptor<PodcastEntity>(predicate: #Predicate { $0.id == id })
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+
+    private func commit(_ what: String) {
+        do {
+            try context.save()
+        } catch {
+            debugPrint("Error \(what): \(error.localizedDescription)")
+            context.rollback()
+        }
+    }
+}

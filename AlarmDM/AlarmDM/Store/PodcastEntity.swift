@@ -39,7 +39,9 @@ final class PodcastEntity {
     var isFavorite: Bool = false
     var isWithMusic: Bool = false
 
-    @Relationship(deleteRule: .cascade, inverse: \BookmarkEntity.podcast)
+    /// Nullify, not cascade: a bookmark is something a person made, and it
+    /// should not disappear because the cached episode row did.
+    @Relationship(deleteRule: .nullify, inverse: \BookmarkEntity.podcast)
     var bookmarks: [BookmarkEntity]? = []
 
     init(from podcast: Podcast) {

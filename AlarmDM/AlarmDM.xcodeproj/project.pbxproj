@@ -42,6 +42,8 @@
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
+		AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000143 /* BookmarkLibrary.swift */; };
+		AA0000000000000000000142 /* BookmarkRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000141 /* BookmarkRepository.swift */; };
 		AA0000000000000000000138 /* RealmImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000137 /* RealmImport.swift */; };
 		AA0000000000000000000136 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000135 /* AppDatabase.swift */; };
 		AA0000000000000000000134 /* BookmarkEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000133 /* BookmarkEntity.swift */; };
@@ -127,6 +129,8 @@
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000143 /* BookmarkLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkLibrary.swift; sourceTree = "<group>"; };
+		AA0000000000000000000141 /* BookmarkRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkRepository.swift; sourceTree = "<group>"; };
 		AA0000000000000000000137 /* RealmImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmImport.swift; sourceTree = "<group>"; };
 		AA0000000000000000000135 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		AA0000000000000000000133 /* BookmarkEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkEntity.swift; sourceTree = "<group>"; };
@@ -203,6 +207,8 @@
 		4D6677942CC7AA9500EC2ADE /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000000000000000000143 /* BookmarkLibrary.swift */,
+				AA0000000000000000000141 /* BookmarkRepository.swift */,
 				AA0000000000000000000137 /* RealmImport.swift */,
 				AA0000000000000000000135 /* AppDatabase.swift */,
 				AA0000000000000000000133 /* BookmarkEntity.swift */,
@@ -540,6 +546,8 @@
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				AA000000000000000000010C /* SettingsView.swift in Sources */,
+				AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */,
+				AA0000000000000000000142 /* BookmarkRepository.swift in Sources */,
 				AA0000000000000000000138 /* RealmImport.swift in Sources */,
 				AA0000000000000000000136 /* AppDatabase.swift in Sources */,
 				AA0000000000000000000134 /* BookmarkEntity.swift in Sources */,

@@ -146,7 +146,6 @@ struct Podcast: Identifiable, Equatable {
     var isDownloaded: Bool {
         fileUrl != nil
     }
-    var bookmarks: [Bookmark]?
 }
 
 extension Podcast {

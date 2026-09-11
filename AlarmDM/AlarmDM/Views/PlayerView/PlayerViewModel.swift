@@ -62,6 +62,9 @@ final class PlayerViewModel: ObservableObject {
     @Published private(set) var isFavorite: Bool = false
     /// The song the station is announcing, during live radio only.
     @Published private(set) var liveTrack: LiveTrack?
+    /// Briefly true after a bookmark is captured, so the button can say it
+    /// happened without a dialog interrupting playback.
+    @Published private(set) var justBookmarked = false
     @Published var isDownloading: Bool = false
     /// Download progress, 0...1 — not the playback position, which is `playbackProgress`.
     @Published var progress: Double = 0.0
@@ -356,6 +359,14 @@ final class PlayerViewModel: ObservableObject {
         // moment it opens it.
         duration = podcast.durationInSeconds
         isPresented = true
+    }
+
+    func addBookmark() {
+        guard BookmarkLibrary.shared.capture() != nil else { return }
+        justBookmarked = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
+            self?.justBookmarked = false
+        }
     }
 
     func toggleFavourite() {
