@@ -20,6 +20,12 @@ struct NewTabContentView: View {
     @State private var currentItem: TabBarItem = .radio
     @StateObject private var playerViewModel = PlayerViewModel(mode: nil)
 
+    /// The WiFi-only warning lives here rather than in each list, so the same
+    /// alert answers a blocked download wherever it was started — a row, the
+    /// player, either tab.
+    @State private var blockedEpisode: Podcast?
+    @State private var showsMeteredAlert = false
+
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
@@ -69,6 +75,22 @@ struct NewTabContentView: View {
         }
         .animation(.easeInOut(duration: 0.3), value: playerViewModel.isExpanded)
         .environmentObject(playerViewModel)
+        .onReceive(EpisodeLibrary.shared.downloadBlocked) { podcast in
+            blockedEpisode = podcast
+            showsMeteredAlert = true
+        }
+        .alert("Preuzimanje samo preko WiFi-ja", isPresented: $showsMeteredAlert) {
+            Button("Preuzmi svejedno") {
+                if let blockedEpisode { EpisodeLibrary.shared.download(blockedEpisode, force: true) }
+            }
+            Button("Isključi ograničenje") {
+                AppSettings.shared.downloadsOverWiFiOnly = false
+                if let blockedEpisode { EpisodeLibrary.shared.download(blockedEpisode) }
+            }
+            Button("Otkaži", role: .cancel) { blockedEpisode = nil }
+        } message: {
+            Text("Trenutno si na mobilnoj mreži. Možeš preuzeti samo ovu epizodu, ili ukloniti ograničenje za ubuduće - kasnije ga vraćaš u Ostalo.")
+        }
     }
 }
 

@@ -58,7 +58,11 @@ struct RadioView: View {
                     emptyState
                 } else {
                     ForEach(viewModel.visiblePodcasts, id: \.id) { podcast in
-                        PodcastRowView(podcast: podcast, showsMusicVariant: viewModel.showsMusicVariant(for: podcast))
+                        PodcastRowView(
+                            podcast: podcast,
+                            showsMusicVariant: viewModel.showsMusicVariant(for: podcast),
+                            isDownloading: viewModel.isDownloading(podcast)
+                        )
                             .contentShape(Rectangle())
                             .onTapGesture {
                                 playerViewModel.mode = .podcast(podcast: podcast)
@@ -66,11 +70,13 @@ struct RadioView: View {
                             }
                             .episodeRowActions(
                                 podcast: podcast,
+                                isDownloading: viewModel.isDownloading(podcast),
                                 play: {
                                     playerViewModel.mode = .podcast(podcast: podcast)
                                     playerViewModel.togglePlayPause()
                                 },
                                 toggleFavourite: { viewModel.toggleFavourite(podcast) },
+                                download: { viewModel.download(podcast) },
                                 deleteDownload: { viewModel.deleteDownload(podcast) }
                             )
                             .onAppear { viewModel.loadMoreIfNeeded(currentItem: podcast) }

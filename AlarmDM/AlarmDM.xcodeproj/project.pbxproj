@@ -53,6 +53,9 @@
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
+		AA000000000000000000010F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000110 /* AppSettings.swift */; };
+		AA0000000000000000000111 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000112 /* NetworkMonitor.swift */; };
+		AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000114 /* LiveIndicatorViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -136,6 +139,9 @@
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000110 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		AA0000000000000000000112 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		AA0000000000000000000114 /* LiveIndicatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveIndicatorViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -187,6 +193,8 @@
 			children = (
 				4D6677A82CC9341600EC2ADE /* FileService.swift */,
 				AA0000000000000000000104 /* AppConstants.swift */,
+				AA0000000000000000000112 /* NetworkMonitor.swift */,
+				AA0000000000000000000110 /* AppSettings.swift */,
 			);
 			path = Helpers;
 			sourceTree = "<group>";
@@ -197,6 +205,7 @@
 				4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */,
 				4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */,
 				4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */,
+				AA0000000000000000000114 /* LiveIndicatorViews.swift */,
 				4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */,
 			);
 			path = PlayerView;
@@ -548,6 +557,9 @@
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */,
 				AA000000000000000000010C /* SettingsView.swift in Sources */,
+				AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */,
+				AA0000000000000000000111 /* NetworkMonitor.swift in Sources */,
+				AA000000000000000000010F /* AppSettings.swift in Sources */,
 				AA0000000000000000000109 /* SupportView.swift in Sources */,
 				AA0000000000000000000107 /* PodcastRepository.swift in Sources */,
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
@@ -726,7 +738,7 @@
 				CODE_SIGN_ENTITLEMENTS = AlarmDM/AlarmDM.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"AlarmDM/Preview Content\"";
 				DEVELOPMENT_TEAM = 2QB89332G7;
 				ENABLE_PREVIEWS = YES;
@@ -760,7 +772,7 @@
 				CODE_SIGN_ENTITLEMENTS = AlarmDM/AlarmDM.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_ASSET_PATHS = "\"AlarmDM/Preview Content\"";
 				DEVELOPMENT_TEAM = 2QB89332G7;
 				ENABLE_PREVIEWS = YES;

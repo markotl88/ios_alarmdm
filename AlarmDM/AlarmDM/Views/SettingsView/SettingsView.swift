@@ -65,6 +65,7 @@ final class SettingsViewModel: ObservableObject {
 struct SettingsView: View {
 
     @StateObject private var viewModel = SettingsViewModel()
+    @ObservedObject private var settings = AppSettings.shared
     @State private var showDeleteConfirmation = false
     @Environment(\.openURL) private var openURL
 
@@ -79,6 +80,7 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            networkSection
             downloadsSection
             showSection
             appSection
@@ -99,6 +101,16 @@ struct SettingsView: View {
     }
 
     // MARK: Sections
+
+    private var networkSection: some View {
+        Section {
+            Toggle(isOn: settings.downloadsOverWiFiOnlyBinding) {
+                Label("Preuzimanje samo preko WiFi-ja", systemImage: "wifi")
+            }
+        } footer: {
+            Text("Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje — kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu.")
+        }
+    }
 
     private var downloadsSection: some View {
         Section("Preuzeto") {

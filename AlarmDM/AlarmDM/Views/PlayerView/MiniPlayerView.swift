@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import AVKit
 
 // MARK: - Mini player
 
@@ -45,10 +46,19 @@ struct MiniPlayerView: View {
                         .foregroundColor(Color("primaryText"))
                         .lineLimit(1)
 
-                    Text(playerViewModel.isLive ? "UŽIVO" : playerViewModel.subtitle)
-                        .font(.caption)
-                        .foregroundColor(playerViewModel.isLive ? Color("primaryLink") : Color("secondaryText"))
-                        .lineLimit(1)
+                    // Live gets the pulsing dot and a label that scrolls when
+                    // the announced track is too long for the bar.
+                    if playerViewModel.isLive {
+                        LiveLabel(
+                            track: playerViewModel.liveTrack,
+                            isPlaying: playerViewModel.isPlaying
+                        )
+                    } else {
+                        Text(playerViewModel.subtitle)
+                            .font(.caption)
+                            .foregroundColor(Color("secondaryText"))
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -138,13 +148,7 @@ struct FullscreenPlayerView: View {
 
             transportControls.padding(.top, 20)
 
-            if !playerViewModel.isLive {
-                HStack(spacing: 28) {
-                    favouriteControl
-                    downloadControl
-                }
-                .padding(.top, 24)
-            }
+            actionRow.padding(.top, 24)
 
             Spacer()
         }
@@ -182,15 +186,39 @@ struct FullscreenPlayerView: View {
         .padding(.top, 8)
     }
 
+    /// The badge, and under it whatever the station says is playing. The label
+    /// only appears when the stream actually announces a track — an empty line
+    /// reserved "just in case" would push the layout around every time radio
+    /// starts.
     private var liveBadge: some View {
-        HStack(spacing: 6) {
-            Circle().fill(Color.red).frame(width: 8, height: 8)
-            Text("UŽIVO").font(.caption.weight(.bold))
+        VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                PulsingLiveDot(isAnimating: playerViewModel.isPlaying)
+                Text("UŽIVO").font(.caption.weight(.bold))
+            }
+            .foregroundColor(Color("primaryText"))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
+
+            if let track = playerViewModel.liveTrack {
+                VStack(spacing: 2) {
+                    Text(track.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(Color("primaryText"))
+                    if let artist = track.artist {
+                        Text(artist)
+                            .font(.caption)
+                            .foregroundColor(Color("secondaryText"))
+                    }
+                }
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .padding(.horizontal, 32)
+                .transition(.opacity)
+            }
         }
-        .foregroundColor(Color("primaryText"))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
+        .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
     private var scrubber: some View {
@@ -262,52 +290,83 @@ struct FullscreenPlayerView: View {
         .foregroundColor(Color("primaryText"))
     }
 
-    private var favouriteControl: some View {
-        Button {
-            playerViewModel.toggleFavourite()
-        } label: {
-            Label(
-                playerViewModel.isFavorite ? "U omiljenim" : "Omiljeno",
-                systemImage: playerViewModel.isFavorite ? "heart.fill" : "heart"
-            )
-            .font(.subheadline)
-            .foregroundColor(playerViewModel.isFavorite ? Color("primaryLink") : Color("primaryText"))
+    /// Icon-only, evenly sized: favourite, download, output — and the bookmark
+    /// button will join them. Labels under every one would crowd the screen and
+    /// say what the glyphs already say. Live radio has nothing to favourite or
+    /// download, so only the output picker remains.
+    private var actionRow: some View {
+        HStack(spacing: 20) {
+            if !playerViewModel.isLive {
+                favouriteControl
+                downloadControl
+            }
+            routeControl
         }
-        .accessibilityLabel(playerViewModel.isFavorite ? "Ukloni iz omiljenih" : "Dodaj u omiljene")
+        .animation(.easeInOut(duration: 0.2), value: playerViewModel.isLive)
+    }
+
+    private var favouriteControl: some View {
+        PlayerActionButton(
+            label: playerViewModel.isFavorite ? "Ukloni iz omiljenih" : "Dodaj u omiljene",
+            action: { playerViewModel.toggleFavourite() }
+        ) {
+            Image(systemName: playerViewModel.isFavorite ? "heart.fill" : "heart")
+                .font(.title3)
+                .foregroundColor(playerViewModel.isFavorite ? Color("primaryLink") : Color("primaryText"))
+        }
     }
 
     @ViewBuilder
     private var downloadControl: some View {
         if playerViewModel.isDownloading {
-            VStack(spacing: 8) {
-                ProgressView(value: playerViewModel.progress)
-                    .progressViewStyle(.linear)
-                    .tint(Color("primaryLink"))
-                    .frame(width: 180)
-                Text("Preuzimanje \(Int(playerViewModel.progress * 100))%")
-                    .font(.caption)
-                    .foregroundColor(Color("secondaryText"))
+            // The ring carries the percentage the caption used to spell out.
+            PlayerActionButton(label: "Preuzimanje u toku", action: {}) {
+                ZStack {
+                    Circle()
+                        .trim(from: 0, to: max(playerViewModel.progress, 0.02))
+                        .stroke(Color("primaryLink"), style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .frame(width: 32, height: 32)
+                    Image(systemName: "arrow.down")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(Color("secondaryText"))
+                }
             }
+            .disabled(true)
         } else if playerViewModel.showCheckmark {
-            Label("Preuzeto", systemImage: "checkmark.circle.fill")
-                .font(.subheadline)
-                .foregroundColor(.green)
+            PlayerActionButton(label: "Preuzeto", action: {}) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(.green)
+            }
+            .disabled(true)
         } else if playerViewModel.isDownloaded {
-            Button(role: .destructive) {
-                playerViewModel.deletePodcast()
-            } label: {
-                Label("Obriši preuzeto", systemImage: "trash")
-                    .font(.subheadline)
+            PlayerActionButton(label: "Obriši preuzeto", action: { playerViewModel.deletePodcast() }) {
+                Image(systemName: "trash")
+                    .font(.title3)
+                    .foregroundColor(.red)
             }
         } else {
-            Button {
-                playerViewModel.downloadPodcast()
-            } label: {
-                Label("Preuzmi epizodu", systemImage: "arrow.down.circle")
-                    .font(.subheadline)
+            PlayerActionButton(label: "Preuzmi epizodu", action: { playerViewModel.downloadPodcast() }) {
+                Image(systemName: "arrow.down")
+                    .font(.title3)
+                    .foregroundColor(Color("primaryText"))
             }
-            .foregroundColor(Color("primaryLink"))
         }
+    }
+
+    /// Apple's own picker: AirPods, the car stereo, an AirPlay speaker. It draws
+    /// its own glyph and presents the system sheet, and it turns blue by itself
+    /// when the sound is going somewhere other than the phone.
+    private var routeControl: some View {
+        RoutePickerView(
+            tintColor: UIColor(named: "primaryText") ?? .label,
+            activeTintColor: UIColor(named: "primaryLink") ?? .systemBlue
+        )
+        .frame(width: 30, height: 30)
+        .frame(width: 52, height: 52)
+        .background(Circle().fill(Color(.tertiarySystemFill)))
+        .accessibilityLabel("Izlaz zvuka")
     }
 
     private static func format(_ time: TimeInterval) -> String {
@@ -319,5 +378,47 @@ struct FullscreenPlayerView: View {
         return hours > 0
             ? String(format: "%d:%02d:%02d", hours, minutes, seconds)
             : String(format: "%02d:%02d", minutes, seconds)
+    }
+}
+
+// MARK: - Shared action button
+
+/// One shape for every action under the transport controls, so the row reads as
+/// a set rather than as three unrelated buttons.
+private struct PlayerActionButton<Content: View>: View {
+    let label: String
+    let action: () -> Void
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        Button(action: action) {
+            content()
+                .frame(width: 52, height: 52)
+                .background(Circle().fill(Color(.tertiarySystemFill)))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
+// MARK: - Output picker
+
+/// AVRoutePickerView has no SwiftUI equivalent. Volume stays on the hardware
+/// buttons — a slider here would only duplicate them and steal room.
+struct RoutePickerView: UIViewRepresentable {
+    let tintColor: UIColor
+    let activeTintColor: UIColor
+
+    func makeUIView(context: Context) -> AVRoutePickerView {
+        let view = AVRoutePickerView()
+        view.prioritizesVideoDevices = false
+        view.tintColor = tintColor
+        view.activeTintColor = activeTintColor
+        return view
+    }
+
+    func updateUIView(_ uiView: AVRoutePickerView, context: Context) {
+        uiView.tintColor = tintColor
+        uiView.activeTintColor = activeTintColor
     }
 }
