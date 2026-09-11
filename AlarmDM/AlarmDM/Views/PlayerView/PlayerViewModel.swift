@@ -45,7 +45,16 @@ final class PlayerViewModel: ObservableObject {
     @Published private(set) var isLive: Bool = false
 
     /// 0...1 position within the current episode. Live radio always reports 0.
-    var playbackProgress: Double { engine.progress }
+    /// The engine holds nothing until the first press on a restored episode,
+    /// so the bar reads from what was restored instead of showing zero for
+    /// something that is plainly half finished.
+    var playbackProgress: Double {
+        guard engine.hasContent else {
+            guard duration > 0 else { return 0 }
+            return min(max(currentTime / duration, 0), 1)
+        }
+        return engine.progress
+    }
 
     // MARK: - Download state
 
@@ -310,6 +319,11 @@ final class PlayerViewModel: ObservableObject {
         restoredPosition = saved.position
         mode = .podcast(podcast: podcast)
         currentTime = saved.position
+        // The feed already told us how long it runs, so the scrubber and the
+        // mini player's bar can show the right place before anything is
+        // loaded. The engine replaces this with the file's own duration the
+        // moment it opens it.
+        duration = podcast.durationInSeconds
         isPresented = true
     }
 
