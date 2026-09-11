@@ -136,6 +136,9 @@ final class PlaybackEngine: NSObject, ObservableObject {
     private var timeControlObservation: NSKeyValueObservation?
     private var itemStatusObservation: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
+    /// Where to jump once the new item is ready. Seeking a stream that has not
+    /// finished loading is quietly dropped, so the request waits here instead.
+    private var pendingSeek: TimeInterval?
     private var metadataOutput: AVPlayerItemMetadataOutput?
     private var commandsConfigured = false
     private let fileService: FileServiceProtocol
@@ -151,11 +154,14 @@ final class PlaybackEngine: NSObject, ObservableObject {
     // MARK: - Public API
 
     /// Starts playback of `source`. Re-selecting what is already loaded just resumes.
-    func play(_ source: PlaybackSource) {
+    func play(_ source: PlaybackSource, startingAt position: TimeInterval? = nil) {
         if self.source == source, player != nil {
+            if let position { seek(to: position) }
             resume()
             return
         }
+
+        pendingSeek = position
 
         guard let url = resolveURL(for: source) else {
             lastErrorMessage = "Nije moguće pronaći audio za \(source.title)."
@@ -206,6 +212,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
 
     func stop() {
         teardownPlayer()
+        pendingSeek = nil
         source = nil
         isPlaying = false
         isBuffering = false
@@ -291,6 +298,10 @@ final class PlaybackEngine: NSObject, ObservableObject {
                    itemDuration.isNumeric, !itemDuration.isIndefinite {
                     self.duration = itemDuration.seconds
                     self.updateNowPlayingInfo()
+                }
+                if item.status == .readyToPlay, let target = self.pendingSeek {
+                    self.pendingSeek = nil
+                    self.seek(to: target)
                 }
             }
         }
