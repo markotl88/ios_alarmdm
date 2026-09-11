@@ -93,14 +93,35 @@ final class PodcastEpisodesViewModel: ObservableObject {
     func deleteDownload(_ podcast: Podcast) {
         EpisodeLibrary.shared.deleteDownload(podcast)
     }
+
+    func download(_ podcast: Podcast) {
+        EpisodeLibrary.shared.download(podcast)
+    }
+
+    func isDownloading(_ podcast: Podcast) -> Bool {
+        EpisodeLibrary.shared.isDownloading(podcast)
+    }
     private var currentPage = 1
     private var totalPages: Int = 1
     private let repository = PodcastRepository.shared
     private var queryDate: String?
+    private var cancellables = Set<AnyCancellable>()
     
     init(podcastService: PodcastServiceProtocol = PodcastService(), show: Show) {
         self.podcastService = podcastService
         self.selectedShow = show
+
+        // The list holds a snapshot taken from Realm when it loaded, so a
+        // favourite or a deleted download has to be reflected here explicitly.
+        // The Radio tab already listened; this screen did not, so the heart
+        // only appeared when something else happened to reload the list.
+        EpisodeLibrary.shared.didChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.podcasts = self.loadPodcastsFromRealm()
+            }
+            .store(in: &cancellables)
     }
     
     // MARK: - Fetch Podcasts from Server and Save to Realm

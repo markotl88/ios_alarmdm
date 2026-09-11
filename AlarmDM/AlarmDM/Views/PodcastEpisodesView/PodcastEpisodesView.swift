@@ -37,7 +37,11 @@ struct PodcastEpisodesView: View {
 
             List {
                 ForEach(viewModel.visiblePodcasts) { podcast in
-                    PodcastRowView(podcast: podcast, showsMusicVariant: viewModel.hasBothMusicVariants)
+                    PodcastRowView(
+                        podcast: podcast,
+                        showsMusicVariant: viewModel.hasBothMusicVariants,
+                        isDownloading: viewModel.isDownloading(podcast)
+                    )
                         .contentShape(Rectangle())
                         .onTapGesture {
                             playerViewModel.mode = .podcast(podcast: podcast)
@@ -50,11 +54,13 @@ struct PodcastEpisodesView: View {
                         }
                         .episodeRowActions(
                             podcast: podcast,
+                            isDownloading: viewModel.isDownloading(podcast),
                             play: {
                                 playerViewModel.mode = .podcast(podcast: podcast)
                                 playerViewModel.togglePlayPause()
                             },
                             toggleFavourite: { viewModel.toggleFavourite(podcast) },
+                            download: { viewModel.download(podcast) },
                             deleteDownload: { viewModel.deleteDownload(podcast) }
                         )
                 }
@@ -158,6 +164,7 @@ struct PodcastRowView: View {
     /// Only true inside a show that publishes both cuts, so the badge means
     /// something instead of appearing on every row.
     var showsMusicVariant: Bool = false
+    var isDownloading: Bool = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -196,7 +203,9 @@ struct PodcastRowView: View {
                         .foregroundColor(Color("primaryLink"))
                         .accessibilityLabel("Omiljeno")
                 }
-                if podcast.isDownloaded {
+                if isDownloading {
+                    DownloadProgressRing(podcastId: podcast.id)
+                } else if podcast.isDownloaded {
                     Image(systemName: "arrow.down.circle.fill")
                         .font(.footnote)
                         .foregroundColor(.secondary)
@@ -205,6 +214,36 @@ struct PodcastRowView: View {
             }
         }
         .padding(.vertical, 6)
+    }
+}
+
+/// A ring that fills as the episode downloads. It subscribes to the library's
+/// progress stream and filters for one episode, so a download redraws its own
+/// row and nothing else — the list itself only hears about start and finish.
+struct DownloadProgressRing: View {
+    let podcastId: UUID
+
+    @State private var progress: Double = 0
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(Color(.quaternaryLabel), lineWidth: 2)
+            Circle()
+                // A hair of the ring is always drawn, so the control reads as
+                // "started" rather than as an empty circle in the first seconds.
+                .trim(from: 0, to: max(progress, 0.03))
+                .stroke(Color("primaryLink"), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 18, height: 18)
+        .animation(.linear(duration: 0.2), value: progress)
+        .onAppear { progress = EpisodeLibrary.shared.progress(for: podcastId) }
+        .onReceive(EpisodeLibrary.shared.progressPublisher) { update in
+            guard update.id == podcastId else { return }
+            progress = update.progress
+        }
+        .accessibilityLabel("Preuzimanje \(Int(progress * 100)) posto")
     }
 }
 
@@ -266,8 +305,10 @@ extension View {
 /// the same pairing Apple's own Podcasts app uses.
 struct EpisodeRowActions: ViewModifier {
     let podcast: Podcast
+    let isDownloading: Bool
     let play: () -> Void
     let toggleFavourite: () -> Void
+    let download: () -> Void
     let deleteDownload: () -> Void
 
     func body(content: Content) -> some View {
@@ -285,11 +326,24 @@ struct EpisodeRowActions: ViewModifier {
             }
             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                 if podcast.isDownloaded {
-                    Button(role: .destructive) {
+                    // Deliberately not `role: .destructive`: that role makes
+                    // SwiftUI animate the row out as if the episode were gone,
+                    // and it then slides back in once the list reloads. Only
+                    // the downloaded file goes away, so the row must stay put
+                    // and simply swap its badge and its available actions.
+                    Button {
                         deleteDownload()
                     } label: {
                         Label("Obriši", systemImage: "trash")
                     }
+                    .tint(.red)
+                } else if !isDownloading {
+                    Button {
+                        download()
+                    } label: {
+                        Label("Preuzmi", systemImage: "arrow.down.circle")
+                    }
+                    .tint(.gray)
                 }
             }
             .contextMenu {
@@ -314,6 +368,19 @@ struct EpisodeRowActions: ViewModifier {
                     } label: {
                         Label("Obriši preuzeto", systemImage: "trash")
                     }
+                } else if isDownloading {
+                    // Disabled rather than hidden: the menu should say why
+                    // there is no Preuzmi, instead of silently dropping it.
+                    Button {} label: {
+                        Label("Preuzimanje u toku…", systemImage: "arrow.down.circle")
+                    }
+                    .disabled(true)
+                } else {
+                    Button {
+                        download()
+                    } label: {
+                        Label("Preuzmi epizodu", systemImage: "arrow.down.circle")
+                    }
                 }
             }
     }
@@ -322,14 +389,18 @@ struct EpisodeRowActions: ViewModifier {
 extension View {
     func episodeRowActions(
         podcast: Podcast,
+        isDownloading: Bool = false,
         play: @escaping () -> Void,
         toggleFavourite: @escaping () -> Void,
+        download: @escaping () -> Void,
         deleteDownload: @escaping () -> Void
     ) -> some View {
         modifier(EpisodeRowActions(
             podcast: podcast,
+            isDownloading: isDownloading,
             play: play,
             toggleFavourite: toggleFavourite,
+            download: download,
             deleteDownload: deleteDownload
         ))
     }

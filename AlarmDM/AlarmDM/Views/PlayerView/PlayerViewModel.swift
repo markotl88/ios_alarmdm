@@ -3,14 +3,13 @@
 //  AlarmDM
 //
 //  A thin, observable façade over PlaybackEngine.shared. It owns the UI-only
-//  concerns (presentation, download progress, Realm bookkeeping) and mirrors
+//  concerns (presentation, download progress) and mirrors
 //  playback state from the engine, so the phone UI and the CarPlay scene can
 //  never disagree about what is playing.
 //
 
 import Foundation
 import Combine
-import RealmSwift
 import AVFoundation
 
 enum PlayerMode: Equatable, Identifiable {
@@ -70,9 +69,6 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let engine: PlaybackEngine
-    private let fileService: FileServiceProtocol
-    private let podcastService: PodcastServiceProtocol
-    private let realm = try? Realm()
     private var cancellables = Set<AnyCancellable>()
 
     private var podcastId: UUID?
@@ -81,14 +77,8 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(mode: PlayerMode? = nil,
-         engine: PlaybackEngine = .shared,
-         podcastService: PodcastServiceProtocol = PodcastService(),
-         fileService: FileServiceProtocol = FileService()) {
-
+    init(mode: PlayerMode? = nil, engine: PlaybackEngine = .shared) {
         self.engine = engine
-        self.fileService = fileService
-        self.podcastService = podcastService
         self.mode = mode
 
         bindEngine()
@@ -122,6 +112,14 @@ final class PlayerViewModel: ObservableObject {
             .sink { [weak self] in self?.duration = $0 }
             .store(in: &cancellables)
 
+        EpisodeLibrary.shared.progressPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] update in
+                guard let self, update.id == self.podcastId else { return }
+                self.progress = update.progress
+            }
+            .store(in: &cancellables)
+
         engine.sourcePublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] source in
@@ -132,6 +130,23 @@ final class PlayerViewModel: ObservableObject {
                 self.isLive = source.isLive
                 self.isPresented = true
                 self.syncSelection(with: source)
+            }
+            .store(in: &cancellables)
+
+        // The lists can change the episode that is loaded here — favouriting
+        // from a row should move the heart on the player too, and deleting a
+        // download should drop the delete button.
+        EpisodeLibrary.shared.didChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self,
+                      let podcastId = self.podcastId,
+                      let refreshed = self.loadPodcastFromRealm(with: podcastId) else { return }
+                self.podcast = refreshed
+                self.isFavorite = refreshed.isFavorite
+                self.isDownloaded = refreshed.isDownloaded
+                self.showDeleteButton = refreshed.isDownloaded
+                self.isDownloading = EpisodeLibrary.shared.isDownloading(refreshed)
             }
             .store(in: &cancellables)
     }
@@ -196,8 +211,16 @@ final class PlayerViewModel: ObservableObject {
             showDeleteButton = false
         }
 
-        progress = 0
-        isDownloading = false
+        // Adopt whatever the library is already doing for this episode, so
+        // opening the player mid-download shows the ring instead of an idle
+        // download button.
+        if let podcast {
+            isDownloading = EpisodeLibrary.shared.isDownloading(podcast)
+            progress = EpisodeLibrary.shared.progress(for: podcast.id)
+        } else {
+            isDownloading = false
+            progress = 0
+        }
         showCheckmark = false
     }
 
@@ -253,78 +276,51 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Download
 
     func downloadPodcast() {
-        guard let urlString = podcast?.podcastUrl, let podcastUrl = URL(string: urlString) else { return }
+        guard let podcast, !podcast.isDownloaded else { return }
 
-        isDownloading = true
+        // `isDownloading` is not set here: the library decides whether the
+        // download actually starts, and says so through `didChange`. Setting it
+        // optimistically left the ring spinning forever whenever the WiFi-only
+        // rule refused — the one case where nothing ever completes.
         showCheckmark = false
+        progress = 0
 
-        podcastService.downloadPodcasts(from: podcastUrl, completion: { [weak self] result in
+        // One download path for the whole app — the row's Preuzmi and this
+        // button run the same code, so they cannot drift apart or fight over
+        // the same episode. The library refreshes `isDownloaded` and the
+        // delete button through `didChange`.
+        EpisodeLibrary.shared.download(podcast) { [weak self] result in
             guard let self else { return }
-            self.isDownloading = false
 
-            switch result {
-            case .success(let location):
-                self.isDownloaded = true
-                self.podcast?.fileUrl = location.lastPathComponent
-                if let podcast = self.podcast {
-                    self.savePodcastToRealm(PodcastRealm(from: podcast))
-                    // If this episode is the one playing, continue from the local file.
-                    if self.engine.source == .podcast(podcast) || self.podcastId == podcast.id {
-                        self.engine.switchToLocalFile(location)
-                    }
-                }
-                EpisodeLibrary.shared.episodeDidChange()
-                self.showCheckmark = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                    self?.showCheckmark = false
-                    self?.showDeleteButton = true
-                }
+            guard case .success(let location) = result else { return }
 
-            case .failure(let error):
-                debugPrint("Error downloading file: \(error.localizedDescription)")
+            // If this episode is the one playing, continue from the local file.
+            if self.podcastId == podcast.id {
+                self.engine.switchToLocalFile(location)
             }
-        }, progressHandler: { [weak self] progress in
-            self?.progress = progress
-        })
+
+            self.showCheckmark = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+                self?.showCheckmark = false
+            }
+        }
     }
 
     func deletePodcast() {
-        guard let podcast, let fileName = podcast.fileUrl else { return }
-
-        switch fileService.deleteFile(with: fileName) {
-        case .success:
-            isDownloaded = false
-            showDeleteButton = false
-            self.podcast?.fileUrl = nil
-            if let updated = self.podcast {
-                savePodcastToRealm(PodcastRealm(from: updated))
-            }
-            EpisodeLibrary.shared.episodeDidChange()
-        case .failure(let error):
-            debugPrint("Error deleting file: \(error.localizedDescription)")
-        }
+        guard let podcast else { return }
+        EpisodeLibrary.shared.deleteDownload(podcast)
     }
 
     // MARK: - Realm
 
+    /// Reads go through the repository like everywhere else; writes are the
+    /// library's job, so this view model no longer touches Realm directly.
     private func loadPodcastFromRealm(with id: UUID) -> Podcast? {
-        guard let realm,
-              let podcastRealm = realm.objects(PodcastRealm.self)
-                .filter("id == %@", id.uuidString).first else {
+        guard let podcast = PodcastRepository.shared.podcast(with: id) else {
             debugPrint("Podcast \(id) not found in Realm")
             return nil
         }
-        return Podcast(from: podcastRealm)
+        return podcast
     }
 
-    private func savePodcastToRealm(_ newPodcast: PodcastRealm) {
-        guard let realm else { return }
-        do {
-            try realm.write {
-                realm.add(newPodcast, update: .modified)
-            }
-        } catch {
-            debugPrint("Error saving podcast to Realm: \(error.localizedDescription)")
-        }
-    }
 }

@@ -150,6 +150,14 @@ final class RadioViewModel: ObservableObject {
         EpisodeLibrary.shared.deleteDownload(podcast)
     }
 
+    func download(_ podcast: Podcast) {
+        EpisodeLibrary.shared.download(podcast)
+    }
+
+    func isDownloading(_ podcast: Podcast) -> Bool {
+        EpisodeLibrary.shared.isDownloading(podcast)
+    }
+
     private func fetchLivestreamUrl() {
         podcastService.getLivestream { [weak self] result in
             switch result {

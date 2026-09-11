@@ -81,6 +81,16 @@ final class PodcastRepository {
         }
     }
 
+    func setDownloadedFile(_ fileName: String?, for id: UUID) {
+        guard let realm,
+              let object = realm.object(ofType: PodcastRealm.self, forPrimaryKey: id.uuidString) else { return }
+        do {
+            try realm.write { object.fileUrl = fileName }
+        } catch {
+            debugPrint("Error recording downloaded file: \(error.localizedDescription)")
+        }
+    }
+
     func clearDownloadReference(for id: UUID) {
         guard let realm,
               let object = realm.object(ofType: PodcastRealm.self, forPrimaryKey: id.uuidString) else { return }
@@ -123,11 +133,97 @@ final class EpisodeLibrary {
     /// downloaded — and the Preuzeto filter cannot see it.
     let didChange = PassthroughSubject<Void, Never>()
 
+    /// Fires when the WiFi-only rule stopped a download, so the UI can offer to
+    /// go ahead anyway or to drop the rule. The library refuses rather than
+    /// deciding for the person — it has no way to ask.
+    let downloadBlocked = PassthroughSubject<Podcast, Never>()
+
     private let repository = PodcastRepository.shared
     private let fileService: FileServiceProtocol
+    private let podcastService: PodcastServiceProtocol
+    private let settings = AppSettings.shared
+    private let network = NetworkMonitor.shared
 
-    init(fileService: FileServiceProtocol = FileService()) {
+    /// Episodes with a download in flight. A row shows a ring for these, and a
+    /// second tap cannot start the same download twice.
+    private(set) var downloadsInFlight: Set<UUID> = []
+
+    private var downloadProgress: [UUID: Double] = [:]
+    private let progressSubject = PassthroughSubject<(id: UUID, progress: Double), Never>()
+
+    /// Progress ticks, one stream for the whole app. Every consumer filters by
+    /// episode id, so a row redraws only for its own download and the list is
+    /// never rebuilt for someone else's.
+    var progressPublisher: AnyPublisher<(id: UUID, progress: Double), Never> {
+        progressSubject.eraseToAnyPublisher()
+    }
+
+    func progress(for id: UUID) -> Double { downloadProgress[id] ?? 0 }
+
+    init(fileService: FileServiceProtocol = FileService(),
+         podcastService: PodcastServiceProtocol = PodcastService()) {
         self.fileService = fileService
+        self.podcastService = podcastService
+    }
+
+    func isDownloading(_ podcast: Podcast) -> Bool {
+        downloadsInFlight.contains(podcast.id)
+    }
+
+    /// Downloads an episode and records the local file. `didChange` fires when
+    /// the download starts and when it ends — never per tick, so a list is not
+    /// rebuilt sixty times a minute; progress goes out on `progressPublisher`
+    /// instead. On a metered connection this refuses and emits `downloadBlocked`
+    /// unless `force` says the person has already chosen.
+    ///
+    /// Returns whether the download actually started, so a caller does not put
+    /// itself into a downloading state for something that was refused.
+    @discardableResult
+    func download(_ podcast: Podcast,
+                  force: Bool = false,
+                  completion: ((Result<URL, Error>) -> Void)? = nil) -> Bool {
+        guard !podcast.isDownloaded else { return false }
+        guard !downloadsInFlight.contains(podcast.id) else { return false }
+        guard let url = URL(string: podcast.podcastUrl) else {
+            debugPrint("Episode \(podcast.id) has no usable media URL")
+            return false
+        }
+
+        if !force, settings.downloadsOverWiFiOnly, network.isMetered {
+            downloadBlocked.send(podcast)
+            return false
+        }
+
+        downloadsInFlight.insert(podcast.id)
+        downloadProgress[podcast.id] = 0
+        didChange.send()
+
+        podcastService.downloadPodcasts(from: url, completion: { [weak self] result in
+            guard let self else { return }
+            self.downloadsInFlight.remove(podcast.id)
+            self.downloadProgress[podcast.id] = nil
+
+            if case .success(let location) = result {
+                self.repository.setDownloadedFile(location.lastPathComponent, for: podcast.id)
+            } else if case .failure(let error) = result {
+                debugPrint("Error downloading episode: \(error.localizedDescription)")
+            }
+
+            self.didChange.send()
+            completion?(result)
+        }, progressHandler: { [weak self] value in
+            guard let self else { return }
+            // Throttled to whole percent steps, and hopped to main because the
+            // session reports progress from its own queue.
+            DispatchQueue.main.async {
+                let previous = self.downloadProgress[podcast.id] ?? 0
+                guard value >= previous + 0.01 || value >= 1 else { return }
+                self.downloadProgress[podcast.id] = value
+                self.progressSubject.send((id: podcast.id, progress: value))
+            }
+        })
+
+        return true
     }
 
     /// Called by whoever wrote to Realm outside this type — the player, after
