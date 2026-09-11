@@ -16,7 +16,7 @@ struct AlarmDMApp: SwiftUI.App {
     
     var body: some Scene {
         WindowGroup {
-            NewTabContentView()
+            RootView()
         }
     }
 
@@ -31,8 +31,15 @@ struct AlarmDMApp: SwiftUI.App {
     private func setupRealm() {
         // Set up Realm configuration with schema version and migration block if needed
         let config = Realm.Configuration(
-            schemaVersion: 3, // Increment this when making changes to the Realm schema
+            schemaVersion: 4, // Increment this when making changes to the Realm schema
             migrationBlock: { migration, oldSchemaVersion in
+                if oldSchemaVersion < 4 {
+                    // A bookmark's Double is a position in the episode, not a
+                    // length. Renamed rather than added and copied, so any row
+                    // written by a development build keeps its value.
+                    migration.renameProperty(onType: BookmarkRealm.className(),
+                                             from: "duration", to: "position")
+                }
                 if oldSchemaVersion < 3 {
                     // Provizorni podnevni program turned out to be Unutrašnja
                     // emigracija under an older name. Rows cached before the

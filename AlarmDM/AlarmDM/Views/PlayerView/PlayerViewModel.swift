@@ -54,7 +54,7 @@ final class PlayerViewModel: ObservableObject {
     /// The song the station is announcing, during live radio only.
     @Published private(set) var liveTrack: LiveTrack?
     @Published var isDownloading: Bool = false
-    /// Download progress, 0...1. Kept under this name because PlayerView binds to it.
+    /// Download progress, 0...1 — not the playback position, which is `playbackProgress`.
     @Published var progress: Double = 0.0
     @Published var showDeleteButton: Bool = false
     @Published var showCheckmark: Bool = false

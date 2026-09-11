@@ -13,7 +13,7 @@ class BookmarkRealm: Object {
     @Persisted var title: String = ""
     @Persisted var note: String = ""
     @Persisted var createdAt: Date = Date()
-    @Persisted var duration: Double = 0.0
+    @Persisted var position: Double = 0.0
     @Persisted var category: String?
 
     @Persisted(originProperty: "bookmarks") var parentPodcast: LinkingObjects<PodcastRealm>
@@ -26,7 +26,7 @@ extension BookmarkRealm {
         self.title = bookmark.title
         self.note = bookmark.note
         self.createdAt = bookmark.createdAt
-        self.duration = bookmark.duration
+        self.position = bookmark.position
         self.category = bookmark.category.rawValue
         parentPodcast.bookmarks.append(self)
     }
