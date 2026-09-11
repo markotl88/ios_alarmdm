@@ -135,7 +135,7 @@ final class RadioViewModel: ObservableObject {
                 self.latestPodcasts = self.repository.latestPodcasts(limit: self.displayLimit)
             case .failure(let error):
                 if self.latestPodcasts.isEmpty {
-                    self.errorMessage = "Nije moguće učitati podkaste. Proveri internet vezu."
+                    self.errorMessage = "Nije moguće učitati podkaste. Proveri internet konekciju."
                 }
                 debugPrint("Error fetching podcasts: \(error.localizedDescription)")
             }
