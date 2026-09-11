@@ -47,6 +47,7 @@
 		AA0000000000000000000126 /* PodcastRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000125 /* PodcastRowView.swift */; };
 		AA0000000000000000000124 /* FullscreenPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000123 /* FullscreenPlayerView.swift */; };
 		AA0000000000000000000122 /* TabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000121 /* TabBar.swift */; };
+		AA0000000000000000000172 /* PlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000171 /* PlaybackState.swift */; };
 		AA000000000000000000010F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000110 /* AppSettings.swift */; };
 		AA0000000000000000000111 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000112 /* NetworkMonitor.swift */; };
 		AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000114 /* LiveIndicatorViews.swift */; };
@@ -127,6 +128,7 @@
 		AA0000000000000000000125 /* PodcastRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRowView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000123 /* FullscreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenPlayerView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000121 /* TabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBar.swift; sourceTree = "<group>"; };
+		AA0000000000000000000171 /* PlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackState.swift; sourceTree = "<group>"; };
 		AA0000000000000000000110 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		AA0000000000000000000112 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		AA0000000000000000000114 /* LiveIndicatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveIndicatorViews.swift; sourceTree = "<group>"; };
@@ -170,6 +172,7 @@
 		4D13F43E2CCA70AF00AA52D1 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000000000000000000171 /* PlaybackState.swift */,
 				4D6677A82CC9341600EC2ADE /* FileService.swift */,
 				AA0000000000000000000104 /* AppConstants.swift */,
 				AA0000000000000000000112 /* NetworkMonitor.swift */,
@@ -530,6 +533,7 @@
 				AA0000000000000000000126 /* PodcastRowView.swift in Sources */,
 				AA0000000000000000000124 /* FullscreenPlayerView.swift in Sources */,
 				AA0000000000000000000122 /* TabBar.swift in Sources */,
+				AA0000000000000000000172 /* PlaybackState.swift in Sources */,
 				AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */,
 				AA0000000000000000000111 /* NetworkMonitor.swift in Sources */,
 				AA000000000000000000010F /* AppSettings.swift in Sources */,
@@ -706,7 +710,7 @@
 				CODE_SIGN_ENTITLEMENTS = AlarmDM/AlarmDM.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_ASSET_PATHS = "\"AlarmDM/Preview Content\"";
 				DEVELOPMENT_TEAM = 2QB89332G7;
 				ENABLE_PREVIEWS = YES;
@@ -740,7 +744,7 @@
 				CODE_SIGN_ENTITLEMENTS = AlarmDM/AlarmDM.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEVELOPMENT_ASSET_PATHS = "\"AlarmDM/Preview Content\"";
 				DEVELOPMENT_TEAM = 2QB89332G7;
 				ENABLE_PREVIEWS = YES;

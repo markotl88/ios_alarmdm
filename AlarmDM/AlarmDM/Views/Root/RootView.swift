@@ -11,6 +11,7 @@ import SwiftUI
 struct RootView: View {
     @State private var currentItem: TabBarItem = .radio
     @StateObject private var playerViewModel = PlayerViewModel(mode: nil)
+    @Environment(\.scenePhase) private var scenePhase
 
     /// The WiFi-only warning lives here rather than in each list, so the same
     /// alert answers a blocked download wherever it was started — a row, the
@@ -82,6 +83,13 @@ struct RootView: View {
             Button("Otkaži", role: .cancel) { blockedEpisode = nil }
         } message: {
             Text("Trenutno si na mobilnoj mreži. Možeš preuzeti samo ovu epizodu, ili ukloniti ograničenje za ubuduće - kasnije ga vraćaš u Ostalo.")
+        }
+        .onAppear { playerViewModel.restorePlaybackState() }
+        .onChange(of: scenePhase) { _, phase in
+            // Leaving is the last moment anything is certain. iOS can end a
+            // suspended app without warning and without calling back, so the
+            // position is written down here rather than on the way out.
+            if phase != .active { playerViewModel.rememberPlaybackPosition() }
         }
     }
 }
