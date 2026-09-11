@@ -27,6 +27,9 @@ final class PodcastEntity {
     var title: String = ""
     var subtitle: String = ""
     var createdAt: Date?
+    /// When it went out live, for matching a live bookmark to its place in the
+    /// recording. Only the full cut has one.
+    var airedAt: Date?
     var timestamp: String?
     var podcastUrl: String = ""
     var duration: String = ""
@@ -55,6 +58,7 @@ final class PodcastEntity {
         title = podcast.title
         subtitle = podcast.subtitle
         createdAt = podcast.createdDate
+        airedAt = podcast.airedAt
         timestamp = podcast.timestamp
         podcastUrl = podcast.podcastUrl
         duration = podcast.duration
@@ -71,6 +75,7 @@ extension Podcast {
         self.title = entity.title
         self.subtitle = entity.subtitle
         self.createdDate = entity.createdAt
+        self.airedAt = entity.airedAt
         self.timestamp = entity.timestamp
         self.podcastUrl = entity.podcastUrl
         self.duration = entity.duration

@@ -50,6 +50,18 @@ final class BookmarkRepository {
         commit("saving bookmark")
     }
 
+    /// Moves a live capture into the episode it fell inside. The title and
+    /// show are rewritten too — until now they said "Radio uživo", which was
+    /// true and is no longer.
+    func link(_ id: UUID, to episode: Podcast, position: TimeInterval) {
+        guard let entity = entity(with: id) else { return }
+        entity.podcast = podcastEntity(with: episode.id)
+        entity.position = position
+        entity.episodeTitle = episode.title
+        entity.show = episode.show.rawValue
+        commit("linking bookmark to its episode")
+    }
+
     func setCategory(_ category: BookmarkCategory?, for id: UUID) {
         guard let entity = entity(with: id) else { return }
         entity.category = category?.rawValue

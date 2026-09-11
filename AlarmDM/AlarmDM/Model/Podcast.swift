@@ -133,6 +133,8 @@ struct Podcast: Identifiable, Equatable {
     var title = ""
     var subtitle = ""
     var createdDate: Date?
+    /// When it went out live. Only the full cut has one.
+    var airedAt: Date?
     var timestamp: String?
     var podcastUrl = ""
     var duration = ""
@@ -169,6 +171,7 @@ extension Podcast {
         self.title = response.title
         self.subtitle = response.subtitle
         self.createdDate = response.createdDate.formattedCreatedDate
+        self.airedAt = response.airedAt?.formattedCreatedDate
         self.timestamp = response.timestamp
         self.podcastUrl = response.podcastUrl
         self.duration = response.duration

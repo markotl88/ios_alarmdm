@@ -35,10 +35,14 @@ final class BookmarkLibrary {
     static let rewind: TimeInterval = 5
 
     private let repository: BookmarkRepository
+    private let podcasts: PodcastRepository
     private let engine: PlaybackEngine
 
-    init(repository: BookmarkRepository = .shared, engine: PlaybackEngine = .shared) {
+    init(repository: BookmarkRepository = .shared,
+         podcasts: PodcastRepository = .shared,
+         engine: PlaybackEngine = .shared) {
         self.repository = repository
+        self.podcasts = podcasts
         self.engine = engine
     }
 
@@ -67,12 +71,14 @@ final class BookmarkLibrary {
         case .radio:
             // Live radio has no position to point at, so the moment it was
             // caught is the only handle — along with whatever the station
-            // happened to be announcing.
+            // happened to be announcing. If it announced a song, the category
+            // is not a guess: that is what was playing.
+            let announced = engine.liveTrack != nil
             bookmark = Bookmark(
                 id: UUID(),
                 createdAt: Date(),
                 position: 0,
-                category: category,
+                category: category ?? (announced ? .muzika : nil),
                 note: engine.liveTrack?.display ?? "",
                 episodeTitle: "Radio uživo",
                 show: nil,
@@ -87,6 +93,28 @@ final class BookmarkLibrary {
     }
 
     func all() -> [Bookmark] { repository.all() }
+
+    /// Tries to put every live capture into the episode it fell inside, now
+    /// that episodes have arrived. Cheap enough to run whenever the list is
+    /// looked at: it does nothing at all unless a live bookmark is waiting.
+    @discardableResult
+    func reconcileLiveCaptures() -> Int {
+        let waiting = repository.all().filter(\.isLive)
+        guard !waiting.isEmpty else { return 0 }
+
+        let episodes = podcasts.broadcastEpisodes()
+        guard !episodes.isEmpty else { return 0 }
+
+        var matched = 0
+        for bookmark in waiting {
+            guard let hit = LiveBookmarkMatcher.match(bookmark, against: episodes) else { continue }
+            repository.link(bookmark.id, to: hit.episode, position: hit.position)
+            matched += 1
+        }
+
+        if matched > 0 { didChange.send() }
+        return matched
+    }
 
     func setCategory(_ category: BookmarkCategory?, for id: UUID) {
         repository.setCategory(category, for: id)

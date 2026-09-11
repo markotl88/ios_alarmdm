@@ -28,6 +28,9 @@ final class BookmarksViewModel: ObservableObject {
     }
 
     func reload() {
+        // An episode published since the last look may now hold a bookmark
+        // that was caught live. Does nothing unless one is waiting.
+        library.reconcileLiveCaptures()
         bookmarks = library.all()
     }
 

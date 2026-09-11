@@ -34,6 +34,13 @@ final class PodcastRepository {
             .map(Podcast.init(from:))
     }
 
+    /// Episodes a live bookmark could fall inside: the full cut, with a known
+    /// broadcast time. Nothing else can host one.
+    func broadcastEpisodes(limit: Int = 200) -> [Podcast] {
+        fetch(limit: limit, matching: #Predicate { $0.airedAt != nil && $0.isWithMusic })
+            .map(Podcast.init(from:))
+    }
+
     func podcast(with id: UUID) -> Podcast? {
         entity(with: id).map(Podcast.init(from:))
     }

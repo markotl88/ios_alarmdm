@@ -125,9 +125,12 @@ struct BookmarkRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: bookmark.category?.systemImage ?? "bookmark")
+            // A live capture that has not found its episode is a note and
+            // nothing more — no audio behind it, nowhere to jump. The broadcast
+            // glyph says that before the tap does.
+            Image(systemName: leadingSymbol)
                 .font(.footnote)
-                .foregroundColor(bookmark.category == nil ? .secondary : Color("primaryLink"))
+                .foregroundColor(leadingColor)
                 .frame(width: 26, height: 26)
                 .background(Circle().fill(Color(.tertiarySystemFill)))
 
@@ -151,14 +154,30 @@ struct BookmarkRowView: View {
 
             Spacer(minLength: 0)
 
-            // A live capture has no episode to open, and saying so up front
-            // beats a tap that does nothing.
             if bookmark.isLive {
-                Text("UŽIVO")
-                    .font(.caption2.weight(.bold))
-                    .foregroundColor(Color("secondaryText"))
+                HStack(spacing: 4) {
+                    Circle().fill(Color.red).frame(width: 5, height: 5)
+                    Text("UŽIVO")
+                        .font(.caption2.weight(.bold))
+                }
+                .foregroundColor(Color("secondaryText"))
+                .padding(.horizontal, 7)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(Color(.tertiarySystemFill)))
             }
         }
         .padding(.vertical, 4)
+        // Dimmed as a whole, because none of it leads anywhere yet.
+        .opacity(bookmark.isLive ? 0.75 : 1)
+    }
+
+    private var leadingSymbol: String {
+        if let category = bookmark.category { return category.systemImage }
+        return bookmark.isLive ? "dot.radiowaves.left.and.right" : "bookmark"
+    }
+
+    private var leadingColor: Color {
+        guard bookmark.category != nil else { return .secondary }
+        return Color("primaryLink")
     }
 }
