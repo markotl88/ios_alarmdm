@@ -12,7 +12,6 @@ import UIKit
 import AVFoundation
 import MediaPlayer
 import Combine
-import RealmSwift
 
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 

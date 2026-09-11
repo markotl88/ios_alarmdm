@@ -7,7 +7,6 @@
 
 import SwiftUI
 import Combine
-import RealmSwift
 
 /// The episode list filters. Only ever shown inside a single show — the Radio
 /// tab is a short "what is new" list where filtering would be noise.
