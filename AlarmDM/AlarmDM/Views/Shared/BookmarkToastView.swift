@@ -95,6 +95,15 @@ struct BookmarkToastView: View {
                 if focused { onInteract() }
             }
             .onSubmit(finish)
+            .onAppear {
+                // A live capture with nothing announced has no content of its
+                // own — no position in an episode, no song title. Whatever gets
+                // typed here is the only thing that row will ever say, so the
+                // field asks for it instead of waiting to be noticed.
+                guard bookmark.isLive, bookmark.note.isEmpty else { return }
+                onInteract()
+                noteFocused = true
+            }
             .padding(.horizontal, 10)
             .padding(.vertical, 8)
             .background(RoundedRectangle(cornerRadius: 9).fill(Color(.tertiarySystemFill)))
