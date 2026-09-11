@@ -21,6 +21,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var radioItem: CPListItem?
     private var engine: PlaybackEngine { .shared }
 
+    /// The bookmark button briefly fills in after a capture. CPNowPlayingButton
+    /// cannot be changed once made, so the acknowledgement is a rebuilt button
+    /// rather than an edited one.
+    private var justBookmarked = false
+    private var bookmarkFeedback: Task<Void, Never>?
+
     // MARK: - Scene lifecycle
 
     func templateApplicationScene(
@@ -30,6 +36,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.interfaceController = interfaceController
         setupRootTemplates()
         observeEngine()
+        refreshNowPlayingButtons()
     }
 
     func templateApplicationScene(
@@ -37,6 +44,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         didDisconnectInterfaceController interfaceController: CPInterfaceController
     ) {
         cancellables.removeAll()
+        bookmarkFeedback?.cancel()
         self.interfaceController = nil
         self.radioItem = nil
     }
@@ -160,6 +168,40 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         interfaceController.pushTemplate(CPNowPlayingTemplate.shared, animated: true, completion: nil)
     }
 
+    // MARK: - Bookmarks
+
+    /// One button on Now Playing, and it saves on the press. Anything that asks
+    /// a follow-up question — a category, a confirmation — is a menu to read
+    /// while driving, which is the one thing this cannot be.
+    private func refreshNowPlayingButtons() {
+        guard engine.hasContent else {
+            CPNowPlayingTemplate.shared.updateNowPlayingButtons([])
+            return
+        }
+
+        guard let image = UIImage(systemName: justBookmarked ? "bookmark.fill" : "bookmark") else { return }
+
+        let button = CPNowPlayingImageButton(image: image) { [weak self] _ in
+            self?.captureBookmark()
+        }
+        CPNowPlayingTemplate.shared.updateNowPlayingButtons([button])
+    }
+
+    private func captureBookmark() {
+        guard BookmarkLibrary.shared.capture() != nil else { return }
+
+        justBookmarked = true
+        refreshNowPlayingButtons()
+
+        bookmarkFeedback?.cancel()
+        bookmarkFeedback = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            self?.justBookmarked = false
+            self?.refreshNowPlayingButtons()
+        }
+    }
+
     // MARK: - Engine observation
 
     private func observeEngine() {
@@ -170,7 +212,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         engine.sourcePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.refreshRadioItem() }
+            .sink { [weak self] _ in
+                self?.refreshRadioItem()
+                // The button belongs to whatever is playing, so it comes and
+                // goes with it rather than sitting there doing nothing.
+                self?.refreshNowPlayingButtons()
+            }
             .store(in: &cancellables)
     }
 
