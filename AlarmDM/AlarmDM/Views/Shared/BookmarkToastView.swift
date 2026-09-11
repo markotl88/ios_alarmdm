@@ -50,7 +50,7 @@ struct BookmarkToastView: View {
 
             // Live radio gets no categories: what was caught is a moment on
             // air, and sorting it can wait for the list.
-            if !bookmark.isLive {
+            if !bookmark.capturedLive {
                 categories
             }
         }
@@ -106,7 +106,7 @@ struct BookmarkToastView: View {
                 // own — no position in an episode, no song title. Whatever gets
                 // typed here is the only thing that row will ever say, so the
                 // field asks for it instead of waiting to be noticed.
-                guard asksForNote, bookmark.isLive, bookmark.note.isEmpty else { return }
+                guard asksForNote, bookmark.capturedLive, bookmark.note.isEmpty else { return }
                 onInteract()
                 noteFocused = true
             }

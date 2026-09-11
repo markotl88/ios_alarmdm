@@ -57,10 +57,17 @@ struct Bookmark: Identifiable, Equatable {
     var episodeTitle: String
     var show: Show?
 
-    /// Nil when this was caught during live radio.
+    /// Nil until a live capture finds the episode it fell inside.
     var podcastId: UUID?
 
-    var isLive: Bool { podcastId == nil }
+    /// Caught on live radio rather than inside an episode. Stays true after
+    /// the episode turns up, because `createdAt` plus this is what lets the
+    /// position be worked out again if the broadcast time is ever corrected.
+    var capturedLive: Bool
+
+    /// Caught live and still without an episode: nothing to open, nowhere to
+    /// jump. Not the same as having been caught live, which never changes.
+    var isAwaitingEpisode: Bool { capturedLive && podcastId == nil }
 
     /// What you wrote beats what the feed called the episode. Four bookmarks
     /// inside the same episode are four identical rows otherwise.
@@ -76,7 +83,7 @@ struct Bookmark: Identifiable, Equatable {
 
     /// mm:ss into the episode, or the moment it was caught for live radio.
     var positionText: String {
-        guard !isLive else {
+        guard !isAwaitingEpisode else {
             return Bookmark.liveFormatter.string(from: createdAt)
         }
         let total = Int(position)

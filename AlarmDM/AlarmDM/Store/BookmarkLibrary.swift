@@ -65,7 +65,8 @@ final class BookmarkLibrary {
                 note: "",
                 episodeTitle: podcast.title,
                 show: podcast.show,
-                podcastId: podcast.id
+                podcastId: podcast.id,
+                capturedLive: false
             )
 
         case .radio:
@@ -82,7 +83,8 @@ final class BookmarkLibrary {
                 note: engine.liveTrack?.display ?? "",
                 episodeTitle: "Radio uživo",
                 show: nil,
-                podcastId: nil
+                podcastId: nil,
+                capturedLive: true
             )
         }
 
@@ -99,21 +101,46 @@ final class BookmarkLibrary {
     /// looked at: it does nothing at all unless a live bookmark is waiting.
     @discardableResult
     func reconcileLiveCaptures() -> Int {
-        let waiting = repository.all().filter(\.isLive)
-        guard !waiting.isEmpty else { return 0 }
+        let captures = repository.all().filter { $0.capturedLive || $0.podcastId != nil }
+        guard !captures.isEmpty else { return 0 }
 
         let episodes = podcasts.broadcastEpisodes()
         guard !episodes.isEmpty else { return 0 }
 
-        var matched = 0
-        for bookmark in waiting {
-            guard let hit = LiveBookmarkMatcher.match(bookmark, against: episodes) else { continue }
-            repository.link(bookmark.id, to: hit.episode, position: hit.position)
-            matched += 1
+        var changed = 0
+        for bookmark in captures {
+            if bookmark.isAwaitingEpisode {
+                guard let hit = LiveBookmarkMatcher.match(bookmark, against: episodes) else { continue }
+                repository.link(bookmark.id, to: hit.episode, position: hit.position)
+                changed += 1
+            } else if let moved = correctedPosition(for: bookmark, in: episodes) {
+                repository.setPosition(moved, for: bookmark.id)
+                changed += 1
+            }
         }
 
-        if matched > 0 { didChange.send() }
-        return matched
+        if changed > 0 { didChange.send() }
+        return changed
+    }
+
+    /// A placed live capture, worked out again against the episode's current
+    /// broadcast time. Returns nil when nothing moved.
+    ///
+    /// The window is what makes this safe for bookmarks made before the app
+    /// recorded how they were captured. A bookmark taken while listening to a
+    /// recording would come out hours away from where it sits, so anything
+    /// that far off is left alone; only a small correction is ever applied,
+    /// which is all a corrected broadcast time can produce.
+    private func correctedPosition(for bookmark: Bookmark, in episodes: [Podcast]) -> TimeInterval? {
+        guard let podcastId = bookmark.podcastId,
+              let episode = episodes.first(where: { $0.id == podcastId }),
+              let position = LiveBookmarkMatcher.position(of: bookmark, in: episode) else { return nil }
+
+        let moved = position - bookmark.position
+        guard abs(moved) > 1 else { return nil }
+        guard bookmark.capturedLive || abs(moved) < 15 * 60 else { return nil }
+
+        return position
     }
 
     func setCategory(_ category: BookmarkCategory?, for id: UUID) {

@@ -62,6 +62,14 @@ final class BookmarkRepository {
         commit("linking bookmark to its episode")
     }
 
+    /// Used when a corrected broadcast time moves a live capture that was
+    /// already placed.
+    func setPosition(_ position: TimeInterval, for id: UUID) {
+        guard let entity = entity(with: id) else { return }
+        entity.position = position
+        commit("moving bookmark")
+    }
+
     func setCategory(_ category: BookmarkCategory?, for id: UUID) {
         guard let entity = entity(with: id) else { return }
         entity.category = category?.rawValue

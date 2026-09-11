@@ -35,6 +35,10 @@ final class BookmarkEntity {
     /// because a cached row did.
     var podcast: PodcastEntity?
 
+    /// Caught on live radio. Kept after the episode is found, so a corrected
+    /// broadcast time can move it again.
+    var capturedLive: Bool = false
+
     init(from bookmark: Bookmark, podcast: PodcastEntity? = nil) {
         id = bookmark.id
         createdAt = bookmark.createdAt
@@ -43,6 +47,7 @@ final class BookmarkEntity {
         note = bookmark.note
         episodeTitle = bookmark.episodeTitle
         show = bookmark.show?.rawValue
+        capturedLive = bookmark.capturedLive
         self.podcast = podcast
     }
 }
@@ -57,5 +62,6 @@ extension Bookmark {
         self.episodeTitle = entity.episodeTitle
         self.show = entity.show.flatMap(Show.init(rawValue:))
         self.podcastId = entity.podcast?.id
+        self.capturedLive = entity.capturedLive
     }
 }

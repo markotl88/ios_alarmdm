@@ -154,7 +154,7 @@ struct BookmarkRowView: View {
 
             Spacer(minLength: 0)
 
-            if bookmark.isLive {
+            if bookmark.isAwaitingEpisode {
                 HStack(spacing: 4) {
                     Circle().fill(Color.red).frame(width: 5, height: 5)
                     Text("UŽIVO")
@@ -168,12 +168,12 @@ struct BookmarkRowView: View {
         }
         .padding(.vertical, 4)
         // Dimmed as a whole, because none of it leads anywhere yet.
-        .opacity(bookmark.isLive ? 0.75 : 1)
+        .opacity(bookmark.isAwaitingEpisode ? 0.75 : 1)
     }
 
     private var leadingSymbol: String {
         if let category = bookmark.category { return category.systemImage }
-        return bookmark.isLive ? "dot.radiowaves.left.and.right" : "bookmark"
+        return bookmark.isAwaitingEpisode ? "dot.radiowaves.left.and.right" : "bookmark"
     }
 
     private var leadingColor: Color {
