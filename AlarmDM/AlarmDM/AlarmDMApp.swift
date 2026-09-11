@@ -16,7 +16,7 @@ struct AlarmDMApp: SwiftUI.App {
     
     var body: some Scene {
         WindowGroup {
-            NewTabContentView()
+            RootView()
         }
     }
 

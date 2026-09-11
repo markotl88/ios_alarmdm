@@ -34,7 +34,7 @@
 		4DAF9EE22C579E3100B4FA7F /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE12C579E3000B4FA7F /* NetworkManager.swift */; };
 		4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */; };
 		4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */; };
-		4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */; };
+		4DAF9EF02C57B68700B4FA7F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* RootView.swift */; };
 		4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */; };
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
@@ -42,6 +42,11 @@
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
+		AA000000000000000000012A /* EpisodeLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000129 /* EpisodeLibrary.swift */; };
+		AA0000000000000000000128 /* EpisodeRowActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000127 /* EpisodeRowActions.swift */; };
+		AA0000000000000000000126 /* PodcastRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000125 /* PodcastRowView.swift */; };
+		AA0000000000000000000124 /* FullscreenPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000123 /* FullscreenPlayerView.swift */; };
+		AA0000000000000000000122 /* TabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000121 /* TabBar.swift */; };
 		AA000000000000000000010F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000110 /* AppSettings.swift */; };
 		AA0000000000000000000111 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000112 /* NetworkMonitor.swift */; };
 		AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000114 /* LiveIndicatorViews.swift */; };
@@ -109,7 +114,7 @@
 		4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastService.swift; sourceTree = "<group>"; };
 		4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesViewModel.swift; sourceTree = "<group>"; };
 		4DAF9EE92C57B40B00B4FA7F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentView.swift; sourceTree = "<group>"; };
+		4DAF9EEF2C57B68700B4FA7F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
@@ -117,6 +122,11 @@
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000129 /* EpisodeLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeLibrary.swift; sourceTree = "<group>"; };
+		AA0000000000000000000127 /* EpisodeRowActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeRowActions.swift; sourceTree = "<group>"; };
+		AA0000000000000000000125 /* PodcastRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRowView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000123 /* FullscreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenPlayerView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000121 /* TabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBar.swift; sourceTree = "<group>"; };
 		AA0000000000000000000110 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		AA0000000000000000000112 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		AA0000000000000000000114 /* LiveIndicatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveIndicatorViews.swift; sourceTree = "<group>"; };
@@ -171,6 +181,7 @@
 		4D13F44E2CCBCA5600AA52D1 /* PlayerView */ = {
 			isa = PBXGroup;
 			children = (
+				AA0000000000000000000123 /* FullscreenPlayerView.swift */,
 				4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */,
 				4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */,
 				AA0000000000000000000114 /* LiveIndicatorViews.swift */,
@@ -178,22 +189,15 @@
 			path = PlayerView;
 			sourceTree = "<group>";
 		};
-		4D53969F2CD3FB8200CD1B71 /* CustomTabBar */ = {
+		4D6677942CC7AA9500EC2ADE /* Store */ = {
 			isa = PBXGroup;
 			children = (
-				4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */,
-			);
-			path = CustomTabBar;
-			sourceTree = "<group>";
-		};
-		4D6677942CC7AA9500EC2ADE /* Realm */ = {
-			isa = PBXGroup;
-			children = (
+				AA0000000000000000000129 /* EpisodeLibrary.swift */,
 				4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */,
 				AA0000000000000000000108 /* PodcastRepository.swift */,
 				4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */,
 			);
-			path = Realm;
+			path = Store;
 			sourceTree = "<group>";
 		};
 		4D6677992CC7B06000EC2ADE /* Model */ = {
@@ -250,7 +254,7 @@
 				4D13F43C2CCA709800AA52D1 /* Player */,
 				4D13F43E2CCA70AF00AA52D1 /* Helpers */,
 				4D6677992CC7B06000EC2ADE /* Model */,
-				4D6677942CC7AA9500EC2ADE /* Realm */,
+				4D6677942CC7AA9500EC2ADE /* Store */,
 				4DAF9EEA2C57B64C00B4FA7F /* Views */,
 				4DAF9EE92C57B40B00B4FA7F /* Info.plist */,
 				4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */,
@@ -302,16 +306,25 @@
 		4DAF9EEA2C57B64C00B4FA7F /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				4D53969F2CD3FB8200CD1B71 /* CustomTabBar */,
+				AA0000000000000000000120 /* Shared */,
 				4D13F44E2CCBCA5600AA52D1 /* PlayerView */,
 				4DAF9EF32C57B76200B4FA7F /* RadioView */,
 				AA000000000000000000010B /* SupportView */,
 				AA000000000000000000010E /* SettingsView */,
 				4D6677A22CC83D1300EC2ADE /* ShowView */,
 				4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */,
-				4DAF9EEC2C57B66100B4FA7F /* TabView */,
+				4DAF9EEC2C57B66100B4FA7F /* Root */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000120 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000127 /* EpisodeRowActions.swift */,
+				AA0000000000000000000125 /* PodcastRowView.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */ = {
@@ -323,12 +336,14 @@
 			path = PodcastEpisodesView;
 			sourceTree = "<group>";
 		};
-		4DAF9EEC2C57B66100B4FA7F /* TabView */ = {
+		4DAF9EEC2C57B66100B4FA7F /* Root */ = {
 			isa = PBXGroup;
 			children = (
-				4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */,
+				AA0000000000000000000121 /* TabBar.swift */,
+				4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */,
+				4DAF9EEF2C57B68700B4FA7F /* RootView.swift */,
 			);
-			path = TabView;
+			path = Root;
 			sourceTree = "<group>";
 		};
 		4DAF9EF32C57B76200B4FA7F /* RadioView */ = {
@@ -506,10 +521,15 @@
 				4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */,
 				4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */,
 				4D66779B2CC7B06B00EC2ADE /* Podcast.swift in Sources */,
-				4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */,
+				4DAF9EF02C57B68700B4FA7F /* RootView.swift in Sources */,
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
 				AA000000000000000000010C /* SettingsView.swift in Sources */,
+				AA000000000000000000012A /* EpisodeLibrary.swift in Sources */,
+				AA0000000000000000000128 /* EpisodeRowActions.swift in Sources */,
+				AA0000000000000000000126 /* PodcastRowView.swift in Sources */,
+				AA0000000000000000000124 /* FullscreenPlayerView.swift in Sources */,
+				AA0000000000000000000122 /* TabBar.swift in Sources */,
 				AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */,
 				AA0000000000000000000111 /* NetworkMonitor.swift in Sources */,
 				AA000000000000000000010F /* AppSettings.swift in Sources */,

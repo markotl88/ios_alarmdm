@@ -1,13 +1,14 @@
 //
-//  TabView.swift
+//  RootView.swift
 //  AlarmDM
 //
-//  Created by Marko Stajic on 29.07.2024.
+//  The app's root: the four tabs, the mini player above them, and the
+//  full screen player that slides over everything.
 //
 
 import SwiftUI
 
-struct NewTabContentView: View {
+struct RootView: View {
     @State private var currentItem: TabBarItem = .radio
     @StateObject private var playerViewModel = PlayerViewModel(mode: nil)
 
@@ -81,42 +82,6 @@ struct NewTabContentView: View {
             Button("Otkaži", role: .cancel) { blockedEpisode = nil }
         } message: {
             Text("Trenutno si na mobilnoj mreži. Možeš preuzeti samo ovu epizodu, ili ukloniti ograničenje za ubuduće - kasnije ga vraćaš u Ostalo.")
-        }
-    }
-}
-
-struct TabBar: View {
-    @Binding var currentItem: TabBarItem
-
-    var body: some View {
-        HStack {
-            tabButton(item: .radio)
-            Spacer()
-            tabButton(item: .shows)
-            Spacer()
-            tabButton(item: .support)
-            Spacer()
-            tabButton(item: .settings)
-        }
-        .padding(.horizontal)
-        .padding(.top, 8)
-        .padding(.bottom, 10)
-        .background(Color(UIColor.systemBackground).ignoresSafeArea(edges: .bottom))
-        .foregroundColor(Color.primary)
-        .font(.footnote)
-    }
-
-    @ViewBuilder
-    private func tabButton(item: TabBarItem) -> some View {
-        Button(action: {
-            currentItem = item
-        }) {
-            VStack(spacing: 4) {
-                Image(systemName: item.iconName)
-                    .font(.system(size: 20, weight: currentItem == item ? .semibold : .regular))
-                Text(item.title)
-            }
-            .foregroundColor(currentItem == item ? Color.accentColor : Color.secondary)
         }
     }
 }
