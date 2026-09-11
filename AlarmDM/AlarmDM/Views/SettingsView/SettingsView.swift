@@ -108,7 +108,7 @@ struct SettingsView: View {
                 Label("Preuzimanje samo preko WiFi-ja", systemImage: "wifi")
             }
         } footer: {
-            Text("Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje — kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu.")
+            Text("Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu.")
         }
     }
 
