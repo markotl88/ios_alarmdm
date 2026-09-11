@@ -55,6 +55,46 @@ enum PlaybackSource: Equatable {
     }
 }
 
+// MARK: - What the station says is playing
+
+/// A track announced by the stream itself. Shoutcast/Icecast send one string,
+/// almost always "Artist - Title", and HLS streams send the same thing as timed
+/// metadata — so one parser covers both.
+struct LiveTrack: Equatable {
+    let artist: String?
+    let title: String
+
+    var display: String {
+        guard let artist, !artist.isEmpty else { return title }
+        return "\(artist) – \(title)"
+    }
+
+    /// Returns nil for anything that is not worth showing: empty strings, a URL
+    /// (some encoders send the stream address), or the station name on its own,
+    /// which says nothing the screen is not already saying.
+    init?(raw: String) {
+        let cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty, cleaned.count < 200 else { return nil }
+        guard !cleaned.lowercased().hasPrefix("http") else { return nil }
+
+        let stationNames = ["daskoimladja", "dasko i mladja", "daško i mlađa", "radio"]
+        if stationNames.contains(cleaned.lowercased()) { return nil }
+
+        if let separator = cleaned.range(of: " - ") ?? cleaned.range(of: " – ") {
+            let artist = String(cleaned[..<separator.lowerBound]).trimmingCharacters(in: .whitespaces)
+            let title = String(cleaned[separator.upperBound...]).trimmingCharacters(in: .whitespaces)
+            if !artist.isEmpty && !title.isEmpty {
+                self.artist = artist
+                self.title = title
+                return
+            }
+        }
+
+        self.artist = nil
+        self.title = cleaned
+    }
+}
+
 // MARK: - Engine
 
 final class PlaybackEngine: NSObject, ObservableObject {
@@ -69,6 +109,8 @@ final class PlaybackEngine: NSObject, ObservableObject {
     @Published private(set) var currentTime: TimeInterval = 0
     @Published private(set) var duration: TimeInterval = 0
     @Published private(set) var lastErrorMessage: String?
+    /// Only ever set during live radio, and only when the stream announces it.
+    @Published private(set) var liveTrack: LiveTrack?
 
     // Publishers exposed explicitly: the stored properties are private(set), so
     // consumers observe through these instead of the synthesised $ projections.
@@ -77,6 +119,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
     var isBufferingPublisher: AnyPublisher<Bool, Never> { $isBuffering.eraseToAnyPublisher() }
     var currentTimePublisher: AnyPublisher<TimeInterval, Never> { $currentTime.eraseToAnyPublisher() }
     var durationPublisher: AnyPublisher<TimeInterval, Never> { $duration.eraseToAnyPublisher() }
+    var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { $liveTrack.eraseToAnyPublisher() }
 
     var hasContent: Bool { source != nil }
     var isLive: Bool { source?.isLive ?? false }
@@ -93,6 +136,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
     private var timeControlObservation: NSKeyValueObservation?
     private var itemStatusObservation: NSKeyValueObservation?
     private var endObserver: NSObjectProtocol?
+    private var metadataOutput: AVPlayerItemMetadataOutput?
     private var commandsConfigured = false
     private let fileService: FileServiceProtocol
 
@@ -129,6 +173,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
         self.currentTime = 0
         self.duration = 0
         self.lastErrorMessage = nil
+        self.liveTrack = nil
 
         attachObservers(to: player, item: item)
         activateSession()
@@ -166,6 +211,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
         isBuffering = false
         currentTime = 0
         duration = 0
+        liveTrack = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
@@ -259,6 +305,13 @@ final class PlaybackEngine: NSObject, ObservableObject {
             }
         }
 
+        // What the station announces about the current track. Costs nothing when
+        // the stream carries no metadata — the delegate simply never fires.
+        let metadataOutput = AVPlayerItemMetadataOutput(identifiers: nil)
+        metadataOutput.setDelegate(self, queue: .main)
+        item.add(metadataOutput)
+        self.metadataOutput = metadataOutput
+
         endObserver = NotificationCenter.default.addObserver(
             forName: .AVPlayerItemDidPlayToEndTime,
             object: item,
@@ -279,6 +332,10 @@ final class PlaybackEngine: NSObject, ObservableObject {
         if let endObserver {
             NotificationCenter.default.removeObserver(endObserver)
             self.endObserver = nil
+        }
+        if let metadataOutput {
+            player?.currentItem?.remove(metadataOutput)
+            self.metadataOutput = nil
         }
         timeControlObservation?.invalidate()
         timeControlObservation = nil
@@ -393,9 +450,19 @@ final class PlaybackEngine: NSObject, ObservableObject {
             return
         }
 
+        // While live, the lock screen and the car should show the song rather
+        // than "Radio uživo", which they already know from the live badge.
+        let displayTitle = source.isLive ? (liveTrack?.title ?? source.title) : source.title
+        let displayArtist: String
+        if source.isLive, let liveTrack {
+            displayArtist = liveTrack.artist ?? source.subtitle
+        } else {
+            displayArtist = source.subtitle
+        }
+
         var info: [String: Any] = [
-            MPMediaItemPropertyTitle: source.title,
-            MPMediaItemPropertyArtist: source.subtitle,
+            MPMediaItemPropertyTitle: displayTitle,
+            MPMediaItemPropertyArtist: displayArtist,
             MPNowPlayingInfoPropertyIsLiveStream: source.isLive,
             MPNowPlayingInfoPropertyElapsedPlaybackTime: currentTime,
             MPNowPlayingInfoPropertyPlaybackRate: isPlaying ? 1.0 : 0.0
@@ -422,5 +489,48 @@ final class PlaybackEngine: NSObject, ObservableObject {
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? 1.0 : 0.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
         updateRemoteCommandAvailability()
+    }
+}
+
+// MARK: - Stream metadata
+
+extension PlaybackEngine: AVPlayerItemMetadataOutputPushDelegate {
+
+    func metadataOutput(_ output: AVPlayerItemMetadataOutput,
+                        didOutputTimedMetadataGroups groups: [AVTimedMetadataGroup],
+                        from track: AVPlayerItemTrack?) {
+        guard isLive else { return }
+
+        // Written as a plain loop on purpose. The same thing as a chain of
+        // flatMap/filter/compactMap made the type checker give up on this
+        // expression — AVMetadataItem's overloads leave it too much to infer.
+        var announced: LiveTrack?
+        var sawAnyItem = false
+
+        for group in groups {
+            for item in group.items {
+                sawAnyItem = true
+                guard isTitleMetadata(item), let raw = item.stringValue else { continue }
+                if let track = LiveTrack(raw: raw) {
+                    announced = track
+                }
+            }
+        }
+
+        // An empty announcement between songs should clear the label rather than
+        // leave the previous track sitting there as if it were still playing.
+        guard announced != nil || sawAnyItem else { return }
+        guard announced != liveTrack else { return }
+
+        liveTrack = announced
+        updateNowPlayingInfo()
+    }
+
+    private func isTitleMetadata(_ item: AVMetadataItem) -> Bool {
+        if let identifier = item.identifier {
+            if identifier == .icyMetadataStreamTitle { return true }
+            if identifier == .commonIdentifierTitle { return true }
+        }
+        return item.commonKey == .commonKeyTitle
     }
 }

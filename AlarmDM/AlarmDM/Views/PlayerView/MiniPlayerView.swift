@@ -46,10 +46,19 @@ struct MiniPlayerView: View {
                         .foregroundColor(Color("primaryText"))
                         .lineLimit(1)
 
-                    Text(playerViewModel.isLive ? "UŽIVO" : playerViewModel.subtitle)
-                        .font(.caption)
-                        .foregroundColor(playerViewModel.isLive ? Color("primaryLink") : Color("secondaryText"))
-                        .lineLimit(1)
+                    // Live gets the pulsing dot and a label that scrolls when
+                    // the announced track is too long for the bar.
+                    if playerViewModel.isLive {
+                        LiveLabel(
+                            track: playerViewModel.liveTrack,
+                            isPlaying: playerViewModel.isPlaying
+                        )
+                    } else {
+                        Text(playerViewModel.subtitle)
+                            .font(.caption)
+                            .foregroundColor(Color("secondaryText"))
+                            .lineLimit(1)
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -177,15 +186,39 @@ struct FullscreenPlayerView: View {
         .padding(.top, 8)
     }
 
+    /// The badge, and under it whatever the station says is playing. The label
+    /// only appears when the stream actually announces a track — an empty line
+    /// reserved "just in case" would push the layout around every time radio
+    /// starts.
     private var liveBadge: some View {
-        HStack(spacing: 6) {
-            Circle().fill(Color.red).frame(width: 8, height: 8)
-            Text("UŽIVO").font(.caption.weight(.bold))
+        VStack(spacing: 10) {
+            HStack(spacing: 6) {
+                PulsingLiveDot(isAnimating: playerViewModel.isPlaying)
+                Text("UŽIVO").font(.caption.weight(.bold))
+            }
+            .foregroundColor(Color("primaryText"))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
+
+            if let track = playerViewModel.liveTrack {
+                VStack(spacing: 2) {
+                    Text(track.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundColor(Color("primaryText"))
+                    if let artist = track.artist {
+                        Text(artist)
+                            .font(.caption)
+                            .foregroundColor(Color("secondaryText"))
+                    }
+                }
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .padding(.horizontal, 32)
+                .transition(.opacity)
+            }
         }
-        .foregroundColor(Color("primaryText"))
-        .padding(.horizontal, 12)
-        .padding(.vertical, 6)
-        .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
+        .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
     private var scrubber: some View {

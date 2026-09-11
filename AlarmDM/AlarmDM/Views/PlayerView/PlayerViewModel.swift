@@ -51,6 +51,8 @@ final class PlayerViewModel: ObservableObject {
 
     @Published var isDownloaded: Bool = false
     @Published private(set) var isFavorite: Bool = false
+    /// The song the station is announcing, during live radio only.
+    @Published private(set) var liveTrack: LiveTrack?
     @Published var isDownloading: Bool = false
     /// Download progress, 0...1. Kept under this name because PlayerView binds to it.
     @Published var progress: Double = 0.0
@@ -110,6 +112,11 @@ final class PlayerViewModel: ObservableObject {
         engine.durationPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.duration = $0 }
+            .store(in: &cancellables)
+
+        engine.liveTrackPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.liveTrack = $0 }
             .store(in: &cancellables)
 
         EpisodeLibrary.shared.progressPublisher
