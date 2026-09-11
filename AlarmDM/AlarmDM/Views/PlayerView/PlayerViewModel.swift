@@ -45,7 +45,16 @@ final class PlayerViewModel: ObservableObject {
     @Published private(set) var isLive: Bool = false
 
     /// 0...1 position within the current episode. Live radio always reports 0.
-    var playbackProgress: Double { engine.progress }
+    /// The engine holds nothing until the first press on a restored episode,
+    /// so the bar reads from what was restored instead of showing zero for
+    /// something that is plainly half finished.
+    var playbackProgress: Double {
+        guard engine.hasContent else {
+            guard duration > 0 else { return 0 }
+            return min(max(currentTime / duration, 0), 1)
+        }
+        return engine.progress
+    }
 
     // MARK: - Download state
 
@@ -71,6 +80,10 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let engine: PlaybackEngine
+    private let playbackState: PlaybackStateStore
+    /// Where a restored episode should start. Cleared the moment it is used,
+    /// so it can never send a later press back in time.
+    private var restoredPosition: TimeInterval?
     private var cancellables = Set<AnyCancellable>()
 
     private var podcastId: UUID?
@@ -79,8 +92,11 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Init
 
-    init(mode: PlayerMode? = nil, engine: PlaybackEngine = .shared) {
+    init(mode: PlayerMode? = nil,
+         engine: PlaybackEngine = .shared,
+         playbackState: PlaybackStateStore = .shared) {
         self.engine = engine
+        self.playbackState = playbackState
         self.mode = mode
 
         bindEngine()
@@ -92,7 +108,11 @@ final class PlayerViewModel: ObservableObject {
     private func bindEngine() {
         engine.isPlayingPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.isPlaying = $0 }
+            .sink { [weak self] playing in
+                guard let self else { return }
+                self.isPlaying = playing
+                if !playing { self.rememberPlaybackPosition() }
+            }
             .store(in: &cancellables)
 
         engine.isBufferingPublisher
@@ -102,16 +122,33 @@ final class PlayerViewModel: ObservableObject {
 
         // Rounded and de-duplicated: the engine ticks twice a second, and every
         // distinct value re-renders each view observing this object.
+        // Both of these ignore the engine while it holds nothing. Subscribing
+        // hands over the current value at once — zero, at launch — and
+        // receive(on:) delivers it a runloop later, which lands after the
+        // restore has already put the saved time and duration here. Without
+        // the guard, coming back to a half finished episode showed 00:00.
         engine.currentTimePublisher
             .map { $0.rounded(.down) }
             .removeDuplicates()
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.currentTime = $0 }
+            .sink { [weak self] time in
+                guard let self, self.engine.hasContent else { return }
+                self.currentTime = time
+            }
             .store(in: &cancellables)
 
         engine.durationPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.duration = $0 }
+            .sink { [weak self] duration in
+                guard let self, self.engine.hasContent else { return }
+                // A freshly created item reports zero until the file has
+                // loaded. Taking that at face value collapses the scrubber's
+                // range to nothing and flings the handle to the far end, until
+                // the real duration arrives a moment later. The feed already
+                // said how long the episode runs, so keep that instead.
+                guard duration > 0 else { return }
+                self.duration = duration
+            }
             .store(in: &cancellables)
 
         engine.liveTrackPublisher
@@ -190,6 +227,7 @@ final class PlayerViewModel: ObservableObject {
             subtitle = "Daško i Mlađa"
             artworkName = "img_radio"
             isLive = true
+            duration = 0
             isDownloaded = false
             isFavorite = false
             showDeleteButton = false
@@ -202,6 +240,9 @@ final class PlayerViewModel: ObservableObject {
             subtitle = selected.subtitle
             artworkName = selected.show.imageName
             isLive = false
+            // Known before a single byte is fetched, which is what keeps the
+            // scrubber sane between pressing play and the file opening.
+            duration = podcast?.durationInSeconds ?? 0
             isDownloaded = podcast?.isDownloaded ?? false
             isFavorite = podcast?.isFavorite ?? false
             showDeleteButton = isDownloaded
@@ -252,12 +293,26 @@ final class PlayerViewModel: ObservableObject {
         if engine.source == source {
             engine.toggle()
         } else {
-            engine.play(source)
+            // A restored episode has never been loaded into the engine, so the
+            // first press is what actually opens it — at the second it was
+            // left on, not at the beginning.
+            engine.play(source, startingAt: restoredPosition)
         }
+        restoredPosition = nil
         isPresented = true
     }
 
-    func seek(to time: TimeInterval) { engine.seek(to: time) }
+    func seek(to time: TimeInterval) {
+        // A restored episode has nothing loaded yet, and the engine refuses to
+        // seek a player it does not have. Move the mark the first press will
+        // start from instead, so dragging works before a note is played.
+        guard engine.hasContent else {
+            restoredPosition = max(0, time)
+            currentTime = max(0, time)
+            return
+        }
+        engine.seek(to: time)
+    }
     func skipForward() { engine.skip(by: 15) }
     func skipBackward() { engine.skip(by: -15) }
 
@@ -267,6 +322,40 @@ final class PlayerViewModel: ObservableObject {
         isPresented = false
         isExpanded = false
         mode = nil
+        restoredPosition = nil
+        // Closing the bar is the one clear statement that there is nothing to
+        // come back to.
+        playbackState.clear()
+    }
+
+    // MARK: - Carrying on where it was left
+
+    /// Writes down what is playing and where. Called when playback pauses and
+    /// when the app goes away — not on a timer, because a second's accuracy
+    /// costs a write every second for the rest of the episode.
+    func rememberPlaybackPosition() {
+        guard !isLive, let podcastId, currentTime > 0 else { return }
+        playbackState.save(PlaybackState(podcastId: podcastId, position: currentTime))
+    }
+
+    /// Puts the player back the way it was found, without making a sound and
+    /// without touching the network. Nothing is loaded into the engine: the
+    /// mini player reads from here, and the first press is what opens the
+    /// audio — at the right second, because of `restoredPosition`.
+    func restorePlaybackState() {
+        guard mode == nil, engine.source == nil else { return }
+        guard let saved = playbackState.saved,
+              let podcast = PodcastRepository.shared.podcast(with: saved.podcastId) else { return }
+
+        restoredPosition = saved.position
+        mode = .podcast(podcast: podcast)
+        currentTime = saved.position
+        // The feed already told us how long it runs, so the scrubber and the
+        // mini player's bar can show the right place before anything is
+        // loaded. The engine replaces this with the file's own duration the
+        // moment it opens it.
+        duration = podcast.durationInSeconds
+        isPresented = true
     }
 
     func toggleFavourite() {

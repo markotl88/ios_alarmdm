@@ -72,35 +72,46 @@ struct MarqueeText: View {
     }
 
     var body: some View {
-        Group {
-            if scrolls {
-                HStack(spacing: gap) {
+        // A blank line of the right font is what the layout is built on, and
+        // the text rides in an overlay. Overlay content never widens its
+        // parent, which is the whole problem: two copies of a long title with
+        // .fixedSize() propose a width far past the screen, and `clipped()`
+        // only hides the drawing — the bar, and everything around it, had
+        // already been stretched by then.
+        Text(verbatim: " ")
+            .font(font)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .leading) {
+                if scrolls {
+                    HStack(spacing: gap) {
+                        label
+                        label
+                    }
+                    .offset(x: offset)
+                } else {
                     label
-                    label
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                 }
-                .offset(x: offset)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .clipped()
-            } else {
-                label
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-        }
-        .background(
-            GeometryReader { geometry in
-                Color.clear.preference(key: MarqueeWidthKey.self, value: geometry.size.width)
+            .clipped()
+            .background(
+                GeometryReader { geometry in
+                    Color.clear.preference(key: MarqueeWidthKey.self, value: geometry.size.width)
+                }
+            )
+            .onPreferenceChange(MarqueeWidthKey.self) { width in
+                guard width != containerWidth else { return }
+                containerWidth = width
+                restart()
             }
-        )
-        .onPreferenceChange(MarqueeWidthKey.self) { width in
-            guard width != containerWidth else { return }
-            containerWidth = width
-            restart()
-        }
-        .onChange(of: text) { _, _ in restart() }
-        .accessibilityElement()
-        .accessibilityLabel(text)
+            .onChange(of: text) { _, _ in restart() }
+            // The two measurements arrive in no fixed order. Without this, a
+            // width that lands after the container's would leave `scrolls`
+            // reading false forever and the loop would never start.
+            .onChange(of: textWidth) { _, _ in restart() }
+            .accessibilityElement()
+            .accessibilityLabel(text)
     }
 
     private var label: some View {

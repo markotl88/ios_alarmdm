@@ -13,11 +13,6 @@ struct FullscreenPlayerView: View {
     @EnvironmentObject var playerViewModel: PlayerViewModel
 
     @State private var dragOffset: CGFloat = 0
-    @State private var scrubTime: TimeInterval?
-
-    private var displayedTime: TimeInterval {
-        scrubTime ?? playerViewModel.currentTime
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -129,31 +124,11 @@ struct FullscreenPlayerView: View {
     }
 
     private var scrubber: some View {
-        VStack(spacing: 4) {
-            Slider(
-                value: Binding(
-                    get: { displayedTime },
-                    set: { scrubTime = $0 }
-                ),
-                in: 0...max(playerViewModel.duration, 1),
-                onEditingChanged: { editing in
-                    if !editing, let target = scrubTime {
-                        playerViewModel.seek(to: target)
-                        scrubTime = nil
-                    }
-                }
-            )
-            .tint(Color("primaryLink"))
-            .disabled(playerViewModel.duration <= 0)
-
-            HStack {
-                Text(Self.format(displayedTime))
-                Spacer()
-                Text(Self.format(playerViewModel.duration))
-            }
-            .font(.caption.monospacedDigit())
-            .foregroundColor(Color("secondaryText"))
-        }
+        ScrubberView(
+            currentTime: playerViewModel.currentTime,
+            duration: playerViewModel.duration,
+            onSeek: { playerViewModel.seek(to: $0) }
+        )
         .padding(.horizontal, 32)
     }
 
@@ -276,16 +251,6 @@ struct FullscreenPlayerView: View {
         .accessibilityLabel("Izlaz zvuka")
     }
 
-    private static func format(_ time: TimeInterval) -> String {
-        guard time.isFinite, time >= 0 else { return "--:--" }
-        let total = Int(time)
-        let hours = total / 3600
-        let minutes = (total % 3600) / 60
-        let seconds = total % 60
-        return hours > 0
-            ? String(format: "%d:%02d:%02d", hours, minutes, seconds)
-            : String(format: "%02d:%02d", minutes, seconds)
-    }
 }
 
 // MARK: - Shared action button
@@ -327,5 +292,65 @@ struct RoutePickerView: UIViewRepresentable {
     func updateUIView(_ uiView: AVRoutePickerView, context: Context) {
         uiView.tintColor = tintColor
         uiView.activeTintColor = activeTintColor
+    }
+}
+
+// MARK: - Scrubber
+
+/// Plain @State bound straight to the Slider, on purpose.
+///
+/// It used to be a computed Binding — `scrubTime ?? currentTime` to read, the
+/// dragged value into `scrubTime` to write — and after one drag the slider
+/// stopped following playback until the player was minimised, which is when
+/// that state was destroyed. So something wrote the dragged value back after
+/// the gesture handler had cleared it. With no setter of our own there is
+/// nothing left to call out of order.
+///
+/// It lives in its own view for the second half of it: the player above
+/// redraws every second as the time advances, and the less of that reaches a
+/// live gesture the better. Incoming times are ignored entirely while a drag
+/// is in flight rather than fighting it for the value.
+struct ScrubberView: View {
+
+    let currentTime: TimeInterval
+    let duration: TimeInterval
+    let onSeek: (TimeInterval) -> Void
+
+    @State private var value: Double = 0
+    @State private var isScrubbing = false
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Slider(value: $value, in: 0...max(duration, 1)) { editing in
+                isScrubbing = editing
+                if !editing { onSeek(value) }
+            }
+            .tint(Color("primaryLink"))
+            .disabled(duration <= 0)
+
+            HStack {
+                Text(Self.format(value))
+                Spacer()
+                Text(Self.format(duration))
+            }
+            .font(.caption.monospacedDigit())
+            .foregroundColor(Color("secondaryText"))
+        }
+        .onAppear { value = currentTime }
+        .onChange(of: currentTime) { _, new in
+            guard !isScrubbing else { return }
+            value = new
+        }
+    }
+
+    static func format(_ time: TimeInterval) -> String {
+        guard time.isFinite, time >= 0 else { return "--:--" }
+        let total = Int(time)
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let seconds = total % 60
+        return hours > 0
+            ? String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            : String(format: "%02d:%02d", minutes, seconds)
     }
 }

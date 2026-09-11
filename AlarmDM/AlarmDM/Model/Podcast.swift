@@ -70,11 +70,11 @@ enum Show: String, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .alarmSaDaskomIMladjom: return "Svakog radnog dana od 07 do 10h."
-        case .ljudiIzPodzemlja: return "Specijalizovana za punk/hardcore zvuk. Sreda u 20h."
-        case .unutrasnjaEmigracija: return "Svi mi emigranti."
+        case .alarmSaDaskomIMladjom: return "Ponedeljak - četvrtak, od 08 do 10h."
+        case .ljudiIzPodzemlja: return "Specijalizovana za punk/hardcore zvuk."
+        case .unutrasnjaEmigracija: return "Svi mi emigranti. Svakog dana od 11h"
         case .vecernjaSkolaRokenrola: return "Rokenrol za večernje sate."
-        case .naIviciOfsajda: return "Romantizovani fudbalski istorijat. Nedelja u 20h."
+        case .naIviciOfsajda: return "Romantizovani fudbalski istorijat."
         case .nepopularnoMisljenje: return "Teme o kojima se ćuti."
         case .sportskiPozdrav: return "Sportska emisija."
         case .jbt: return "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05."
