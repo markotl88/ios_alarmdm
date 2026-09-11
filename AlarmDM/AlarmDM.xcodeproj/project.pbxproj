@@ -9,16 +9,9 @@
 /* Begin PBXBuildFile section */
 		4D13F43B2CCA65E400AA52D1 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */; };
 		4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */; };
-		4D13F4502CCBCA6900AA52D1 /* PlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */; };
 		4D13F4522CCBCA7800AA52D1 /* PlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */; };
 		4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */; };
-		4D13F4582CCBD37C00AA52D1 /* PlayerModalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */; };
-		4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */; };
-		4D5396A32CD3FB9000CD1B71 /* CustomTabBarContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A12CD3FB9000CD1B71 /* CustomTabBarContainerView.swift */; };
-		4D5396A42CD3FB9000CD1B71 /* CustomTabBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A02CD3FB9000CD1B71 /* CustomTabBarView.swift */; };
 		4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */; };
-		4D5396A72CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A62CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift */; };
-		4D6677902CC6703600EC2ADE /* MiniPodcastDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */; };
 		4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; };
 		4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */; };
 		4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */; };
@@ -27,9 +20,7 @@
 		4D66779F2CC7B5E100EC2ADE /* PodcastResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */; };
 		4D6677A02CC7BC3300EC2ADE /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A32CC83D2300EC2ADE /* ShowView.swift */; };
-		4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */; };
 		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
-		4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */; };
 		4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */; };
 		4D9E12322DC0E54D005D99E9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E12312DC0E540005D99E9 /* AppDelegate.swift */; };
 		4D9E12352DC0E767005D99E9 /* CarPlay.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4D9E12342DC0E767005D99E9 /* CarPlay.framework */; };
@@ -42,10 +33,8 @@
 		4DAF9ED42C579D5200B4FA7F /* AlarmDMUITestsLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9ED32C579D5200B4FA7F /* AlarmDMUITestsLaunchTests.swift */; };
 		4DAF9EE22C579E3100B4FA7F /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE12C579E3000B4FA7F /* NetworkManager.swift */; };
 		4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */; };
-		4DAF9EE62C57AE5000B4FA7F /* Parser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE52C57AE5000B4FA7F /* Parser.swift */; };
 		4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */; };
 		4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */; };
-		4DAF9EF22C57B69000B4FA7F /* TabContentViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */; };
 		4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */; };
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
@@ -92,25 +81,16 @@
 /* Begin PBXFileReference section */
 		4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Colors.xcassets; sourceTree = "<group>"; };
 		4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioViewModel.swift; sourceTree = "<group>"; };
-		4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerView.swift; sourceTree = "<group>"; };
 		4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
 		4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
-		4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerModalView.swift; sourceTree = "<group>"; };
-		4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPodcastService.swift; sourceTree = "<group>"; };
-		4D5396A02CD3FB9000CD1B71 /* CustomTabBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarView.swift; sourceTree = "<group>"; };
-		4D5396A12CD3FB9000CD1B71 /* CustomTabBarContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTabBarContainerView.swift; sourceTree = "<group>"; };
 		4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
-		4D5396A62CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItemsPreferenceKey.swift; sourceTree = "<group>"; };
-		4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPodcastDetailView.swift; sourceTree = "<group>"; };
 		4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Podcast+Realm.swift"; sourceTree = "<group>"; };
 		4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+Realm.swift"; sourceTree = "<group>"; };
 		4D66779A2CC7B06B00EC2ADE /* Podcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Podcast.swift; sourceTree = "<group>"; };
 		4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
 		4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastResponse.swift; sourceTree = "<group>"; };
 		4D6677A32CC83D2300EC2ADE /* ShowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowView.swift; sourceTree = "<group>"; };
-		4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShowViewModel.swift; sourceTree = "<group>"; };
 		4D6677A82CC9341600EC2ADE /* FileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileService.swift; sourceTree = "<group>"; };
-		4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioPlayer.swift; sourceTree = "<group>"; };
 		4D9E122E2DC0DEAB005D99E9 /* AlarmDM.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AlarmDM.entitlements; sourceTree = "<group>"; };
 		4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		4D9E12312DC0E540005D99E9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -127,11 +107,9 @@
 		4DAF9ED32C579D5200B4FA7F /* AlarmDMUITestsLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmDMUITestsLaunchTests.swift; sourceTree = "<group>"; };
 		4DAF9EE12C579E3000B4FA7F /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
 		4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastService.swift; sourceTree = "<group>"; };
-		4DAF9EE52C57AE5000B4FA7F /* Parser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Parser.swift; sourceTree = "<group>"; };
 		4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEpisodesViewModel.swift; sourceTree = "<group>"; };
 		4DAF9EE92C57B40B00B4FA7F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentView.swift; sourceTree = "<group>"; };
-		4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabContentViewModel.swift; sourceTree = "<group>"; };
 		4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
@@ -174,18 +152,9 @@
 		4D13F43C2CCA709800AA52D1 /* Player */ = {
 			isa = PBXGroup;
 			children = (
-				4D6677AA2CC9486300EC2ADE /* AudioPlayer.swift */,
 				AA0000000000000000000102 /* PlaybackEngine.swift */,
 			);
 			path = Player;
-			sourceTree = "<group>";
-		};
-		4D13F43D2CCA70A100AA52D1 /* MiniPodcastDetailView */ = {
-			isa = PBXGroup;
-			children = (
-				4D66778F2CC6703600EC2ADE /* MiniPodcastDetailView.swift */,
-			);
-			path = MiniPodcastDetailView;
 			sourceTree = "<group>";
 		};
 		4D13F43E2CCA70AF00AA52D1 /* Helpers */ = {
@@ -202,11 +171,9 @@
 		4D13F44E2CCBCA5600AA52D1 /* PlayerView */ = {
 			isa = PBXGroup;
 			children = (
-				4D13F44F2CCBCA6900AA52D1 /* PlayerView.swift */,
 				4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */,
 				4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */,
 				AA0000000000000000000114 /* LiveIndicatorViews.swift */,
-				4D13F4572CCBD37C00AA52D1 /* PlayerModalView.swift */,
 			);
 			path = PlayerView;
 			sourceTree = "<group>";
@@ -214,10 +181,7 @@
 		4D53969F2CD3FB8200CD1B71 /* CustomTabBar */ = {
 			isa = PBXGroup;
 			children = (
-				4D5396A02CD3FB9000CD1B71 /* CustomTabBarView.swift */,
-				4D5396A12CD3FB9000CD1B71 /* CustomTabBarContainerView.swift */,
 				4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */,
-				4D5396A62CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift */,
 			);
 			path = CustomTabBar;
 			sourceTree = "<group>";
@@ -246,7 +210,6 @@
 			isa = PBXGroup;
 			children = (
 				4D6677A32CC83D2300EC2ADE /* ShowView.swift */,
-				4D6677A52CC83D3900EC2ADE /* ShowViewModel.swift */,
 			);
 			path = ShowView;
 			sourceTree = "<group>";
@@ -332,8 +295,6 @@
 			children = (
 				4DAF9EE12C579E3000B4FA7F /* NetworkManager.swift */,
 				4DAF9EE32C57ACDF00B4FA7F /* PodcastService.swift */,
-				4DAF9EE52C57AE5000B4FA7F /* Parser.swift */,
-				4D1901E22C57BE71005A2FD4 /* MockPodcastService.swift */,
 			);
 			path = ServiceLayer;
 			sourceTree = "<group>";
@@ -348,7 +309,6 @@
 				AA000000000000000000010E /* SettingsView */,
 				4D6677A22CC83D1300EC2ADE /* ShowView */,
 				4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */,
-				4D13F43D2CCA70A100AA52D1 /* MiniPodcastDetailView */,
 				4DAF9EEC2C57B66100B4FA7F /* TabView */,
 			);
 			path = Views;
@@ -367,7 +327,6 @@
 			isa = PBXGroup;
 			children = (
 				4DAF9EEF2C57B68700B4FA7F /* TabContentView.swift */,
-				4DAF9EF12C57B69000B4FA7F /* TabContentViewModel.swift */,
 			);
 			path = TabView;
 			sourceTree = "<group>";
@@ -538,24 +497,18 @@
 			files = (
 				4D9E12322DC0E54D005D99E9 /* AppDelegate.swift in Sources */,
 				4D66779F2CC7B5E100EC2ADE /* PodcastResponse.swift in Sources */,
-				4DAF9EF22C57B69000B4FA7F /* TabContentViewModel.swift in Sources */,
 				4DAF9EE22C579E3100B4FA7F /* NetworkManager.swift in Sources */,
 				4DAF9EB92C579D5100B4FA7F /* PodcastEpisodesView.swift in Sources */,
 				4D13F4522CCBCA7800AA52D1 /* PlayerViewModel.swift in Sources */,
 				4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */,
 				4D66779D2CC7B07A00EC2ADE /* Bookmark.swift in Sources */,
-				4D5396A32CD3FB9000CD1B71 /* CustomTabBarContainerView.swift in Sources */,
-				4D5396A42CD3FB9000CD1B71 /* CustomTabBarView.swift in Sources */,
-				4D5396A72CD3FE8A00CD1B71 /* TabBarItemsPreferenceKey.swift in Sources */,
 				4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */,
 				4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */,
-				4DAF9EE62C57AE5000B4FA7F /* Parser.swift in Sources */,
 				4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */,
 				4D66779B2CC7B06B00EC2ADE /* Podcast.swift in Sources */,
 				4DAF9EF02C57B68700B4FA7F /* TabContentView.swift in Sources */,
 				4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */,
 				4DAF9EE42C57ACDF00B4FA7F /* PodcastService.swift in Sources */,
-				4D6677AB2CC9486300EC2ADE /* AudioPlayer.swift in Sources */,
 				AA000000000000000000010C /* SettingsView.swift in Sources */,
 				AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */,
 				AA0000000000000000000111 /* NetworkMonitor.swift in Sources */,
@@ -565,14 +518,9 @@
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
 				AA0000000000000000000101 /* PlaybackEngine.swift in Sources */,
 				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,
-				4D1901E32C57BE71005A2FD4 /* MockPodcastService.swift in Sources */,
 				4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */,
-				4D13F4582CCBD37C00AA52D1 /* PlayerModalView.swift in Sources */,
 				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,
-				4D13F4502CCBCA6900AA52D1 /* PlayerView.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
-				4D6677A62CC83D3900EC2ADE /* ShowViewModel.swift in Sources */,
-				4D6677902CC6703600EC2ADE /* MiniPodcastDetailView.swift in Sources */,
 				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,
 				4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */,
 			);

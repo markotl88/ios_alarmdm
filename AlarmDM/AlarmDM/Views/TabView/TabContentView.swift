@@ -7,15 +7,6 @@
 
 import SwiftUI
 
-struct InnerContentSize: PreferenceKey {
-  typealias Value = [CGRect]
-
-  static var defaultValue: [CGRect] = []
-  static func reduce(value: inout [CGRect], nextValue: () -> [CGRect]) {
-    value.append(contentsOf: nextValue())
-  }
-}
-
 struct NewTabContentView: View {
     @State private var currentItem: TabBarItem = .radio
     @StateObject private var playerViewModel = PlayerViewModel(mode: nil)
@@ -94,12 +85,6 @@ struct NewTabContentView: View {
     }
 }
 
-import SwiftUI
-
-//enum TabPage {
-//    case radio, shows, support, settings
-//}
-
 struct TabBar: View {
     @Binding var currentItem: TabBarItem
 
@@ -133,103 +118,5 @@ struct TabBar: View {
             }
             .foregroundColor(currentItem == item ? Color.accentColor : Color.secondary)
         }
-    }
-}
-
-//struct TabBar: View {
-//    @Binding var currentPage: TabPage
-//
-//    var body: some View {
-//        HStack {
-//            Button(action: { currentPage = .main }) {
-//                VStack {
-//                    Image(systemName: "house")
-//                    Text("Home")
-//                }
-//            }
-//            Spacer()
-//            Button(action: { currentPage = .secondary }) {
-//                VStack {
-//                    Image(systemName: "car")
-//                    Text("Secondary")
-//                }
-//            }
-//        }
-//        .padding()
-//        .frame(height: 60)
-//        .background(Color.black)
-//        .foregroundColor(.white)
-//    }
-//}
-
-struct TabContentView: View {
-    @State private var selectedTab = 0
-    @StateObject private var playerViewModel = PlayerViewModel(mode: nil)
-    @State private var tabBarHeight: CGFloat = 0
-    
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            TabView(selection: $selectedTab) {
-                NavigationStack {
-                    RadioView()
-                }
-                .tabItem {
-                    Label("Radio", systemImage: "dot.radiowaves.left.and.right")
-                }
-                .tag(0)
-
-                NavigationStack {
-                    ShowView()
-                }
-                .tabItem {
-                    Label("Shows", systemImage: "music.note.list")
-                }
-                .tag(1)
-
-                NavigationStack {
-                    SupportView()
-                }
-                .tabItem {
-                    Label("Support", systemImage: "heart")
-                }
-                .tag(2)
-
-                NavigationStack {
-                    SettingsView()
-                }
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
-                .tag(3)
-            }
-
-            // 🟨 MINI PLAYER — ispod sadržaja, iznad tab bara
-            Color.clear
-                .frame(height: 0)
-                .background(
-                    GeometryReader { proxy in
-                        Color.clear
-                            .preference(key: TabBarHeightKey.self, value: proxy.safeAreaInsets.bottom)
-                    }
-                )
-
-            if playerViewModel.isPresented {
-                MiniPlayerView()
-                    .environmentObject(playerViewModel)
-                    .padding(.horizontal)
-                    .padding(.bottom, tabBarHeight)
-                    .transition(.move(edge: .bottom))
-                    .zIndex(1)
-            }
-        }
-        .onPreferenceChange(TabBarHeightKey.self) { self.tabBarHeight = $0 }
-        .environmentObject(playerViewModel)
-    }
-}
-
-struct TabBarHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }

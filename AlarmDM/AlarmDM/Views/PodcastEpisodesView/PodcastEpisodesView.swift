@@ -247,57 +247,6 @@ struct DownloadProgressRing: View {
     }
 }
 
-struct PlaceholderView: View {
-    var body: some View {
-        VStack(alignment: .leading) {
-            RoundedRectangle(cornerRadius: 5)
-                .fill(Color.gray.opacity(0.3))
-                .frame(height: 20)
-            RoundedRectangle(cornerRadius: 5)
-                .fill(Color.gray.opacity(0.3))
-                .frame(height: 20)
-        }
-        .padding()
-    }
-}
-
-struct ShimmerEffect: ViewModifier {
-    @State private var phase: CGFloat = 0
-    
-    func body(content: Content) -> some View {
-        content
-            .overlay(
-                Color.white
-                    .mask(
-                        Rectangle()
-                            .fill(
-                                LinearGradient(gradient: Gradient(stops: [
-                                    .init(color: Color.white.opacity(0), location: phase),
-                                    .init(color: Color.white.opacity(0.5), location: phase + 0.1),
-                                    .init(color: Color.white.opacity(0), location: phase + 0.2)
-                                ]), startPoint: .topLeading, endPoint: .bottomTrailing)
-                            )
-                            .rotationEffect(.degrees(30))
-                    )
-                    .animation(Animation.linear(duration: 1.5).repeatForever(autoreverses: false), value: phase)
-            )
-            .onAppear {
-                phase = -0.5
-                DispatchQueue.main.async {
-                    withAnimation {
-                        phase = 1.5
-                    }
-                }
-            }
-    }
-}
-
-extension View {
-    func shimmering() -> some View {
-        self.modifier(ShimmerEffect())
-    }
-}
-
 // MARK: - Row actions
 
 /// Swipe and long press carry the same actions. Swipe is fast for anyone who
