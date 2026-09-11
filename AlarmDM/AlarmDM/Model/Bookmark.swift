@@ -62,6 +62,18 @@ struct Bookmark: Identifiable, Equatable {
 
     var isLive: Bool { podcastId == nil }
 
+    /// What you wrote beats what the feed called the episode. Four bookmarks
+    /// inside the same episode are four identical rows otherwise.
+    var displayTitle: String {
+        note.isEmpty ? episodeTitle : note
+    }
+
+    /// The episode steps down to the second line once the note has taken the
+    /// first, so a row never stops saying where it came from.
+    var displaySubtitle: String? {
+        note.isEmpty ? show?.displayName : episodeTitle
+    }
+
     /// mm:ss into the episode, or the moment it was caught for live radio.
     var positionText: String {
         guard !isLive else {

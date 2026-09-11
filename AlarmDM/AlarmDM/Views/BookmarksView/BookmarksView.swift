@@ -132,7 +132,7 @@ struct BookmarkRowView: View {
                 .background(Circle().fill(Color(.tertiarySystemFill)))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(bookmark.episodeTitle)
+                Text(bookmark.displayTitle)
                     .font(.subheadline.weight(.semibold))
                     .foregroundColor(Color("primaryText"))
                     .lineLimit(2)
@@ -140,20 +140,13 @@ struct BookmarkRowView: View {
                 HStack(spacing: 6) {
                     Text(bookmark.positionText)
                         .monospacedDigit()
-                    if let show = bookmark.show {
+                    if let subtitle = bookmark.displaySubtitle {
                         Text("·")
-                        Text(show.displayName).lineLimit(1)
+                        Text(subtitle).lineLimit(1)
                     }
                 }
                 .font(.caption)
                 .foregroundColor(Color("secondaryText"))
-
-                if !bookmark.note.isEmpty {
-                    Text(bookmark.note)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                }
             }
 
             Spacer(minLength: 0)

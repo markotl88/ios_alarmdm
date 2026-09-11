@@ -22,6 +22,10 @@ struct RootView: View {
     /// The bookmark confirmation lives here too, so it shows wherever the
     /// capture came from — the player, and later the car.
     @State private var capturedBookmark: Bookmark?
+    /// Set the moment the toast is touched. Typing a note takes longer than
+    /// the countdown, and having it close mid-word would be worse than not
+    /// offering the field at all.
+    @State private var toastHeld = false
 
     var body: some View {
         ZStack {
@@ -82,8 +86,13 @@ struct RootView: View {
                             BookmarkLibrary.shared.setCategory(category, for: bookmark.id)
                             dismissToast()
                         },
+                        onNote: { note in
+                            BookmarkLibrary.shared.setNote(note, for: bookmark.id)
+                        },
+                        onInteract: { toastHeld = true },
                         onDismiss: dismissToast
                     )
+                    .id(bookmark.id)
                     .padding(.bottom, toastBottomInset)
                 }
                 .zIndex(20)
@@ -92,6 +101,7 @@ struct RootView: View {
         .animation(.easeInOut(duration: 0.3), value: playerViewModel.isExpanded)
         .environmentObject(playerViewModel)
         .onReceive(BookmarkLibrary.shared.didCapture) { bookmark in
+            toastHeld = false
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                 capturedBookmark = bookmark
             }
@@ -99,7 +109,7 @@ struct RootView: View {
             // top of the player. A second capture replaces the first, and the
             // id check keeps the older timer from closing the newer toast.
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
-                guard capturedBookmark?.id == bookmark.id else { return }
+                guard capturedBookmark?.id == bookmark.id, !toastHeld else { return }
                 dismissToast()
             }
         }
@@ -138,6 +148,7 @@ struct RootView: View {
     }
 
     private func dismissToast() {
+        toastHeld = false
         withAnimation(.easeInOut(duration: 0.2)) { capturedBookmark = nil }
     }
 }
