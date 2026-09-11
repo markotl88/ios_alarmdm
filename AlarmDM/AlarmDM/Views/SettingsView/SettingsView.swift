@@ -14,6 +14,7 @@ import WebKit
 
 final class SettingsViewModel: ObservableObject {
 
+    @Published private(set) var bookmarkCount = 0
     @Published private(set) var downloadedCount = 0
     @Published private(set) var downloadedBytes: Int64 = 0
     @Published var deleteFailureMessage: String?
@@ -43,9 +44,19 @@ final class SettingsViewModel: ObservableObject {
         return "\(downloadedCount) \(noun) · \(formattedSize)"
     }
 
+    var bookmarksSummary: String {
+        switch bookmarkCount {
+        case 0: return "Nema zabeleški"
+        case 1: return "1 zabeleška"
+        case 2...4: return "\(bookmarkCount) zabeleške"
+        default: return "\(bookmarkCount) zabeleški"
+        }
+    }
+
     func refresh() {
         downloadedCount = fileService.downloadedFiles().count
         downloadedBytes = fileService.downloadedBytes()
+        bookmarkCount = BookmarkLibrary.shared.all().count
     }
 
     func deleteAllDownloads() {
@@ -80,6 +91,7 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            bookmarksSection
             networkSection
             downloadsSection
             showSection
@@ -101,6 +113,21 @@ struct SettingsView: View {
     }
 
     // MARK: Sections
+
+    private var bookmarksSection: some View {
+        Section {
+            NavigationLink {
+                BookmarksView()
+            } label: {
+                HStack {
+                    Label("Zabeleženo", systemImage: "bookmark")
+                    Spacer()
+                    Text(viewModel.bookmarksSummary)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
 
     private var networkSection: some View {
         Section {

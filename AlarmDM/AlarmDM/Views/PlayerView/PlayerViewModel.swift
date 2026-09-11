@@ -305,6 +305,17 @@ final class PlayerViewModel: ObservableObject {
         isPresented = true
     }
 
+    /// Opens an episode at a given second — what tapping a bookmark does.
+    func play(_ podcast: Podcast, startingAt position: TimeInterval) {
+        mode = .podcast(podcast: podcast)
+        guard let source = currentSource else { return }
+        // A bookmark supersedes whatever was restored: this is the position
+        // being asked for now.
+        restoredPosition = nil
+        engine.play(source, startingAt: position)
+        isPresented = true
+    }
+
     func seek(to time: TimeInterval) {
         // A restored episode has nothing loaded yet, and the engine refuses to
         // seek a player it does not have. Move the mark the first press will
