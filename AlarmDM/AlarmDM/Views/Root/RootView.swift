@@ -47,49 +47,7 @@ struct RootView: View {
             Color(UIColor.systemGroupedBackground)
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                Group {
-                    switch currentItem {
-                    case .radio:
-                        NavigationStack {
-                            RadioView()
-                        }
-                    case .shows:
-                        NavigationStack {
-                            ShowView()
-                        }
-                    case .support:
-                        NavigationStack {
-                            SupportView()
-                        }
-                    case .settings:
-                        NavigationStack {
-                            SettingsView()
-                        }
-                    }
-                }
-                .frame(maxWidth: RootView.contentWidth(for: widthClass))
-                .frame(maxWidth: .infinity)
-
-                // rezerviši prostor za MiniPlayer + TabBar
-                Spacer().frame(height: playerViewModel.isPresented && !playerViewModel.isExpanded
-                               ? MiniPlayerView.height(for: widthClass)
-                               : 0)
-                Spacer().frame(height: 60) // fiksna visina lažnog tab bara
-            }
-
-            VStack(spacing: 0) {
-                Spacer()
-
-                if playerViewModel.isPresented && !playerViewModel.isExpanded {
-                    MiniPlayerView()
-                        .environmentObject(playerViewModel)
-                }
-                
-                if !playerViewModel.isExpanded {
-                    TabBar(currentItem: $currentItem)
-                }
-            }
+            shell
 
             if playerViewModel.isExpanded {
                 FullscreenPlayerView()
@@ -165,13 +123,114 @@ struct RootView: View {
         }
     }
 
+    private var isWide: Bool { widthClass == .regular }
+
+    // MARK: - The shell
+
+    /// Two shapes for the same four screens. A phone gets the tab bar along
+    /// the bottom; anything wider gets them down the side, where an iPad and a
+    /// Mac both expect to find navigation — and where the empty half of a wide
+    /// window turns into something useful rather than a margin.
+    @ViewBuilder
+    private var shell: some View {
+        if isWide {
+            wideShell
+        } else {
+            compactShell
+        }
+    }
+
+    private var wideShell: some View {
+        NavigationSplitView {
+            sidebar
+        } detail: {
+            VStack(spacing: 0) {
+                screen
+                    .frame(maxWidth: RootView.contentWidth(for: widthClass))
+                    .frame(maxWidth: .infinity)
+
+                // Inside the detail column rather than across the window, so
+                // it belongs to what is playing and not to the sidebar.
+                if playerViewModel.isPresented && !playerViewModel.isExpanded {
+                    MiniPlayerView()
+                        .environmentObject(playerViewModel)
+                }
+            }
+        }
+        .navigationSplitViewStyle(.balanced)
+    }
+
+    private var sidebar: some View {
+        List(selection: sidebarSelection) {
+            ForEach(TabBarItem.ordered, id: \.self) { item in
+                Label(item.title, systemImage: item.iconName)
+                    .tag(item)
+            }
+        }
+        .listStyle(.sidebar)
+        .navigationTitle("Daško i Mlađa")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    /// The sidebar wants to be able to select nothing; this app never does.
+    private var sidebarSelection: Binding<TabBarItem?> {
+        Binding(
+            get: { currentItem },
+            set: { selected in
+                if let selected { currentItem = selected }
+            }
+        )
+    }
+
+    private var compactShell: some View {
+        ZStack {
+            VStack(spacing: 0) {
+                screen
+
+                // rezerviši prostor za MiniPlayer + TabBar
+                Spacer().frame(height: playerViewModel.isPresented && !playerViewModel.isExpanded
+                               ? MiniPlayerView.height(for: widthClass)
+                               : 0)
+                Spacer().frame(height: 60) // fiksna visina lažnog tab bara
+            }
+
+            VStack(spacing: 0) {
+                Spacer()
+
+                if playerViewModel.isPresented && !playerViewModel.isExpanded {
+                    MiniPlayerView()
+                        .environmentObject(playerViewModel)
+                }
+
+                if !playerViewModel.isExpanded {
+                    TabBar(currentItem: $currentItem)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var screen: some View {
+        switch currentItem {
+        case .radio:
+            NavigationStack { RadioView() }
+        case .shows:
+            NavigationStack { ShowView() }
+        case .support:
+            NavigationStack { SupportView() }
+        case .settings:
+            NavigationStack { SettingsView() }
+        }
+    }
+
     /// Sits just above whatever is at the bottom at that moment: the tab bar,
     /// the mini player on top of it, or nothing at all when the full screen
-    /// player is covering both.
+    /// player is covering both. On a wide window there is no tab bar to clear.
     private var toastBottomInset: CGFloat {
         guard !playerViewModel.isExpanded else { return 32 }
-        let miniPlayer: CGFloat = playerViewModel.isPresented ? 60 : 0
-        return 60 + miniPlayer + 8
+        let miniPlayer = playerViewModel.isPresented ? MiniPlayerView.height(for: widthClass) : 0
+        let tabBar: CGFloat = isWide ? 0 : 60
+        return tabBar + miniPlayer + 8
     }
 
     private func dismissToast() {

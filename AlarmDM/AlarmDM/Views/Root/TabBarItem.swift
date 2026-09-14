@@ -10,6 +10,11 @@ import SwiftUI
 
 enum TabBarItem: Hashable {
     case radio, shows, support, settings
+
+    /// The order they appear in, along the bottom on a phone and down the side
+    /// on anything wider. Written once so the two cannot disagree.
+    static let ordered: [TabBarItem] = [.radio, .shows, .support, .settings]
+
     
     var title: String {
         switch self {
