@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import Combine
+import CoreData
 import SwiftData
 
 final class AppDatabase {
@@ -30,6 +32,17 @@ final class AppDatabase {
     /// every write ends in an explicit `save()`. That suits this code, which
     /// already wrote Realm in explicit transactions.
     let context: ModelContext
+
+    /// Fires when the store changed underneath us — which, now that half of
+    /// it syncs, means another device wrote something. Screens hold snapshots
+    /// they took when they appeared, so without this a bookmark made on the
+    /// Mac sits in the database while the phone shows the old list and looks
+    /// broken.
+    ///
+    /// SwiftData is Core Data underneath, and this is Core Data's notification
+    /// for exactly this. If a future version stops posting it, nothing breaks:
+    /// every screen still reads again when it appears or is pulled down.
+    let didChangeRemotely = PassthroughSubject<Void, Never>()
 
     /// The iCloud container these devices share. One for both bundle ids, so
     /// a debug build on the phone and a release build on the Mac are looking
@@ -88,6 +101,18 @@ final class AppDatabase {
 
         context = ModelContext(container)
         context.autosaveEnabled = false
+
+        observeRemoteChanges()
+    }
+
+    private func observeRemoteChanges() {
+        NotificationCenter.default.addObserver(
+            forName: .NSPersistentStoreRemoteChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.didChangeRemotely.send()
+        }
     }
 
     /// Two stores in one container: a context reaches both, and which one a

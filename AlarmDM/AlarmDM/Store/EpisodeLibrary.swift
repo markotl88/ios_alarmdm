@@ -56,10 +56,19 @@ final class EpisodeLibrary: ProgressRecording {
 
     func progress(for id: UUID) -> Double { downloadProgress[id] ?? 0 }
 
+    private var cancellables = Set<AnyCancellable>()
+
     init(fileService: FileServiceProtocol = FileService(),
-         podcastService: PodcastServiceProtocol = PodcastService()) {
+         podcastService: PodcastServiceProtocol = PodcastService(),
+         database: AppDatabase = .shared) {
         self.fileService = fileService
         self.podcastService = podcastService
+
+        // A favourite marked on another device is a change to this list like
+        // any other, and the screens already know what to do with didChange.
+        database.didChangeRemotely
+            .sink { [weak self] in self?.didChange.send() }
+            .store(in: &cancellables)
     }
 
     func isDownloading(_ podcast: Podcast) -> Bool {

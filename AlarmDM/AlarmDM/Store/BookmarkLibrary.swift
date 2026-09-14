@@ -38,12 +38,21 @@ final class BookmarkLibrary {
     private let podcasts: PodcastRepository
     private let engine: PlaybackEngine
 
+    private var cancellables = Set<AnyCancellable>()
+
     init(repository: BookmarkRepository = .shared,
          podcasts: PodcastRepository = .shared,
-         engine: PlaybackEngine = .shared) {
+         engine: PlaybackEngine = .shared,
+         database: AppDatabase = .shared) {
         self.repository = repository
         self.podcasts = podcasts
         self.engine = engine
+
+        // Bookmarks are the half of the database that syncs, so this is the
+        // one list that can change without anyone touching this device.
+        database.didChangeRemotely
+            .sink { [weak self] in self?.didChange.send() }
+            .store(in: &cancellables)
     }
 
     var canCapture: Bool { engine.source != nil }
