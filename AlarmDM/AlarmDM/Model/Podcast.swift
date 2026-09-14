@@ -206,25 +206,27 @@ extension Podcast {
         return end > 0 && playedPosition >= end
     }
 
-    /// How much of an episode counts as having heard it, when the credits
-    /// are not what settles it.
+    /// How much of an episode has to be behind you before it counts as heard.
+    /// One of the two conditions; see endOfShow for the other.
     static let playedFraction = 0.95
 
-    /// The finish line: whichever comes first, ninety-five percent of the
-    /// running time or the start of the closing credits.
+    /// The finish line: both conditions, so whichever of the two lies later.
+    /// Ninety-five percent of the running time has to be behind you *and* the
+    /// closing credits have to have started.
     ///
-    /// Neither works alone. On a three-hour Alarm the credits are twenty
-    /// seconds from the end, and nobody sits through the last eight minutes
-    /// to reach them; on a five-minute episode ninety-five percent lands
-    /// fifteen seconds from the end, inside the credits themselves. Taking
-    /// the earlier of the two is right at both lengths.
+    /// Which one binds depends on the length. On a three-hour Alarm the
+    /// credits are the later line by eight minutes, so they are what settles
+    /// it; on a five-minute episode ninety-five percent falls after the
+    /// credits begin, and it is the percentage that settles it. Requiring
+    /// both means an episode is never called heard with a stretch of show
+    /// still in front of it.
     ///
     /// Falls back to the running time alone when the episode does not say how
     /// long it runs.
     var endOfShow: TimeInterval {
         let duration = durationInSeconds
         guard duration > 0 else { return 0 }
-        return max(0, min(duration * Podcast.playedFraction, duration - outro))
+        return max(0, max(duration * Podcast.playedFraction, duration - outro))
     }
 
     var durationInSeconds: Double {
