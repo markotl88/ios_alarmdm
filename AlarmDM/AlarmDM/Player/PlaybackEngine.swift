@@ -211,10 +211,18 @@ final class PlaybackEngine: NSObject, ObservableObject {
     }
 
     func resume() {
-        guard player != nil else {
-            if let source { play(source) }
+        // Another app taking the audio session can leave the item failed, and a
+        // failed item cannot be told to carry on — there is nothing to carry on
+        // with. It has to be built again, at the second it stopped on.
+        let isBroken = player == nil || player?.currentItem?.status == .failed
+
+        guard !isBroken else {
+            guard let source else { return }
+            let resumeAt = source.isLive ? nil : currentTime
+            play(source, startingAt: resumeAt)
             return
         }
+
         activateSession()
         player?.play()
         updateNowPlayingPlaybackState()
@@ -322,6 +330,9 @@ final class PlaybackEngine: NSObject, ObservableObject {
                 guard let self else { return }
                 if item.status == .failed {
                     self.lastErrorMessage = item.error?.localizedDescription ?? "Reprodukcija nije uspela."
+                    #if DEBUG
+                    debugPrint("item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
+                    #endif
                 }
                 if let itemDuration = self.player?.currentItem?.duration,
                    itemDuration.isNumeric, !itemDuration.isIndefinite {
@@ -339,8 +350,13 @@ final class PlaybackEngine: NSObject, ObservableObject {
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
             // Duration still updates: only the position is stale mid-seek.
-            if !self.isSeeking {
-                self.currentTime = time.seconds.isFinite ? time.seconds : 0
+            //
+            // A non-finite time is not a position of zero, it is no position at
+            // all — what a player reports once its item has failed or been torn
+            // down. Writing it as zero threw away the one number needed to carry
+            // on from where the interruption happened.
+            if !self.isSeeking, time.seconds.isFinite {
+                self.currentTime = time.seconds
             }
             #if DEBUG
             self.logLiveBuffer()
@@ -455,6 +471,10 @@ final class PlaybackEngine: NSObject, ObservableObject {
         guard let info = notification.userInfo,
               let rawType = info[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
+
+        #if DEBUG
+        debugPrint("interruption \(type == .began ? "began" : "ended") at \(currentTime), item: \(String(describing: player?.currentItem?.status.rawValue))")
+        #endif
 
         switch type {
         case .began:
