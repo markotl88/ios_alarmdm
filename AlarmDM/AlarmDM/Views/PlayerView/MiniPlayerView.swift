@@ -121,11 +121,6 @@ struct MiniPlayerView: View {
             }
             .padding(.horizontal, isWide ? 16 : 12)
             .frame(height: barHeight)
-            // Held to the same width as the lists above it, so the artwork
-            // starts where the rows start instead of floating off to one side
-            // of a wide window.
-            .frame(maxWidth: RootView.contentWidth(for: widthClass))
-            .frame(maxWidth: .infinity)
         }
         .background(.regularMaterial)
         .contentShape(Rectangle())

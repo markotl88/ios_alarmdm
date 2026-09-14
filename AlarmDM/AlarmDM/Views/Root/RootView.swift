@@ -144,20 +144,23 @@ struct RootView: View {
         NavigationSplitView {
             sidebar
         } detail: {
-            VStack(spacing: 0) {
-                screen
-                    .frame(maxWidth: RootView.contentWidth(for: widthClass))
-                    .frame(maxWidth: .infinity)
-
-                // Inside the detail column rather than across the window, so
-                // it belongs to what is playing and not to the sidebar.
-                if playerViewModel.isPresented && !playerViewModel.isExpanded {
-                    MiniPlayerView()
-                        .environmentObject(playerViewModel)
-                }
-            }
+            screen
+                .frame(maxWidth: RootView.contentWidth(for: widthClass))
+                .frame(maxWidth: .infinity)
         }
         .navigationSplitViewStyle(.balanced)
+        // Across the whole window, under the sidebar as well. What is playing
+        // does not belong to the section you happen to be looking at — it
+        // keeps playing while you move between all four — so the bar anchors
+        // the window rather than one column of it. As a safe area inset rather
+        // than an overlay, so the list above it scrolls to its own end instead
+        // of underneath.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if playerViewModel.isPresented && !playerViewModel.isExpanded {
+                MiniPlayerView()
+                    .environmentObject(playerViewModel)
+            }
+        }
     }
 
     private var sidebar: some View {
