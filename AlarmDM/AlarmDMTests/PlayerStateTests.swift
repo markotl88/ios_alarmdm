@@ -328,9 +328,10 @@ private final class FakePlaybackEngine: PlaybackEngineType {
         sourceSubject.send(nil)
     }
 
-    func seek(to time: TimeInterval) {
+    func seek(to time: TimeInterval, completion: (() -> Void)?) {
         seekCalls.append(time)
         timeSubject.send(time)
+        completion?()
     }
 
     func skip(by seconds: TimeInterval) {

@@ -142,9 +142,17 @@ protocol PlaybackEngineType: AnyObject {
     func play(_ source: PlaybackSource, startingAt position: TimeInterval?)
     func toggle()
     func stop()
-    func seek(to time: TimeInterval)
+    func seek(to time: TimeInterval, completion: (() -> Void)?)
     func skip(by seconds: TimeInterval)
     func switchToLocalFile(_ fileURL: URL)
+}
+
+extension PlaybackEngineType {
+    /// Most callers only want to move; a protocol requirement cannot carry a
+    /// default argument, so the short form lives here.
+    func seek(to time: TimeInterval) {
+        seek(to: time, completion: nil)
+    }
 }
 
 final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
@@ -189,6 +197,10 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// Where to jump once the new item is ready. Seeking a stream that has not
     /// finished loading is quietly dropped, so the request waits here instead.
     private var pendingSeek: TimeInterval?
+    /// Whether to start playing once that jump has landed. An episode opened
+    /// at a position must not be heard from the beginning first, even for the
+    /// half second it takes the seek to arrive.
+    private var playAfterPendingSeek = false
     /// Raised while a seek is in flight. The periodic observer keeps reporting
     /// the old position until the seek lands, and letting that through drags
     /// the slider back to where it was before the gesture.
@@ -222,6 +234,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         }
 
         pendingSeek = position
+        playAfterPendingSeek = position != nil
 
         guard let url = resolveURL(for: source) else {
             lastErrorMessage = "Nije moguće pronaći audio za \(source.title)."
@@ -291,8 +304,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         deactivateSession()
     }
 
-    func seek(to time: TimeInterval) {
-        guard !isLive, let player else { return }
+    /// `completion` runs once this seek is over and no newer one has replaced
+    /// it — which is how an episode opened at a position starts playing only
+    /// after it has arrived there.
+    func seek(to time: TimeInterval, completion: (() -> Void)? = nil) {
+        guard !isLive, let player else {
+            completion?()
+            return
+        }
 
         let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
         // A second either way rather than an exact frame. Zero tolerance makes
@@ -314,8 +333,12 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
             guard let self, generation == self.seekGeneration else { return }
             self.isSeeking = false
-            guard finished else { return }
-            self.updateNowPlayingInfo()
+            if finished {
+                self.updateNowPlayingInfo()
+            }
+            // Even an unfinished seek has to hand back control, or an episode
+            // that was told to start here would sit silent forever.
+            completion?()
         }
     }
 
@@ -391,7 +414,17 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 }
                 if item.status == .readyToPlay, let target = self.pendingSeek {
                     self.pendingSeek = nil
-                    self.seek(to: target)
+                    let resumeAfterwards = self.playAfterPendingSeek
+                    self.playAfterPendingSeek = false
+
+                    self.seek(to: target) {
+                        // Only now. Playing first and seeking afterwards is
+                        // what let the opening seconds of an episode out of
+                        // the speaker before it jumped to where it was left.
+                        guard resumeAfterwards else { return }
+                        self.player?.play()
+                        self.updateNowPlayingPlaybackState()
+                    }
                 }
             }
         }
