@@ -46,6 +46,13 @@ final class EpisodeStateEntity {
     var episodeTitle: String = ""
     var show: String?
 
+    /// Which of two rows for the same episode describes the later listen.
+    /// A row that has never been played has no date at all, and loses to one
+    /// that has.
+    static func isNewer(_ lhs: EpisodeStateEntity, than rhs: EpisodeStateEntity) -> Bool {
+        (lhs.playedAt ?? .distantPast) > (rhs.playedAt ?? .distantPast)
+    }
+
     init(podcastId: UUID, title: String = "", show: String? = nil) {
         self.podcastId = podcastId
         self.episodeTitle = title

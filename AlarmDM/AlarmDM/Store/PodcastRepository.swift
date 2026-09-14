@@ -62,9 +62,13 @@ final class PodcastRepository: EpisodeLookup {
         guard !entities.isEmpty else { return [] }
 
         let ids = Set(entities.map(\.id))
+        // Newest wins when an episode has more than one row; see merged(_:).
+        // Reading is not the place to delete anything, so the duplicate is
+        // simply passed over here and folded away the next time that episode
+        // is written to.
         let states = Dictionary(
             fetchStates(matching: #Predicate { ids.contains($0.podcastId) }).map { ($0.podcastId, $0) },
-            uniquingKeysWith: { first, _ in first }
+            uniquingKeysWith: { EpisodeStateEntity.isNewer($0, than: $1) ? $0 : $1 }
         )
         let downloads = Dictionary(
             fetchDownloads(matching: #Predicate { ids.contains($0.podcastId) }).map { ($0.podcastId, $0) },
@@ -205,12 +209,16 @@ final class PodcastRepository: EpisodeLookup {
     /// never get one, and an empty row for every episode in the feed is
     /// exactly what this split was meant to avoid sending through iCloud.
     ///
-    /// No unique constraint is possible on a synced store, so two devices can
-    /// arrive at two rows for the same episode. The first one wins here and
-    /// the duplicate is harmless — it says the same thing.
+    /// CloudKit allows no unique constraint, so two devices that both listen
+    /// to an episode before either has heard of the other each create a row,
+    /// and both rows then exist everywhere. Taking whichever came back first
+    /// is how a device ends up reading its own old row forever with the other
+    /// device's newer one sitting beside it — which looks exactly like syncing
+    /// having stopped working.
     private func state(for id: UUID, creatingIfNeeded: Bool = false) -> EpisodeStateEntity? {
-        if let existing = fetchStates(matching: #Predicate { $0.podcastId == id }).first {
-            return existing
+        let existing = fetchStates(matching: #Predicate { $0.podcastId == id })
+        if !existing.isEmpty {
+            return merged(existing)
         }
         guard creatingIfNeeded else { return nil }
 
@@ -226,6 +234,31 @@ final class PodcastRepository: EpisodeLookup {
 
     private func download(for id: UUID) -> DownloadEntity? {
         fetchDownloads(matching: #Predicate { $0.podcastId == id }).first
+    }
+
+    /// Folds duplicate rows for one episode into the newest of them and
+    /// deletes the rest.
+    ///
+    /// The newest wins on position, because a position is a moment and the
+    /// later moment is the true one. The two flags are OR-ed instead: an
+    /// episode heard through on one device is heard, and a favourite marked
+    /// on one device is a favourite, whatever the other device did later.
+    @discardableResult
+    private func merged(_ rows: [EpisodeStateEntity]) -> EpisodeStateEntity? {
+        let sorted = rows.sorted { EpisodeStateEntity.isNewer($0, than: $1) }
+        guard let winner = sorted.first else { return nil }
+        guard sorted.count > 1 else { return winner }
+
+        for duplicate in sorted.dropFirst() {
+            winner.isFavorite = winner.isFavorite || duplicate.isFavorite
+            winner.isPlayed = winner.isPlayed || duplicate.isPlayed
+            if winner.episodeTitle.isEmpty { winner.episodeTitle = duplicate.episodeTitle }
+            if winner.show == nil { winner.show = duplicate.show }
+            context.delete(duplicate)
+        }
+
+        commit("merging duplicate episode state")
+        return winner
     }
 
     /// A hand-made ModelContext does not autosave, so every change ends here.

@@ -113,6 +113,40 @@ final class AppDatabase {
         ) { [weak self] _ in
             self?.didChangeRemotely.send()
         }
+
+        #if DEBUG
+        // Syncing is otherwise completely silent, which makes "it did not
+        // arrive" impossible to tell apart from "it has not arrived yet" and
+        // from "it was refused". Every import and export announces itself
+        // here, with whatever went wrong when something did.
+        NotificationCenter.default.addObserver(
+            forName: NSPersistentCloudKitContainer.eventChangedNotification,
+            object: nil,
+            queue: .main
+        ) { note in
+            guard let event = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey]
+                    as? NSPersistentCloudKitContainer.Event else { return }
+
+            let kind: String
+            switch event.type {
+            case .setup: kind = "setup"
+            case .import: kind = "import"
+            case .export: kind = "export"
+            @unknown default: kind = "event"
+            }
+
+            guard event.endDate != nil else {
+                debugPrint("cloud \(kind) started")
+                return
+            }
+
+            if event.succeeded {
+                debugPrint("cloud \(kind) finished")
+            } else {
+                debugPrint("cloud \(kind) failed: \(event.error?.localizedDescription ?? "-")")
+            }
+        }
+        #endif
     }
 
     /// Two stores in one container: a context reaches both, and which one a
