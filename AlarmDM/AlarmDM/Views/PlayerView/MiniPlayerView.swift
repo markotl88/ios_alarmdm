@@ -87,6 +87,16 @@ struct MiniPlayerView: View {
 
                 Spacer(minLength: 0)
 
+                // Where it is and how long it runs. Only on a wide window,
+                // where the space is there anyway — on a phone the same two
+                // numbers would push the title out of its own bar.
+                if isWide, !playerViewModel.isLive, playerViewModel.duration > 0 {
+                    Text("\(ScrubberView.format(playerViewModel.currentTime)) / \(ScrubberView.format(playerViewModel.duration))")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundColor(Color("secondaryText"))
+                        .padding(.trailing, 4)
+                }
+
                 Button {
                     playerViewModel.addBookmark()
                 } label: {

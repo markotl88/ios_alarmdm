@@ -490,6 +490,10 @@ final class PlayerViewModel: ObservableObject {
         // forget what it already showed us.
         episodes.refreshFromStore()
 
+        #if DEBUG
+        (episodes as? PodcastRepository)?.describeState(for: podcastId)
+        #endif
+
         guard let stored = episodes.podcast(with: podcastId) else { return }
 
         podcast = stored

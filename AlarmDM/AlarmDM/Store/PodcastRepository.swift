@@ -40,6 +40,23 @@ final class PodcastRepository: EpisodeLookup {
         database.adoptStoreChanges()
     }
 
+    #if DEBUG
+    /// Every row this device holds for one episode, as it holds them.
+    ///
+    /// The question this answers is the only one left: whether what another
+    /// device wrote is in this database at all. If it is not, no amount of
+    /// reading will find it and the problem is upstream of everything here.
+    func describeState(for id: UUID) {
+        let rows = fetchStates(matching: #Predicate { $0.podcastId == id })
+        let total = (try? context.fetchCount(FetchDescriptor<EpisodeStateEntity>())) ?? -1
+
+        debugPrint("state rows for \(id): \(rows.count) — of \(total) in the store")
+        for row in rows {
+            debugPrint("   \(Int(row.playedPosition))s at \(String(describing: row.playedAt)) fav:\(row.isFavorite)")
+        }
+    }
+    #endif
+
     // MARK: - Reads
 
     func latestPodcasts(limit: Int = 10) -> [Podcast] {
