@@ -11,48 +11,19 @@ import AVKit
 
 struct FullscreenPlayerView: View {
     @EnvironmentObject var playerViewModel: PlayerViewModel
+    @Environment(\.horizontalSizeClass) private var widthClass
 
     @State private var dragOffset: CGFloat = 0
 
+    private var isWide: Bool { widthClass == .regular }
+
     var body: some View {
-        VStack(spacing: 0) {
-            handle
-
-            Spacer(minLength: 8)
-
-            Image(playerViewModel.artworkName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(maxWidth: 300)
-                .clipShape(RoundedRectangle(cornerRadius: 16))
-                .shadow(radius: 12, y: 6)
-                .padding(.horizontal, 32)
-
-            VStack(spacing: 6) {
-                Text(playerViewModel.title)
-                    .font(.title3.weight(.bold))
-                    .foregroundColor(Color("primaryText"))
-                    .multilineTextAlignment(.center)
-
-                Text(playerViewModel.subtitle)
-                    .font(.subheadline)
-                    .foregroundColor(Color("secondaryText"))
-                    .multilineTextAlignment(.center)
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
-
-            if playerViewModel.isLive {
-                liveBadge.padding(.top, 20)
+        Group {
+            if isWide {
+                wideBody
             } else {
-                scrubber.padding(.top, 20)
+                compactBody
             }
-
-            transportControls.padding(.top, 20)
-
-            actionRow.padding(.top, 24)
-
-            Spacer()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color("background").ignoresSafeArea())
@@ -69,6 +40,106 @@ struct FullscreenPlayerView: View {
                     withAnimation { dragOffset = 0 }
                 }
         )
+    }
+
+    /// The phone: one column, everything centred under the artwork.
+    private var compactBody: some View {
+        VStack(spacing: 0) {
+            handle
+
+            Spacer(minLength: 8)
+
+            Image(playerViewModel.artworkName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(maxWidth: 300)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .shadow(radius: 12, y: 6)
+                .padding(.horizontal, 32)
+
+            titleBlock(alignment: .center)
+                .padding(.horizontal, 24)
+                .padding(.top, 24)
+
+            if playerViewModel.isLive {
+                liveBadge.padding(.top, 20)
+            } else {
+                scrubberView
+                    .padding(.horizontal, 32)
+                    .padding(.top, 20)
+            }
+
+            transportControls.padding(.top, 20)
+
+            actionRow.padding(.top, 24)
+
+            Spacer()
+        }
+    }
+
+    /// A window: artwork on the left, everything you can do on the right.
+    ///
+    /// Stacked, the same layout leaves a small square of artwork adrift in the
+    /// middle of an empty screen with a scrubber running the whole width of a
+    /// Mac window under it. Side by side the artwork can be large without
+    /// pushing anything off the bottom, and the controls sit in a column of
+    /// readable width instead of being stretched across the glass.
+    private var wideBody: some View {
+        VStack(spacing: 0) {
+            handle
+
+            Spacer(minLength: 0)
+
+            HStack(alignment: .top, spacing: 44) {
+                Image(playerViewModel.artworkName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 340, height: 340)
+                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                    .shadow(radius: 16, y: 8)
+
+                VStack(alignment: .leading, spacing: 28) {
+                    titleBlock(alignment: .leading)
+
+                    if playerViewModel.isLive {
+                        liveBadge
+                    } else {
+                        scrubberView
+                    }
+
+                    leading(transportControls)
+                    leading(actionRow)
+                }
+                .frame(maxWidth: 440, alignment: .leading)
+            }
+            .padding(.horizontal, 48)
+
+            Spacer(minLength: 0)
+        }
+    }
+
+    /// Everything in the right hand column starts at the same edge as the
+    /// title. Centred rows under left aligned text read as a mistake.
+    private func leading<Content: View>(_ content: Content) -> some View {
+        HStack(spacing: 0) {
+            content
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func titleBlock(alignment: TextAlignment) -> some View {
+        VStack(alignment: alignment == .center ? .center : .leading, spacing: 6) {
+            Text(playerViewModel.title)
+                .font(isWide ? .title2.weight(.bold) : .title3.weight(.bold))
+                .foregroundColor(Color("primaryText"))
+                .multilineTextAlignment(alignment)
+
+            Text(playerViewModel.subtitle)
+                .font(isWide ? .body : .subheadline)
+                .foregroundColor(Color("secondaryText"))
+                .multilineTextAlignment(alignment)
+        }
+        .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)
     }
 
     private var handle: some View {
@@ -123,13 +194,12 @@ struct FullscreenPlayerView: View {
         .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
-    private var scrubber: some View {
+    private var scrubberView: some View {
         ScrubberView(
             currentTime: playerViewModel.currentTime,
             duration: playerViewModel.duration,
             onSeek: { playerViewModel.seek(to: $0) }
         )
-        .padding(.horizontal, 32)
     }
 
     private var transportControls: some View {

@@ -16,20 +16,25 @@ struct MiniPlayerView: View {
 
     private var isWide: Bool { widthClass == .regular }
 
-    /// The bar is sized for a thumb on a phone. On a bigger screen it is
-    /// being read from further away and clicked rather than tapped, so it
-    /// grows a little — but only a little, since the point of it is still
-    /// that it is not the player.
     /// Including the two point strip along the top. The root view reserves
     /// exactly this much space above the tab bar, so the number lives here
     /// rather than being written down twice and drifting apart.
     static func height(for widthClass: UserInterfaceSizeClass?) -> CGFloat {
-        (widthClass == .regular ? 72 : 58) + 2
+        (widthClass == .regular ? 84 : 58) + 2
     }
 
-    private var barHeight: CGFloat { isWide ? 72 : 58 }
-    private var artworkSide: CGFloat { isWide ? 56 : 44 }
-    private var controlSide: CGFloat { isWide ? 40 : 34 }
+    // The bar is sized for a thumb on a phone. On a Mac or an iPad it is read
+    // from further away and clicked rather than tapped, and it now runs the
+    // whole width of the window — a phone-sized strip across a metre of glass
+    // looks like something left behind. Everything in it grows together;
+    // scaling the bar and not its contents is what makes a control look lost.
+
+    private var barHeight: CGFloat { isWide ? 84 : 58 }
+    private var artworkSide: CGFloat { isWide ? 64 : 44 }
+    private var controlSide: CGFloat { isWide ? 46 : 34 }
+    private var titleFont: Font { isWide ? .title3.weight(.semibold) : .subheadline.weight(.semibold) }
+    private var subtitleFont: Font { isWide ? .subheadline : .caption }
+    private var sideControlFont: Font { isWide ? .title3.weight(.semibold) : .subheadline.weight(.semibold) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,9 +51,10 @@ struct MiniPlayerView: View {
                     .progressViewStyle(.linear)
                     .tint(Color("primaryLink"))
                     .frame(height: 2)
+                    .scaleEffect(x: 1, y: isWide ? 1.5 : 1, anchor: .top)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: isWide ? 16 : 12) {
                 Image(playerViewModel.artworkName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -60,7 +66,7 @@ struct MiniPlayerView: View {
                     // change the bar's height depending on the episode.
                     MarqueeText(
                         text: playerViewModel.title,
-                        font: isWide ? .body.weight(.semibold) : .subheadline.weight(.semibold)
+                        font: titleFont
                     )
                     .foregroundColor(Color("primaryText"))
 
@@ -73,7 +79,7 @@ struct MiniPlayerView: View {
                         )
                     } else {
                         Text(playerViewModel.subtitle)
-                            .font(.caption)
+                            .font(subtitleFont)
                             .foregroundColor(Color("secondaryText"))
                             .lineLimit(1)
                     }
@@ -85,7 +91,7 @@ struct MiniPlayerView: View {
                     playerViewModel.addBookmark()
                 } label: {
                     Image(systemName: playerViewModel.justBookmarked ? "bookmark.fill" : "bookmark")
-                        .font(.subheadline.weight(.semibold))
+                        .font(sideControlFont)
                         .frame(width: controlSide - 4, height: controlSide)
                         .foregroundColor(playerViewModel.justBookmarked
                                          ? Color("primaryLink")
@@ -101,7 +107,7 @@ struct MiniPlayerView: View {
                             ProgressView()
                         } else {
                             Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.title3)
+                                .font(isWide ? .title : .title3)
                         }
                     }
                     .frame(width: controlSide, height: controlSide)
@@ -113,13 +119,13 @@ struct MiniPlayerView: View {
                     playerViewModel.stop()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.subheadline.weight(.semibold))
+                        .font(sideControlFont)
                         .frame(width: controlSide - 4, height: controlSide)
                         .foregroundColor(Color("secondaryText"))
                 }
                 .accessibilityLabel("Zaustavi")
             }
-            .padding(.horizontal, isWide ? 16 : 12)
+            .padding(.horizontal, isWide ? 24 : 12)
             .frame(height: barHeight)
         }
         .background(.regularMaterial)
