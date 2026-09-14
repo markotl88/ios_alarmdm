@@ -106,6 +106,21 @@ enum Show: String, CaseIterable, Identifiable {
         listed.filter { $0.patreonURL != nil }
     }
 
+    /// How long this show's closing credits run. The backend sends the same
+    /// number per episode and that one wins; this is what an episode
+    /// downloaded before the field existed, or fetched with the function
+    /// unreachable, falls back on.
+    ///
+    /// Zero means unmeasured rather than absent, and an episode then ends at
+    /// its last second — which is how it behaved before any of this.
+    var outroSeconds: TimeInterval {
+        switch self {
+        case .alarmSaDaskomIMladjom, .unutrasnjaEmigracija: return 20
+        case .ljudiIzPodzemlja: return 5
+        default: return 0
+        }
+    }
+
     /// Shows added after the original artwork set fall back to the radio image
     /// rather than rendering an empty frame.
     var imageName: String {
@@ -142,7 +157,15 @@ struct Podcast: Identifiable, Equatable {
     var itunesDuration = ""
     
     var show: Show
+    /// From the backend. Nil until an episode is fetched by a version that
+    /// asks for it, and the show's own figure stands in meanwhile.
+    var outroSeconds: TimeInterval?
     var fileUrl: String?
+    /// How far the last listen got, and when. Written by the player, never by
+    /// the feed.
+    var playedPosition: TimeInterval = 0
+    var playedAt: Date?
+    var isPlayed = false
     var isFavorite = false
     var isWithMusic = false
     var isDownloaded: Bool {
@@ -151,6 +174,32 @@ struct Podcast: Identifiable, Equatable {
 }
 
 extension Podcast {
+    /// The closing credits, in seconds: what the backend measured for this
+    /// episode, or the show's figure when it has not measured one. Backend
+    /// zero is unmeasured, not measured-as-none, so it does not overrule a
+    /// show the app knows about.
+    var outro: TimeInterval {
+        if let outroSeconds, outroSeconds > 0 { return outroSeconds }
+        return show.outroSeconds
+    }
+
+    /// True once the listen has gone past the end of the show. Kept here
+    /// rather than read off the stored flag alone so a position restored
+    /// mid-session answers the same way.
+    var hasReachedEnd: Bool {
+        let end = endOfShow
+        return end > 0 && playedPosition >= end
+    }
+
+    /// Where the show is over and the credits start rolling — the line an
+    /// episode has to cross to count as listened to. Falls back to the full
+    /// running time when nothing has been measured.
+    var endOfShow: TimeInterval {
+        let duration = durationInSeconds
+        guard duration > 0 else { return 0 }
+        return max(0, duration - outro)
+    }
+
     var durationInSeconds: Double {
         // ako imaš string tipa "24:35"
         let components = itunesDuration.split(separator: ":").compactMap { Double($0) }
@@ -178,6 +227,7 @@ extension Podcast {
         self.lengthInBytes = response.lengthInBytes
         self.itunesDuration = response.itunesDuration
         self.show = Show(rawValue: response.showType ?? "") ?? .ostalo
+        self.outroSeconds = response.outroSeconds
         self.isWithMusic = response.withMusic
     }
 }

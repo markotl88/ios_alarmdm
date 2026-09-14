@@ -81,6 +81,22 @@ final class PodcastRepository {
         commit("updating favourite")
     }
 
+    /// Writes down how far a listen got, and whether it went past the end of
+    /// the show. Called when playback pauses and when the app goes away —
+    /// never on a timer, for the same reason the player's own state is not
+    /// saved on one: a second's accuracy would cost a write a second for the
+    /// length of the episode.
+    func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID) {
+        guard let entity = entity(with: id) else { return }
+        entity.playedPosition = max(0, position)
+        // Sticky. Starting an episode again does not make it unfinished, and
+        // an episode left at five minutes on a second device should not undo
+        // the fact that it was heard through on the first.
+        entity.isPlayed = entity.isPlayed || hasFinished
+        entity.playedAt = Date()
+        commit("recording progress")
+    }
+
     func setDownloadedFile(_ fileName: String?, for id: UUID) {
         guard let entity = entity(with: id) else { return }
         entity.fileUrl = fileName

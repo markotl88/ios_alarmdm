@@ -23,4 +23,7 @@ struct PodcastResponse: Codable {
     var airedAt: String?
     var showType: String?
     var withMusic: Bool = false
+    /// How long the closing credits run, in seconds. Zero or absent means the
+    /// show has not been measured — not that it ends without one.
+    var outroSeconds: Double?
 }

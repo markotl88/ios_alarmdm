@@ -225,7 +225,15 @@ final class PlayerViewModel: ObservableObject {
         // position any more. Without this the scrubber shows where the
         // previous episode stopped until the engine's first zero arrives,
         // which it does a runloop late.
-        currentTime = 0
+        //
+        // Only when the audio actually changes, though. Compared by identity
+        // and not by value: an episode re-selected from a refreshed row is a
+        // different Podcast carrying the same audio, and sending the scrubber
+        // to zero under playback that never stopped would be the worse bug of
+        // the two.
+        if !engineIsAlreadyOn(mode) {
+            currentTime = 0
+        }
 
         switch mode {
         case .radio(let stream):
@@ -279,6 +287,23 @@ final class PlayerViewModel: ObservableObject {
             progress = 0
         }
         showCheckmark = false
+    }
+
+    /// Whether the engine is already playing what this mode points at. By
+    /// episode id and by kind, so everything about a row that can change
+    /// without the audio changing — a favourite, a download, how far it has
+    /// been listened to — is ignored.
+    private func engineIsAlreadyOn(_ mode: PlayerMode?) -> Bool {
+        guard let mode, let loaded = engine.source else { return false }
+
+        switch (mode, loaded) {
+        case (.radio, .radio):
+            return true
+        case (.podcast(let selected), .podcast(let playing)):
+            return selected.id == playing.id
+        default:
+            return false
+        }
     }
 
     private var currentSource: PlaybackSource? {
@@ -359,6 +384,17 @@ final class PlayerViewModel: ObservableObject {
     func rememberPlaybackPosition() {
         guard !isLive, let podcastId, currentTime > 0 else { return }
         playbackState.save(PlaybackState(podcastId: podcastId, position: currentTime))
+
+        // Two different things, saved in two different places. The line above
+        // is the player's own state — one slot, what to reopen on launch. This
+        // one is the library's record of this particular episode, which every
+        // episode has and which is what will sync between devices.
+        let end = podcast?.endOfShow ?? 0
+        PodcastRepository.shared.recordProgress(
+            position: currentTime,
+            hasFinished: end > 0 && currentTime >= end,
+            for: podcastId
+        )
     }
 
     /// Puts the player back the way it was found, without making a sound and
