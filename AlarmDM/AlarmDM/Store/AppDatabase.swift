@@ -7,6 +7,7 @@
 
 import Foundation
 import Combine
+import CloudKit
 import CoreData
 import SwiftData
 
@@ -103,7 +104,42 @@ final class AppDatabase {
         context.autosaveEnabled = false
 
         observeRemoteChanges()
+
+        #if DEBUG
+        describeAccount()
+        #endif
     }
+
+    #if DEBUG
+    /// Which iCloud account this device is syncing as.
+    ///
+    /// Two devices exporting happily and neither ever seeing the other is
+    /// exactly what two different accounts look like: each writes to its own
+    /// private database, every export succeeds, and every import brings back
+    /// only what that account already had. The user record id is the same
+    /// string on two devices signed in to the same account, and a different
+    /// one otherwise — which makes it the one line that settles it.
+    private func describeAccount() {
+        let container = CKContainer(identifier: AppDatabase.cloudContainer)
+
+        container.accountStatus { status, error in
+            let name: String
+            switch status {
+            case .available: name = "available"
+            case .noAccount: name = "no account"
+            case .restricted: name = "restricted"
+            case .couldNotDetermine: name = "could not determine"
+            case .temporarilyUnavailable: name = "temporarily unavailable"
+            @unknown default: name = "unknown"
+            }
+            debugPrint("icloud account: \(name)\(error.map { " — \($0.localizedDescription)" } ?? "")")
+        }
+
+        container.fetchUserRecordID { id, error in
+            debugPrint("icloud user: \(id?.recordName ?? "none")\(error.map { " — \($0.localizedDescription)" } ?? "")")
+        }
+    }
+    #endif
 
     /// Throws away the context and takes a fresh one.
     ///
