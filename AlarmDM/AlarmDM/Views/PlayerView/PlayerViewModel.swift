@@ -232,6 +232,12 @@ final class PlayerViewModel: ObservableObject {
         // to zero under playback that never stopped would be the worse bug of
         // the two.
         if !engineIsAlreadyOn(mode) {
+            // Written down before it is thrown away. Nothing else catches this
+            // moment: progress is otherwise saved when playback stops and when
+            // the app goes away, and starting another episode is neither — the
+            // player carries straight on, and the position it carries on from
+            // belongs to the episode being left.
+            rememberProgress()
             currentTime = 0
         }
 
@@ -384,11 +390,17 @@ final class PlayerViewModel: ObservableObject {
     func rememberPlaybackPosition() {
         guard !isLive, let podcastId, currentTime > 0 else { return }
         playbackState.save(PlaybackState(podcastId: podcastId, position: currentTime))
+        rememberProgress()
+    }
 
-        // Two different things, saved in two different places. The line above
-        // is the player's own state — one slot, what to reopen on launch. This
-        // one is the library's record of this particular episode, which every
-        // episode has and which is what will sync between devices.
+    /// The library's record of this one episode: how far it has been listened
+    /// to, and whether that is far enough to call it heard. Separate from the
+    /// line above it, which is the player's own state — a single slot saying
+    /// what to reopen on launch. Every episode has one of these, and these are
+    /// what will sync between devices.
+    private func rememberProgress() {
+        guard !isLive, let podcastId, currentTime > 0 else { return }
+
         let end = podcast?.endOfShow ?? 0
         EpisodeLibrary.shared.recordProgress(
             position: currentTime,
