@@ -204,6 +204,7 @@ final class PlayerViewModel: ObservableObject {
                 self.isDownloaded = refreshed.isDownloaded
                 self.showDeleteButton = refreshed.isDownloaded
                 self.isDownloading = EpisodeLibrary.shared.isDownloading(refreshed)
+                self.adoptSyncedPosition(from: refreshed)
             }
             .store(in: &cancellables)
     }
@@ -439,18 +440,52 @@ final class PlayerViewModel: ObservableObject {
         guard let saved = playbackState.saved,
               let podcast = episodes.podcast(with: saved.podcastId) else { return }
 
-        // After the mode, not before: applying a mode picks up the episode's
-        // own saved progress, and the player's slot is the more recent of the
-        // two — it is written at the same moments and a few seconds later.
         mode = .podcast(podcast: podcast)
-        restoredPosition = saved.position
-        currentTime = saved.position
+
+        // Two records of the same listening, and the later one is right.
+        //
+        // This slot is written on this device only; the episode's own record
+        // syncs. Before it did, the slot was always the newer of the two and
+        // taking it blindly was correct. Now an episode carried on elsewhere
+        // comes back with a later date, and the phone that stopped at
+        // fifty-two minutes has to yield to the Mac that got to an hour and
+        // a half — otherwise it reopens at its own position and the sync
+        // looks broken when it worked.
+        let position: TimeInterval
+        if let syncedAt = podcast.playedAt, syncedAt > saved.savedAt,
+           let synced = podcast.resumePosition {
+            position = synced
+        } else {
+            position = saved.position
+        }
+
+        restoredPosition = position
+        currentTime = position
         // The feed already told us how long it runs, so the scrubber and the
         // mini player's bar can show the right place before anything is
         // loaded. The engine replaces this with the file's own duration the
         // moment it opens it.
         duration = podcast.durationInSeconds
         isPresented = true
+    }
+
+    /// A position that arrived from another device while this one was already
+    /// open. The import can land seconds after launch, well after the player
+    /// has restored, and without this the bar sits at the old position until
+    /// the next launch — by which time the same thing happens again.
+    ///
+    /// Only while nothing is loaded. Once this device is playing, its own
+    /// clock is the truth and anything from elsewhere is older by definition.
+    private func adoptSyncedPosition(from podcast: Podcast) {
+        guard engine.source == nil, !isLive else { return }
+        guard let syncedAt = podcast.playedAt,
+              let synced = podcast.resumePosition else { return }
+        guard syncedAt > (playbackState.saved?.savedAt ?? .distantPast) else { return }
+        guard abs(synced - currentTime) > 1 else { return }
+
+        restoredPosition = synced
+        currentTime = synced
+        duration = podcast.durationInSeconds
     }
 
     func addBookmark() {
