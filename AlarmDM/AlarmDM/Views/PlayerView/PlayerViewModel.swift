@@ -350,6 +350,12 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Transport
 
     func togglePlayPause() {
+        // The freshest thing known about this episode, asked for at the last
+        // possible moment. An import from another device can land seconds
+        // after launch — well after the player restored — and this is the
+        // press that decides where the audio actually starts.
+        refreshFromStoreIfIdle()
+
         guard let source = currentSource else { return }
 
         if source.isSameContent(as: engine.source) {
@@ -471,6 +477,21 @@ final class PlayerViewModel: ObservableObject {
         // moment it opens it.
         duration = podcast.durationInSeconds
         isPresented = true
+    }
+
+    /// Re-reads this episode from the store while nothing is loaded, in case
+    /// something arrived from another device since it was last read. Doing it
+    /// on demand rather than only on notification means syncing does not
+    /// depend on a notification arriving.
+    func refreshFromStoreIfIdle() {
+        guard engine.source == nil, !isLive, let podcastId else { return }
+        guard let stored = episodes.podcast(with: podcastId) else { return }
+
+        podcast = stored
+        isFavorite = stored.isFavorite
+        isDownloaded = stored.isDownloaded
+        showDeleteButton = stored.isDownloaded
+        adoptSyncedPosition(from: stored)
     }
 
     /// A position that arrived from another device while this one was already

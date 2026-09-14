@@ -119,7 +119,15 @@ struct RootView: View {
             // Leaving is the last moment anything is certain. iOS can end a
             // suspended app without warning and without calling back, so the
             // position is written down here rather than on the way out.
-            if phase != .active { playerViewModel.rememberPlaybackPosition() }
+            if phase != .active {
+                playerViewModel.rememberPlaybackPosition()
+            } else {
+                // Coming back is the other moment something may have arrived
+                // from another device — the import often lands while the app
+                // was away, and nothing else would notice until the next
+                // launch.
+                playerViewModel.refreshFromStoreIfIdle()
+            }
         }
     }
 

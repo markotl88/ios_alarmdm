@@ -16,13 +16,9 @@
 		4D16A32B305849B600A6FEEA /* DownloadEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A329305849B600A6FEEA /* DownloadEntity.swift */; };
 		4D16A32C305849B600A6FEEA /* EpisodeStateEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */; };
 		4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */; };
-		4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; };
-		4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */; };
-		4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */; };
 		4D66779B2CC7B06B00EC2ADE /* Podcast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779A2CC7B06B00EC2ADE /* Podcast.swift */; };
 		4D66779D2CC7B07A00EC2ADE /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */; };
 		4D66779F2CC7B5E100EC2ADE /* PodcastResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */; };
-		4D6677A02CC7BC3300EC2ADE /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A32CC83D2300EC2ADE /* ShowView.swift */; };
 		4D6677A92CC9341600EC2ADE /* FileService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677A82CC9341600EC2ADE /* FileService.swift */; };
 		4D9E12302DC0E513005D99E9 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D9E122F2DC0E505005D99E9 /* CarPlaySceneDelegate.swift */; };
@@ -57,7 +53,6 @@
 		AA0000000000000000000132 /* PodcastEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000131 /* PodcastEntity.swift */; };
 		AA0000000000000000000134 /* BookmarkEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000133 /* BookmarkEntity.swift */; };
 		AA0000000000000000000136 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000135 /* AppDatabase.swift */; };
-		AA0000000000000000000138 /* RealmImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000137 /* RealmImport.swift */; };
 		AA0000000000000000000142 /* BookmarkRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000141 /* BookmarkRepository.swift */; };
 		AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000143 /* BookmarkLibrary.swift */; };
 		AA0000000000000000000152 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000151 /* BookmarksView.swift */; };
@@ -91,7 +86,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				4D6677A02CC7BC3300EC2ADE /* RealmSwift in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -108,8 +102,6 @@
 		4D16A329305849B600A6FEEA /* DownloadEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEntity.swift; sourceTree = "<group>"; };
 		4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeStateEntity.swift; sourceTree = "<group>"; };
 		4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
-		4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Podcast+Realm.swift"; sourceTree = "<group>"; };
-		4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+Realm.swift"; sourceTree = "<group>"; };
 		4D66779A2CC7B06B00EC2ADE /* Podcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Podcast.swift; sourceTree = "<group>"; };
 		4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
 		4D66779E2CC7B5E100EC2ADE /* PodcastResponse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastResponse.swift; sourceTree = "<group>"; };
@@ -152,7 +144,6 @@
 		AA0000000000000000000131 /* PodcastEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEntity.swift; sourceTree = "<group>"; };
 		AA0000000000000000000133 /* BookmarkEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkEntity.swift; sourceTree = "<group>"; };
 		AA0000000000000000000135 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
-		AA0000000000000000000137 /* RealmImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmImport.swift; sourceTree = "<group>"; };
 		AA0000000000000000000141 /* BookmarkRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkRepository.swift; sourceTree = "<group>"; };
 		AA0000000000000000000143 /* BookmarkLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkLibrary.swift; sourceTree = "<group>"; };
 		AA0000000000000000000151 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
@@ -168,7 +159,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				4D9E12352DC0E767005D99E9 /* CarPlay.framework in Frameworks */,
-				4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -226,16 +216,13 @@
 				AA0000000000000000000161 /* LiveBookmarkMatcher.swift */,
 				AA0000000000000000000143 /* BookmarkLibrary.swift */,
 				AA0000000000000000000141 /* BookmarkRepository.swift */,
-				AA0000000000000000000137 /* RealmImport.swift */,
 				AA0000000000000000000135 /* AppDatabase.swift */,
 				AA0000000000000000000133 /* BookmarkEntity.swift */,
 				AA0000000000000000000131 /* PodcastEntity.swift */,
 				AA0000000000000000000129 /* EpisodeLibrary.swift */,
 				4D16A329305849B600A6FEEA /* DownloadEntity.swift */,
 				4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */,
-				4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */,
 				AA0000000000000000000108 /* PodcastRepository.swift */,
-				4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -442,7 +429,6 @@
 			);
 			name = AlarmDM;
 			packageProductDependencies = (
-				4D6677922CC7AA7300EC2ADE /* RealmSwift */,
 			);
 			productName = AlarmDM;
 			productReference = 4DAF9EB32C579D5100B4FA7F /* AlarmDM.app */;
@@ -517,7 +503,6 @@
 			);
 			mainGroup = 4DAF9EAA2C579D5100B4FA7F;
 			packageReferences = (
-				4D6677912CC7AA7300EC2ADE /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			productRefGroup = 4DAF9EB42C579D5100B4FA7F /* Products */;
 			projectDirPath = "";
@@ -584,7 +569,6 @@
 				AA0000000000000000000152 /* BookmarksView.swift in Sources */,
 				AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */,
 				AA0000000000000000000142 /* BookmarkRepository.swift in Sources */,
-				AA0000000000000000000138 /* RealmImport.swift in Sources */,
 				AA0000000000000000000136 /* AppDatabase.swift in Sources */,
 				AA0000000000000000000134 /* BookmarkEntity.swift in Sources */,
 				AA0000000000000000000132 /* PodcastEntity.swift in Sources */,
@@ -602,11 +586,9 @@
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
 				AA0000000000000000000101 /* PlaybackEngine.swift in Sources */,
 				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,
-				4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */,
 				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
 				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,
-				4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */,
 				4D16A32B305849B600A6FEEA /* DownloadEntity.swift in Sources */,
 				4D16A32C305849B600A6FEEA /* EpisodeStateEntity.swift in Sources */,
 			);
@@ -950,25 +932,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		4D6677912CC7AA7300EC2ADE /* XCRemoteSwiftPackageReference "realm-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/realm/realm-swift";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 10.54.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		4D6677922CC7AA7300EC2ADE /* RealmSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4D6677912CC7AA7300EC2ADE /* XCRemoteSwiftPackageReference "realm-swift" */;
-			productName = RealmSwift;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4DAF9EAB2C579D5100B4FA7F /* Project object */;
 }
