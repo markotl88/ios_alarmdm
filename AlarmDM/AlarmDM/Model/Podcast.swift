@@ -183,6 +183,22 @@ extension Podcast {
         return show.outroSeconds
     }
 
+    /// Below this, a saved position is not worth returning to — the first
+    /// seconds of an episode are quicker to hear again than to think about.
+    static let resumeFloor: TimeInterval = 20
+
+    /// Where pressing play should pick this episode up, or nil to start at
+    /// the beginning. A finished episode starts over: its position is a record
+    /// of the last listen, not an invitation to sit through the credits again.
+    var resumePosition: TimeInterval? {
+        guard !isPlayed, playedPosition > Podcast.resumeFloor else { return nil }
+        let end = endOfShow
+        guard end <= 0 || playedPosition < end else { return nil }
+        // A few seconds back, for the same reason a bookmark takes a few: you
+        // stopped listening slightly before you stopped playing.
+        return max(0, playedPosition - 3)
+    }
+
     /// How far through the show a listen got, as a fraction — for the line
     /// under an episode in a list.
     ///

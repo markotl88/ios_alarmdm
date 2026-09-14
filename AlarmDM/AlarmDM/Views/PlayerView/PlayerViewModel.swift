@@ -231,7 +231,9 @@ final class PlayerViewModel: ObservableObject {
         // different Podcast carrying the same audio, and sending the scrubber
         // to zero under playback that never stopped would be the worse bug of
         // the two.
-        if !engineIsAlreadyOn(mode) {
+        let carriesOn = engineIsAlreadyOn(mode)
+
+        if !carriesOn {
             // Written down before it is thrown away. Nothing else catches this
             // moment: progress is otherwise saved when playback stops and when
             // the app goes away, and starting another episode is neither — the
@@ -269,6 +271,15 @@ final class PlayerViewModel: ObservableObject {
             isDownloaded = podcast?.isDownloaded ?? false
             isFavorite = podcast?.isFavorite ?? false
             showDeleteButton = isDownloaded
+
+            // Opened where it was left. Only on a swap: the same episode
+            // selected again while it plays would otherwise be dragged back to
+            // whatever was last written down, which is a position from before
+            // the last few minutes of listening.
+            if !carriesOn, let resume = podcast?.resumePosition {
+                restoredPosition = resume
+                currentTime = resume
+            }
 
         case .none:
             onlineStream = nil
@@ -418,8 +429,11 @@ final class PlayerViewModel: ObservableObject {
         guard let saved = playbackState.saved,
               let podcast = PodcastRepository.shared.podcast(with: saved.podcastId) else { return }
 
-        restoredPosition = saved.position
+        // After the mode, not before: applying a mode picks up the episode's
+        // own saved progress, and the player's slot is the more recent of the
+        // two — it is written at the same moments and a few seconds later.
         mode = .podcast(podcast: podcast)
+        restoredPosition = saved.position
         currentTime = saved.position
         // The feed already told us how long it runs, so the scrubber and the
         // mini player's bar can show the right place before anything is
