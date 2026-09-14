@@ -277,10 +277,8 @@ extension Podcast {
     }
 }
 
-// An episode used to be built from a Realm row here, and that conversion is
-// gone on purpose. The id it produced came from `UUID(uuidString:) ?? UUID()`
-// over an identifier the old app generated at random, so it was either a
-// meaningless UUID or a brand new one each time it ran — never the id the feed
-// gives the same episode. Anything written under it was invisible from the
-// moment it was written. What the old database still has to say is carried
-// over by media URL instead; see RealmImport.
+// An episode used to be built from a Realm row here. Both that conversion and
+// the database behind it are gone: the id it produced came from
+// `UUID(uuidString:) ?? UUID()` over an identifier the old app generated at
+// random, so it was never the id the feed gives the same episode, and
+// everything written under it was invisible from the moment it was written.

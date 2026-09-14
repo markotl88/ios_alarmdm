@@ -19,9 +19,10 @@ extension UUID {
     /// A UUID derived deterministically from a stable string — the episode's media URL.
     ///
     /// The API has no UUIDs, and `Podcast` previously generated a fresh one on every
-    /// decode. Since that UUID is the Realm primary key, each refresh inserted the same
-    /// episode again instead of updating it. Hashing the media URL keeps one row per
-    /// episode across refreshes and across launches.
+    /// decode. Since that UUID was the episode's primary key, each refresh inserted
+    /// the same episode again instead of updating it — and nothing written against one
+    /// of those ids could ever be found again. Deriving the id from the feed keeps one
+    /// row per episode across refreshes, across launches, and across devices.
     static func stable(from string: String) -> UUID {
         var bytes = Array(Insecure.MD5.hash(data: Data(string.utf8)))
         bytes[6] = (bytes[6] & 0x0F) | 0x50   // version 5-ish: derived, not random

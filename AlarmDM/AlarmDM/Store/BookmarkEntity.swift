@@ -9,9 +9,9 @@ import SwiftData
 @Model
 final class BookmarkEntity {
 
-    /// A UUID, unlike BookmarkRealm's Int. Two devices have to be able to
-    /// create a bookmark at the same moment without colliding, and an
-    /// incrementing integer cannot promise that.
+    /// A UUID rather than the incrementing integer the old database used.
+    /// Two devices have to be able to make a bookmark at the same moment
+    /// without colliding, and a counter cannot promise that.
     var id: UUID = UUID()
 
     var createdAt: Date = Date()

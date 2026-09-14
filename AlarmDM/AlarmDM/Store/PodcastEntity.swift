@@ -2,9 +2,9 @@
 //  PodcastEntity.swift
 //  AlarmDM
 //
-//  The SwiftData shape of an episode. Realm is still the live database — this
-//  exists so the schema compiles and the store is created, one step before
-//  anything reads from it.
+//  The SwiftData shape of an episode: what the feed said about it, and
+//  nothing a person did with it. Those live in EpisodeStateEntity and
+//  DownloadEntity, one of which syncs and one of which does not.
 //
 
 import Foundation

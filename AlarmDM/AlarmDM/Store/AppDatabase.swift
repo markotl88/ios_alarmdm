@@ -30,7 +30,7 @@ final class AppDatabase {
     ///
     /// The trade is autosave: a hand-made context does not save on its own, so
     /// every write ends in an explicit `save()`. That suits this code, which
-    /// already wrote Realm in explicit transactions.
+    /// suits this code, which has always written in explicit transactions.
     let context: ModelContext
 
     /// Fires when the store changed underneath us — which, now that half of

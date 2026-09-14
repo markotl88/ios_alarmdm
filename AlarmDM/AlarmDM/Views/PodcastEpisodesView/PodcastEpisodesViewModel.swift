@@ -110,7 +110,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
         self.podcastService = podcastService
         self.selectedShow = show
 
-        // The list holds a snapshot taken from Realm when it loaded, so a
+        // The list holds a snapshot taken from the store when it loaded, so a
         // favourite or a deleted download has to be reflected here explicitly.
         // The Radio tab already listened; this screen did not, so the heart
         // only appeared when something else happened to reload the list.
@@ -118,14 +118,14 @@ final class PodcastEpisodesViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
                 guard let self else { return }
-                self.podcasts = self.loadPodcastsFromRealm()
+                self.podcasts = self.storedPodcasts()
             }
             .store(in: &cancellables)
     }
     
-    // MARK: - Fetch Podcasts from Server and Save to Realm
+    // MARK: - Fetch episodes from the server and save them
     func fetchData() {
-        podcasts = loadPodcastsFromRealm()
+        podcasts = storedPodcasts()
         
         if let lastDate = podcasts.first?.createdDate?.iso8601String {
             getPodcasts(for: selectedShow.rawValue, from: lastDate, isBefore: false)
@@ -134,8 +134,8 @@ final class PodcastEpisodesViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Fetch Podcasts from Realm
-    private func loadPodcastsFromRealm() -> [Podcast] {
+    // MARK: - Read episodes back
+    private func storedPodcasts() -> [Podcast] {
         repository.podcasts(for: selectedShow)
     }
     
@@ -151,7 +151,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
             case .success(let paginationData):
                 
                 self.repository.save(paginationData.podcasts.map { Podcast(from: $0) })
-                self.podcasts = loadPodcastsFromRealm()
+                self.podcasts = storedPodcasts()
                 
                 if (isBefore ?? true) {
                     if paginationData.podcasts.isEmpty || self.currentPage > (paginationData.totalPages ?? 1) {

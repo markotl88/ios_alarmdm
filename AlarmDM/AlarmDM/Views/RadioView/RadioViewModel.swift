@@ -16,7 +16,7 @@ final class RadioViewModel: ObservableObject {
     @Published var activeFilter: EpisodeFilter?
 
     /// How many episodes are on screen. Grows as the list is scrolled; the API
-    /// is only asked for more when Realm runs out.
+    /// is only asked for more when the store runs out.
     private var displayLimit = 20
     private var nextPage = 1
     private var reachedEnd = false

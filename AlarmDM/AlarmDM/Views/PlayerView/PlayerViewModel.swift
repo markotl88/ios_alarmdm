@@ -198,7 +198,7 @@ final class PlayerViewModel: ObservableObject {
             .sink { [weak self] in
                 guard let self,
                       let podcastId = self.podcastId,
-                      let refreshed = self.loadPodcastFromRealm(with: podcastId) else { return }
+                      let refreshed = self.storedPodcast(with: podcastId) else { return }
                 self.podcast = refreshed
                 self.isFavorite = refreshed.isFavorite
                 self.isDownloaded = refreshed.isDownloaded
@@ -221,7 +221,7 @@ final class PlayerViewModel: ObservableObject {
         case .podcast(let playing):
             if let podcastId, podcastId == playing.id { return }
             self.podcastId = playing.id
-            self.podcast = loadPodcastFromRealm(with: playing.id) ?? playing
+            self.podcast = storedPodcast(with: playing.id) ?? playing
             self.onlineStream = nil
             self.isDownloaded = self.podcast?.isDownloaded ?? false
             self.isFavorite = self.podcast?.isFavorite ?? false
@@ -271,7 +271,7 @@ final class PlayerViewModel: ObservableObject {
         case .podcast(let selected):
             onlineStream = nil
             podcastId = selected.id
-            podcast = loadPodcastFromRealm(with: selected.id) ?? selected
+            podcast = storedPodcast(with: selected.id) ?? selected
             title = selected.title
             subtitle = selected.subtitle
             artworkName = selected.show.imageName
@@ -499,7 +499,7 @@ final class PlayerViewModel: ObservableObject {
     func toggleFavourite() {
         guard let podcast else { return }
         EpisodeLibrary.shared.toggleFavourite(podcast)
-        self.podcast = loadPodcastFromRealm(with: podcast.id) ?? podcast
+        self.podcast = storedPodcast(with: podcast.id) ?? podcast
         isFavorite = self.podcast?.isFavorite ?? false
     }
 
@@ -545,13 +545,13 @@ final class PlayerViewModel: ObservableObject {
         EpisodeLibrary.shared.deleteDownload(podcast)
     }
 
-    // MARK: - Realm
+    // MARK: - The store
 
     /// Reads go through the repository like everywhere else; writes are the
-    /// library's job, so this view model no longer touches Realm directly.
-    private func loadPodcastFromRealm(with id: UUID) -> Podcast? {
+    /// library's job, so this view model no longer touches the store directly.
+    private func storedPodcast(with id: UUID) -> Podcast? {
         guard let podcast = episodes.podcast(with: id) else {
-            debugPrint("Podcast \(id) not found in Realm")
+            debugPrint("Podcast \(id) not found in the store")
             return nil
         }
         return podcast

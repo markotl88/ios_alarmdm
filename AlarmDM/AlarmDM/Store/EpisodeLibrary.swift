@@ -16,7 +16,7 @@ protocol ProgressRecording: AnyObject {
     func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID)
 }
 
-/// Favouriting and deleting a download touch both the file system and Realm,
+/// Favouriting and deleting a download touch both the file system and the store,
 /// and both the Radio tab and a show's list offer them. Kept in one place so
 /// the two screens cannot drift apart.
 final class EpisodeLibrary: ProgressRecording {
@@ -24,7 +24,7 @@ final class EpisodeLibrary: ProgressRecording {
     static let shared = EpisodeLibrary()
 
     /// Fires whenever an episode's local state changes. Lists hold snapshots
-    /// taken from Realm when they appeared, so without this a download made
+    /// taken from the store when they appeared, so without this a download made
     /// from the player leaves every visible row still claiming it is not
     /// downloaded — and the Preuzeto filter cannot see it.
     let didChange = PassthroughSubject<Void, Never>()
@@ -131,8 +131,8 @@ final class EpisodeLibrary: ProgressRecording {
         return true
     }
 
-    /// Called by whoever wrote to Realm outside this type — the player, after
-    /// a download finishes.
+    /// Called by whoever wrote to the store outside this type — the player,
+    /// after a download finishes.
     func episodeDidChange() {
         didChange.send()
     }
