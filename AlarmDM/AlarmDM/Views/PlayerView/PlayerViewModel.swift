@@ -390,7 +390,7 @@ final class PlayerViewModel: ObservableObject {
         // one is the library's record of this particular episode, which every
         // episode has and which is what will sync between devices.
         let end = podcast?.endOfShow ?? 0
-        PodcastRepository.shared.recordProgress(
+        EpisodeLibrary.shared.recordProgress(
             position: currentTime,
             hasFinished: end > 0 && currentTime >= end,
             for: podcastId

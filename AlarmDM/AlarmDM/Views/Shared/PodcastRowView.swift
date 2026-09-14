@@ -23,11 +23,15 @@ struct PodcastRowView: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 50, height: 50)
                 .cornerRadius(8)
+                .opacity(podcast.isPlayed ? 0.55 : 1)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(podcast.title)
                         .font(.headline)
+                        // Heard: still legible, no longer competing with the
+                        // episodes that have not been.
+                        .foregroundColor(podcast.isPlayed ? Color("secondaryText") : Color("primaryText"))
                         .lineLimit(2)
 
                     if showsMusicVariant {
@@ -42,11 +46,22 @@ struct PodcastRowView: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(2)
+
+                if let progress = podcast.listeningProgress {
+                    ListeningProgressLine(progress: progress)
+                        .padding(.top, 2)
+                }
             }
 
             Spacer(minLength: 0)
 
             VStack(spacing: 6) {
+                if podcast.isPlayed {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.footnote)
+                        .foregroundColor(Color("secondaryText"))
+                        .accessibilityLabel("Odslušano")
+                }
                 if podcast.isFavorite {
                     Image(systemName: "heart.fill")
                         .font(.footnote)
@@ -64,6 +79,36 @@ struct PodcastRowView: View {
             }
         }
         .padding(.vertical, 6)
+        // Translucent rather than a colour of its own, so it tints whatever
+        // the list is drawing underneath — the Radio tab's grouped cards and
+        // the episode list's plain rows both come out right without either
+        // screen having to say anything.
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color("primaryLink").opacity(podcast.isPlayed ? 0.07 : 0))
+                .padding(.horizontal, -8)
+        )
+    }
+}
+
+/// The line under an episode that has been started and not finished. Two
+/// capsules rather than a ProgressView: at two points tall, the stock control
+/// brings its own padding and its own minimum height, and fights the row.
+struct ListeningProgressLine: View {
+    let progress: Double
+
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color(.quaternaryLabel))
+                Capsule()
+                    .fill(Color("primaryLink"))
+                    .frame(width: geometry.size.width * min(max(progress, 0), 1))
+            }
+        }
+        .frame(height: 2)
+        .accessibilityLabel("Odslušano \(Int(progress * 100)) posto")
     }
 }
 

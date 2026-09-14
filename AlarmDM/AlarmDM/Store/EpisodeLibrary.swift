@@ -122,6 +122,15 @@ final class EpisodeLibrary {
         didChange.send()
     }
 
+    /// Where a listen got to, written down and announced. Through here rather
+    /// than straight into the repository so the lists hear about it: an
+    /// episode that has just been finished should carry its tick the moment
+    /// the player is put down, not the next time the screen happens to fetch.
+    func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID) {
+        repository.recordProgress(position: position, hasFinished: hasFinished, for: id)
+        didChange.send()
+    }
+
     func toggleFavourite(_ podcast: Podcast) {
         repository.setFavorite(!podcast.isFavorite, for: podcast.id)
         didChange.send()

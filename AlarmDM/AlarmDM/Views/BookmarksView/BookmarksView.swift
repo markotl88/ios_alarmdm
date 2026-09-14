@@ -125,14 +125,11 @@ struct BookmarkRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // A live capture that has not found its episode is a note and
-            // nothing more — no audio behind it, nowhere to jump. The broadcast
-            // glyph says that before the tap does.
             Image(systemName: leadingSymbol)
                 .font(.footnote)
                 .foregroundColor(leadingColor)
                 .frame(width: 26, height: 26)
-                .background(Circle().fill(Color(.tertiarySystemFill)))
+                .background(Circle().fill(badgeFill))
 
             VStack(alignment: .leading, spacing: 3) {
                 Text(bookmark.displayTitle)
@@ -160,24 +157,35 @@ struct BookmarkRowView: View {
                     Text("UŽIVO")
                         .font(.caption2.weight(.bold))
                 }
-                .foregroundColor(Color("secondaryText"))
+                .foregroundColor(Color("noteAccent"))
                 .padding(.horizontal, 7)
                 .padding(.vertical, 3)
-                .background(Capsule().fill(Color(.tertiarySystemFill)))
+                .background(Capsule().fill(Color("noteAccent").opacity(0.14)))
             }
         }
         .padding(.vertical, 4)
-        // Dimmed as a whole, because none of it leads anywhere yet.
-        .opacity(bookmark.isAwaitingEpisode ? 0.75 : 1)
     }
 
     private var leadingSymbol: String {
+        if bookmark.isAwaitingEpisode { return "dot.radiowaves.left.and.right" }
         if let category = bookmark.category { return category.systemImage }
-        return bookmark.isAwaitingEpisode ? "dot.radiowaves.left.and.right" : "bookmark"
+        return "bookmark"
     }
 
+    /// One that has not found its episode is a note and nothing more: tapping
+    /// it plays nothing. It used to be dimmed as a whole, which read as
+    /// disabled — as if the row were broken rather than waiting. A colour of
+    /// its own says the same thing without taking the text away, and the
+    /// category symbol gives way to the broadcast one so the reason is legible
+    /// at a glance.
     private var leadingColor: Color {
-        guard bookmark.category != nil else { return .secondary }
-        return Color("primaryLink")
+        if bookmark.isAwaitingEpisode { return Color("noteAccent") }
+        return bookmark.category != nil ? Color("primaryLink") : .secondary
+    }
+
+    private var badgeFill: Color {
+        bookmark.isAwaitingEpisode
+            ? Color("noteAccent").opacity(0.14)
+            : Color(.tertiarySystemFill)
     }
 }

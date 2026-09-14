@@ -183,6 +183,21 @@ extension Podcast {
         return show.outroSeconds
     }
 
+    /// How far through the show a listen got, as a fraction — for the line
+    /// under an episode in a list.
+    ///
+    /// Nil for an episode that has not been started and for one that is
+    /// finished: an empty line and a full line each say nothing, and drawing
+    /// them puts a rule under every row in the list for no reason.
+    var listeningProgress: Double? {
+        guard !isPlayed, playedPosition > 0 else { return nil }
+        let end = endOfShow
+        guard end > 0 else { return nil }
+        // A minimum, so a minute into a three-hour episode is still visible as
+        // something rather than as a line that was never drawn.
+        return min(max(playedPosition / end, 0.02), 1)
+    }
+
     /// True once the listen has gone past the end of the show. Kept here
     /// rather than read off the stored flag alone so a position restored
     /// mid-session answers the same way.
