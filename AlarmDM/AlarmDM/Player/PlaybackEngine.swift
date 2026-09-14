@@ -359,7 +359,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
                 self.currentTime = time.seconds
             }
             #if DEBUG
-            self.logLiveBuffer()
+            self.logBuffer()
             #endif
             if let itemDuration = self.player?.currentItem?.duration,
                itemDuration.isNumeric, !itemDuration.isIndefinite {
@@ -387,14 +387,16 @@ final class PlaybackEngine: NSObject, ObservableObject {
     }
 
     #if DEBUG
-    /// How much of the live stream the player is actually holding. Two answers
-    /// come out of it: whether rewinding live radio is possible at all, and how
-    /// large a window a recording buffer would have to cover to be useful.
+    /// How much of the current item the player is actually holding. On live
+    /// radio it answers whether rewinding is possible at all and how large a
+    /// recording window would have to be; on an episode it answers how far
+    /// ahead the file has been fetched, which is how long playback can carry
+    /// on with the network gone.
     ///
     /// Reads only — no player, no session, nothing that could collide with a
     /// source change.
-    private func logLiveBuffer() {
-        guard isLive, let item = player?.currentItem else { return }
+    private func logBuffer() {
+        guard let item = player?.currentItem else { return }
         guard Date().timeIntervalSince(lastBufferLog) > 5 else { return }
         lastBufferLog = Date()
 
@@ -411,7 +413,8 @@ final class PlaybackEngine: NSObject, ObservableObject {
             .filter { $0.isFinite }
             .reduce(0, +)
 
-        debugPrint(String(format: "live buffer — seekable: [%@] loaded: %.1fs at %.1f",
+        debugPrint(String(format: "%@ buffer — seekable: [%@] loaded: %.1fs at %.1f",
+                          isLive ? "live" : "file",
                           seekableText.isEmpty ? "none" : seekableText,
                           loadedSeconds,
                           currentTime))

@@ -221,6 +221,12 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Mode
 
     private func applyMode() {
+        // A different thing is being loaded, so the old position is not a
+        // position any more. Without this the scrubber shows where the
+        // previous episode stopped until the engine's first zero arrives,
+        // which it does a runloop late.
+        currentTime = 0
+
         switch mode {
         case .radio(let stream):
             onlineStream = stream ?? AppConstants.fallbackStreamURL
@@ -312,6 +318,9 @@ final class PlayerViewModel: ObservableObject {
         // A bookmark supersedes whatever was restored: this is the position
         // being asked for now.
         restoredPosition = nil
+        // Shown straight away rather than after the seek lands, so the
+        // scrubber never blinks through zero on the way to the bookmark.
+        currentTime = max(0, position)
         engine.play(source, startingAt: position)
         isPresented = true
     }
