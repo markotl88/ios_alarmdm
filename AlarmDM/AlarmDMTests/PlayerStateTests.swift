@@ -195,6 +195,27 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.lastPlayPosition ?? -1, 4_000, accuracy: 0.5)
     }
 
+    /// The other half of the same rule: a listen that happened on another
+    /// device after this one last wrote its slot is the later of the two, and
+    /// it is the one to open at.
+    func testAPositionSyncedFromElsewhereBeatsAnOlderSlot() {
+        var elsewhere = alarm!
+        elsewhere.playedPosition = 5_700
+        elsewhere.playedAt = Date()
+        episodes.rows[elsewhere.id] = elsewhere
+
+        PlaybackStateStore(defaults: defaults).save(
+            PlaybackState(podcastId: elsewhere.id,
+                          position: 3_120,
+                          savedAt: Date(timeIntervalSinceNow: -3_600))
+        )
+
+        let player = makePlayer()
+        player.restorePlaybackState()
+
+        XCTAssertEqual(player.currentTime, 5_697, accuracy: 0.5)
+    }
+
     // MARK: - Finishing
 
     func testStoppingPastTheEndMarksItHeard() {
