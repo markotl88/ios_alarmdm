@@ -206,13 +206,25 @@ extension Podcast {
         return end > 0 && playedPosition >= end
     }
 
-    /// Where the show is over and the credits start rolling — the line an
-    /// episode has to cross to count as listened to. Falls back to the full
-    /// running time when nothing has been measured.
+    /// How much of an episode counts as having heard it, when the credits
+    /// are not what settles it.
+    static let playedFraction = 0.95
+
+    /// The finish line: whichever comes first, ninety-five percent of the
+    /// running time or the start of the closing credits.
+    ///
+    /// Neither works alone. On a three-hour Alarm the credits are twenty
+    /// seconds from the end, and nobody sits through the last eight minutes
+    /// to reach them; on a five-minute episode ninety-five percent lands
+    /// fifteen seconds from the end, inside the credits themselves. Taking
+    /// the earlier of the two is right at both lengths.
+    ///
+    /// Falls back to the running time alone when the episode does not say how
+    /// long it runs.
     var endOfShow: TimeInterval {
         let duration = durationInSeconds
         guard duration > 0 else { return 0 }
-        return max(0, duration - outro)
+        return max(0, min(duration * Podcast.playedFraction, duration - outro))
     }
 
     var durationInSeconds: Double {
