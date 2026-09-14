@@ -28,7 +28,16 @@ struct TabBar: View {
         // tab bar, which is what a thumb and an eye both expect.
         .frame(maxWidth: widthClass == .regular ? 560 : .infinity)
         .frame(maxWidth: .infinity)
-        .background(Color(UIColor.systemBackground).ignoresSafeArea(edges: .bottom))
+        // The same material as the mini player above it, so on a wide window
+        // the two read as one bar at the foot of the page instead of a white
+        // strip laid across it.
+        .background {
+            if widthClass == .regular {
+                Rectangle().fill(.regularMaterial).ignoresSafeArea(edges: .bottom)
+            } else {
+                Color(UIColor.systemBackground).ignoresSafeArea(edges: .bottom)
+            }
+        }
         .foregroundColor(Color.primary)
         .font(.footnote)
     }

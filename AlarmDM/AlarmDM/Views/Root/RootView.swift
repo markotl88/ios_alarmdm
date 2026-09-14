@@ -40,6 +40,13 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
+            // The content column stops at nine hundred points, but the page it
+            // sits on does not. Without this the window shows white margins on
+            // either side of a grey list, which reads as a panel floating on
+            // nothing rather than as a column of content on a page.
+            Color(UIColor.systemGroupedBackground)
+                .ignoresSafeArea()
+
             VStack(spacing: 0) {
                 Group {
                     switch currentItem {
