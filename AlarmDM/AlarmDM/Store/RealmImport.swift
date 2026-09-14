@@ -56,15 +56,21 @@ enum RealmImport {
             return
         }
 
-        let worthKeeping = realm.objects(PodcastRealm.self)
-            .filter("isFavorite == true OR fileUrl != nil")
-            .filter { !$0.podcastUrl.isEmpty }
+        // Realm's own filter first, then out of Realm's world entirely: its
+        // collections are lazy, and everything derived from them stays lazy
+        // until something makes an array of it.
+        let worthKeeping = Array(
+            realm.objects(PodcastRealm.self)
+                .filter("isFavorite == true OR fileUrl != nil")
+        )
 
-        let pending = worthKeeping.map {
-            PendingLocalState(podcastUrl: $0.podcastUrl,
-                              isFavorite: $0.isFavorite,
-                              fileName: $0.fileUrl)
-        }
+        let pending: [PendingLocalState] = worthKeeping
+            .filter { !$0.podcastUrl.isEmpty }
+            .map {
+                PendingLocalState(podcastUrl: $0.podcastUrl,
+                                  isFavorite: $0.isFavorite,
+                                  fileName: $0.fileUrl)
+            }
 
         save(pending, to: defaults)
         defaults.set(true, forKey: didRunKey)
