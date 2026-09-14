@@ -12,6 +12,16 @@ struct RootView: View {
     @State private var currentItem: TabBarItem = .radio
     @StateObject private var playerViewModel = PlayerViewModel(mode: nil)
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var widthClass
+
+    /// How wide the content is allowed to get before it stops following the
+    /// window. A list of episode titles set to the full width of a Mac window
+    /// is a line of text with a hundred points of subject and eight hundred of
+    /// nothing, and an eye has to travel all of it. Everything that scrolls
+    /// keeps to this, and so does the mini player, so the two line up.
+    static func contentWidth(for widthClass: UserInterfaceSizeClass?) -> CGFloat {
+        widthClass == .regular ? 900 : .infinity
+    }
 
     /// The WiFi-only warning lives here rather than in each list, so the same
     /// alert answers a blocked download wherever it was started — a row, the
@@ -31,27 +41,33 @@ struct RootView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                switch currentItem {
-                case .radio:
-                    NavigationStack {
-                        RadioView()
-                    }
-                case .shows:
-                    NavigationStack {
-                        ShowView()
-                    }
-                case .support:
-                    NavigationStack {
-                        SupportView()
-                    }
-                case .settings:
-                    NavigationStack {
-                        SettingsView()
+                Group {
+                    switch currentItem {
+                    case .radio:
+                        NavigationStack {
+                            RadioView()
+                        }
+                    case .shows:
+                        NavigationStack {
+                            ShowView()
+                        }
+                    case .support:
+                        NavigationStack {
+                            SupportView()
+                        }
+                    case .settings:
+                        NavigationStack {
+                            SettingsView()
+                        }
                     }
                 }
+                .frame(maxWidth: RootView.contentWidth(for: widthClass))
+                .frame(maxWidth: .infinity)
 
                 // rezerviši prostor za MiniPlayer + TabBar
-                Spacer().frame(height: playerViewModel.isPresented && !playerViewModel.isExpanded ? 60 : 0)
+                Spacer().frame(height: playerViewModel.isPresented && !playerViewModel.isExpanded
+                               ? MiniPlayerView.height(for: widthClass)
+                               : 0)
                 Spacer().frame(height: 60) // fiksna visina lažnog tab bara
             }
 

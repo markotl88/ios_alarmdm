@@ -12,6 +12,24 @@ import SwiftUI
 
 struct MiniPlayerView: View {
     @EnvironmentObject var playerViewModel: PlayerViewModel
+    @Environment(\.horizontalSizeClass) private var widthClass
+
+    private var isWide: Bool { widthClass == .regular }
+
+    /// The bar is sized for a thumb on a phone. On a bigger screen it is
+    /// being read from further away and clicked rather than tapped, so it
+    /// grows a little — but only a little, since the point of it is still
+    /// that it is not the player.
+    /// Including the two point strip along the top. The root view reserves
+    /// exactly this much space above the tab bar, so the number lives here
+    /// rather than being written down twice and drifting apart.
+    static func height(for widthClass: UserInterfaceSizeClass?) -> CGFloat {
+        (widthClass == .regular ? 72 : 58) + 2
+    }
+
+    private var barHeight: CGFloat { isWide ? 72 : 58 }
+    private var artworkSide: CGFloat { isWide ? 56 : 44 }
+    private var controlSide: CGFloat { isWide ? 40 : 34 }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,7 +52,7 @@ struct MiniPlayerView: View {
                 Image(playerViewModel.artworkName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: 44, height: 44)
+                    .frame(width: artworkSide, height: artworkSide)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -42,7 +60,7 @@ struct MiniPlayerView: View {
                     // change the bar's height depending on the episode.
                     MarqueeText(
                         text: playerViewModel.title,
-                        font: .subheadline.weight(.semibold)
+                        font: isWide ? .body.weight(.semibold) : .subheadline.weight(.semibold)
                     )
                     .foregroundColor(Color("primaryText"))
 
@@ -68,7 +86,7 @@ struct MiniPlayerView: View {
                 } label: {
                     Image(systemName: playerViewModel.justBookmarked ? "bookmark.fill" : "bookmark")
                         .font(.subheadline.weight(.semibold))
-                        .frame(width: 30, height: 34)
+                        .frame(width: controlSide - 4, height: controlSide)
                         .foregroundColor(playerViewModel.justBookmarked
                                          ? Color("primaryLink")
                                          : Color("secondaryText"))
@@ -86,7 +104,7 @@ struct MiniPlayerView: View {
                                 .font(.title3)
                         }
                     }
-                    .frame(width: 34, height: 34)
+                    .frame(width: controlSide, height: controlSide)
                     .foregroundColor(Color("primaryText"))
                 }
                 .accessibilityLabel(playerViewModel.isPlaying ? "Pauziraj" : "Pusti")
@@ -96,13 +114,18 @@ struct MiniPlayerView: View {
                 } label: {
                     Image(systemName: "xmark")
                         .font(.subheadline.weight(.semibold))
-                        .frame(width: 30, height: 34)
+                        .frame(width: controlSide - 4, height: controlSide)
                         .foregroundColor(Color("secondaryText"))
                 }
                 .accessibilityLabel("Zaustavi")
             }
-            .padding(.horizontal, 12)
-            .frame(height: 58)
+            .padding(.horizontal, isWide ? 16 : 12)
+            .frame(height: barHeight)
+            // Held to the same width as the lists above it, so the artwork
+            // starts where the rows start instead of floating off to one side
+            // of a wide window.
+            .frame(maxWidth: RootView.contentWidth(for: widthClass))
+            .frame(maxWidth: .infinity)
         }
         .background(.regularMaterial)
         .contentShape(Rectangle())

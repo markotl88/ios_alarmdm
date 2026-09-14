@@ -13,6 +13,8 @@
 		4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */; };
 		4D16A3273058434E00A6FEEA /* ListeningRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */; };
 		4D16A3283058434E00A6FEEA /* PlayerStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */; };
+		4D16A32B305849B600A6FEEA /* DownloadEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A329305849B600A6FEEA /* DownloadEntity.swift */; };
+		4D16A32C305849B600A6FEEA /* EpisodeStateEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */; };
 		4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */; };
 		4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; };
 		4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */; };
@@ -103,6 +105,8 @@
 		4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningRulesTests.swift; sourceTree = "<group>"; };
 		4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStateTests.swift; sourceTree = "<group>"; };
+		4D16A329305849B600A6FEEA /* DownloadEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEntity.swift; sourceTree = "<group>"; };
+		4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeStateEntity.swift; sourceTree = "<group>"; };
 		4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
 		4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Podcast+Realm.swift"; sourceTree = "<group>"; };
 		4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+Realm.swift"; sourceTree = "<group>"; };
@@ -227,6 +231,8 @@
 				AA0000000000000000000133 /* BookmarkEntity.swift */,
 				AA0000000000000000000131 /* PodcastEntity.swift */,
 				AA0000000000000000000129 /* EpisodeLibrary.swift */,
+				4D16A329305849B600A6FEEA /* DownloadEntity.swift */,
+				4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */,
 				4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */,
 				AA0000000000000000000108 /* PodcastRepository.swift */,
 				4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */,
@@ -601,6 +607,8 @@
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
 				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,
 				4D6677982CC7AF8200EC2ADE /* Bookmark+Realm.swift in Sources */,
+				4D16A32B305849B600A6FEEA /* DownloadEntity.swift in Sources */,
+				4D16A32C305849B600A6FEEA /* EpisodeStateEntity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
