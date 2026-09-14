@@ -107,6 +107,35 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
+    /// The episode row is rewritten the moment playback pauses — that is when
+    /// progress is written down — so by the time play is pressed again, the
+    /// value the player holds no longer equals the one the engine was given.
+    /// Deciding "is this already loaded" by comparing those values answers no,
+    /// and the file starts again from the beginning.
+    func testPausingAndPlayingAgainDoesNotStartTheEpisodeOver() {
+        let player = makePlayer()
+
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        engine.advance(to: 600)
+        flush()
+
+        player.togglePlayPause()
+
+        // What the lists do after progress is recorded: hand the player a
+        // freshly read row, which now carries the position.
+        var refreshed = alarm!
+        refreshed.playedPosition = 600
+        refreshed.playedAt = Date()
+        episodes.rows[refreshed.id] = refreshed
+        player.mode = .podcast(podcast: refreshed)
+
+        player.togglePlayPause()
+
+        XCTAssertEqual(engine.playCalls.count, 1, "the episode was loaded a second time")
+        XCTAssertEqual(player.currentTime, 600, accuracy: 1)
+    }
+
     // MARK: - Coming back to an episode
 
     func testAnEpisodeOpensWhereItWasLeft() {

@@ -351,7 +351,7 @@ final class PlayerViewModel: ObservableObject {
     func togglePlayPause() {
         guard let source = currentSource else { return }
 
-        if engine.source == source {
+        if source.isSameContent(as: engine.source) {
             engine.toggle()
         } else {
             // A restored episode has never been loaded into the engine, so the

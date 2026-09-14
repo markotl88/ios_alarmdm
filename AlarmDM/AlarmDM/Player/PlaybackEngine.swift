@@ -22,6 +22,27 @@ enum PlaybackSource: Equatable {
     case radio(url: URL)
     case podcast(Podcast)
 
+    /// What is playing, rather than what is known about it.
+    ///
+    /// Two of these can hold the same audio and still be unequal: a Podcast
+    /// carries a favourite flag, a downloaded file and how far it has been
+    /// listened to, and every one of those changes while the episode plays.
+    /// Comparing the whole value to decide whether something is already
+    /// loaded answers "no" the moment any of it is written down — and the
+    /// answer to that question decides between carrying on and starting the
+    /// file again from the beginning.
+    var contentId: String {
+        switch self {
+        case .radio(let url): return url.absoluteString
+        case .podcast(let podcast): return podcast.id.uuidString
+        }
+    }
+
+    func isSameContent(as other: PlaybackSource?) -> Bool {
+        guard let other else { return false }
+        return contentId == other.contentId
+    }
+
     var title: String {
         switch self {
         case .radio: return "Radio uživo"
@@ -194,7 +215,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     /// Starts playback of `source`. Re-selecting what is already loaded just resumes.
     func play(_ source: PlaybackSource, startingAt position: TimeInterval? = nil) {
-        if self.source == source, player != nil {
+        if source.isSameContent(as: self.source), player != nil {
             if let position { seek(to: position) }
             resume()
             return
