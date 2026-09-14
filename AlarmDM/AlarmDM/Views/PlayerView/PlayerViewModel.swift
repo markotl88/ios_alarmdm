@@ -459,6 +459,10 @@ final class PlayerViewModel: ObservableObject {
             position = saved.position
         }
 
+        #if DEBUG
+        debugPrint("restoring \(Int(position))s for \(saved.podcastId) — slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
+        #endif
+
         restoredPosition = position
         currentTime = position
         // The feed already told us how long it runs, so the scrubber and the

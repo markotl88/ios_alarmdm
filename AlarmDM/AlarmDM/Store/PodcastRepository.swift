@@ -130,6 +130,13 @@ final class PodcastRepository: EpisodeLookup {
         state.isPlayed = state.isPlayed || hasFinished
         state.playedAt = Date()
         commit("recording progress")
+
+        #if DEBUG
+        // The id is the thing to compare between two devices: the same episode
+        // has to be the same id everywhere, or each device is writing into its
+        // own corner of the same database and syncing looks broken.
+        debugPrint("progress \(Int(position))s for \(id) — \(state.episodeTitle)")
+        #endif
     }
 
     func setDownloadedFile(_ fileName: String?, for id: UUID) {
