@@ -485,6 +485,11 @@ final class PlayerViewModel: ObservableObject {
     /// depend on a notification arriving.
     func refreshFromStoreIfIdle() {
         guard engine.source == nil, !isLive, let podcastId else { return }
+
+        // Not just re-read: read again from a store that has been asked to
+        // forget what it already showed us.
+        episodes.refreshFromStore()
+
         guard let stored = episodes.podcast(with: podcastId) else { return }
 
         podcast = stored

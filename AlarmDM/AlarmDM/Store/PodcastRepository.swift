@@ -15,6 +15,12 @@ import SwiftData
 /// of whatever happens to be in the database.
 protocol EpisodeLookup: AnyObject {
     func podcast(with id: UUID) -> Podcast?
+    /// Forget what has already been read, in case something has arrived since.
+    func refreshFromStore()
+}
+
+extension EpisodeLookup {
+    func refreshFromStore() {}
 }
 
 final class PodcastRepository: EpisodeLookup {
@@ -28,6 +34,11 @@ final class PodcastRepository: EpisodeLookup {
     }
 
     private var context: ModelContext { database.context }
+
+    /// Asked for by whoever is about to make a decision on what it reads back.
+    func refreshFromStore() {
+        database.adoptStoreChanges()
+    }
 
     // MARK: - Reads
 

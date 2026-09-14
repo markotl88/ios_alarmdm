@@ -31,7 +31,7 @@ final class AppDatabase {
     /// The trade is autosave: a hand-made context does not save on its own, so
     /// every write ends in an explicit `save()`. That suits this code, which
     /// suits this code, which has always written in explicit transactions.
-    let context: ModelContext
+    private(set) var context: ModelContext
 
     /// Fires when the store changed underneath us — which, now that half of
     /// it syncs, means another device wrote something. Screens hold snapshots
@@ -105,13 +105,36 @@ final class AppDatabase {
         observeRemoteChanges()
     }
 
+    /// Throws away the context and takes a fresh one.
+    ///
+    /// A context is not a window onto the store, it is a copy of the part of
+    /// it that has been looked at. Rows imported from iCloud land in the store
+    /// underneath, and this context — made once at launch and kept for the
+    /// life of the app — goes on answering with what it already held. That is
+    /// what "every device only remembers its own state" looked like: the
+    /// writing worked, the transport worked, and the reading was of a
+    /// photograph taken before any of it arrived.
+    ///
+    /// Cheap: a context holds no data of its own until something is fetched
+    /// through it.
+    func adoptStoreChanges() {
+        context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        #if DEBUG
+        debugPrint("store re-read")
+        #endif
+    }
+
     private func observeRemoteChanges() {
         NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.didChangeRemotely.send()
+            guard let self else { return }
+            self.adoptStoreChanges()
+            self.didChangeRemotely.send()
         }
 
         #if DEBUG

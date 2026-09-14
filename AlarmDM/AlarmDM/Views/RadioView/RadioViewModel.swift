@@ -120,6 +120,9 @@ final class RadioViewModel: ObservableObject {
 
     func refresh() {
         guard !isLoading else { return }
+        // Pulling the list down asks the network for new episodes; it should
+        // also ask the store for anything another device has sent since.
+        repository.refreshFromStore()
         isLoading = true
         errorMessage = nil
         reachedEnd = false

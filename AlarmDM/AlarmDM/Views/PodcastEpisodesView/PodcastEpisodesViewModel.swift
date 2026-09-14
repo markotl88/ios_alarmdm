@@ -125,6 +125,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
     
     // MARK: - Fetch episodes from the server and save them
     func fetchData() {
+        repository.refreshFromStore()
         podcasts = storedPodcasts()
         
         if let lastDate = podcasts.first?.createdDate?.iso8601String {
