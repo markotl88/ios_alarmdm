@@ -105,6 +105,11 @@ final class PodcastRepository: EpisodeLookup {
         }
 
         commit("saving episodes")
+
+        // Anything carried over from the old database that was waiting for
+        // these episodes can attach itself now. Costs one UserDefaults read
+        // when there is nothing waiting, which is the normal case.
+        RealmImport.reconcile(with: podcasts)
     }
 
     func save(_ podcast: Podcast) {

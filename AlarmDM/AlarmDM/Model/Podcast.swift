@@ -277,20 +277,10 @@ extension Podcast {
     }
 }
 
-extension Podcast {
-    init(from podcastRealm: PodcastRealm) {
-        self.id = UUID(uuidString: podcastRealm.id) ?? UUID() // Convert String to UUID, fallback to a new UUID if conversion fails
-        self.title = podcastRealm.title
-        self.subtitle = podcastRealm.subtitle
-        self.createdDate = podcastRealm.createdAt
-        self.timestamp = podcastRealm.timestamp
-        self.podcastUrl = podcastRealm.podcastUrl
-        self.duration = podcastRealm.duration
-        self.lengthInBytes = podcastRealm.lengthInBytes
-        self.itunesDuration = podcastRealm.itunesDuration
-        self.show = Show(rawValue: podcastRealm.show ?? "") ?? .ostalo
-        self.fileUrl = podcastRealm.fileUrl
-        self.isFavorite = podcastRealm.isFavorite
-        self.isWithMusic = podcastRealm.isWithMusic
-    }
-}
+// An episode used to be built from a Realm row here, and that conversion is
+// gone on purpose. The id it produced came from `UUID(uuidString:) ?? UUID()`
+// over an identifier the old app generated at random, so it was either a
+// meaningless UUID or a brand new one each time it ran — never the id the feed
+// gives the same episode. Anything written under it was invisible from the
+// moment it was written. What the old database still has to say is carried
+// over by media URL instead; see RealmImport.
