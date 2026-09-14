@@ -11,6 +11,8 @@
 		4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */; };
 		4D13F4522CCBCA7800AA52D1 /* PlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */; };
 		4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */; };
+		4D16A3273058434E00A6FEEA /* ListeningRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */; };
+		4D16A3283058434E00A6FEEA /* PlayerStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */; };
 		4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */; };
 		4D6677932CC7AA7300EC2ADE /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 4D6677922CC7AA7300EC2ADE /* RealmSwift */; };
 		4D6677962CC7AAC700EC2ADE /* Podcast+Realm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */; };
@@ -42,25 +44,25 @@
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
-		AA0000000000000000000162 /* LiveBookmarkMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000161 /* LiveBookmarkMatcher.swift */; };
-		AA0000000000000000000156 /* BookmarkToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000155 /* BookmarkToastView.swift */; };
-		AA0000000000000000000154 /* BookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000153 /* BookmarksViewModel.swift */; };
-		AA0000000000000000000152 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000151 /* BookmarksView.swift */; };
-		AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000143 /* BookmarkLibrary.swift */; };
-		AA0000000000000000000142 /* BookmarkRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000141 /* BookmarkRepository.swift */; };
-		AA0000000000000000000138 /* RealmImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000137 /* RealmImport.swift */; };
-		AA0000000000000000000136 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000135 /* AppDatabase.swift */; };
-		AA0000000000000000000134 /* BookmarkEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000133 /* BookmarkEntity.swift */; };
-		AA0000000000000000000132 /* PodcastEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000131 /* PodcastEntity.swift */; };
-		AA000000000000000000012A /* EpisodeLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000129 /* EpisodeLibrary.swift */; };
-		AA0000000000000000000128 /* EpisodeRowActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000127 /* EpisodeRowActions.swift */; };
-		AA0000000000000000000126 /* PodcastRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000125 /* PodcastRowView.swift */; };
-		AA0000000000000000000124 /* FullscreenPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000123 /* FullscreenPlayerView.swift */; };
-		AA0000000000000000000122 /* TabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000121 /* TabBar.swift */; };
-		AA0000000000000000000172 /* PlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000171 /* PlaybackState.swift */; };
 		AA000000000000000000010F /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000110 /* AppSettings.swift */; };
 		AA0000000000000000000111 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000112 /* NetworkMonitor.swift */; };
 		AA0000000000000000000113 /* LiveIndicatorViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000114 /* LiveIndicatorViews.swift */; };
+		AA0000000000000000000122 /* TabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000121 /* TabBar.swift */; };
+		AA0000000000000000000124 /* FullscreenPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000123 /* FullscreenPlayerView.swift */; };
+		AA0000000000000000000126 /* PodcastRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000125 /* PodcastRowView.swift */; };
+		AA0000000000000000000128 /* EpisodeRowActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000127 /* EpisodeRowActions.swift */; };
+		AA000000000000000000012A /* EpisodeLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000129 /* EpisodeLibrary.swift */; };
+		AA0000000000000000000132 /* PodcastEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000131 /* PodcastEntity.swift */; };
+		AA0000000000000000000134 /* BookmarkEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000133 /* BookmarkEntity.swift */; };
+		AA0000000000000000000136 /* AppDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000135 /* AppDatabase.swift */; };
+		AA0000000000000000000138 /* RealmImport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000137 /* RealmImport.swift */; };
+		AA0000000000000000000142 /* BookmarkRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000141 /* BookmarkRepository.swift */; };
+		AA0000000000000000000144 /* BookmarkLibrary.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000143 /* BookmarkLibrary.swift */; };
+		AA0000000000000000000152 /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000151 /* BookmarksView.swift */; };
+		AA0000000000000000000154 /* BookmarksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000153 /* BookmarksViewModel.swift */; };
+		AA0000000000000000000156 /* BookmarkToastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000155 /* BookmarkToastView.swift */; };
+		AA0000000000000000000162 /* LiveBookmarkMatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000161 /* LiveBookmarkMatcher.swift */; };
+		AA0000000000000000000172 /* PlaybackState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000171 /* PlaybackState.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +101,8 @@
 		4D13F4442CCA7E2100AA52D1 /* RadioViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioViewModel.swift; sourceTree = "<group>"; };
 		4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
 		4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
+		4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningRulesTests.swift; sourceTree = "<group>"; };
+		4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStateTests.swift; sourceTree = "<group>"; };
 		4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
 		4D6677952CC7AAC700EC2ADE /* Podcast+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Podcast+Realm.swift"; sourceTree = "<group>"; };
 		4D6677972CC7AF8200EC2ADE /* Bookmark+Realm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bookmark+Realm.swift"; sourceTree = "<group>"; };
@@ -133,25 +137,25 @@
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		AA0000000000000000000161 /* LiveBookmarkMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveBookmarkMatcher.swift; sourceTree = "<group>"; };
-		AA0000000000000000000155 /* BookmarkToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkToastView.swift; sourceTree = "<group>"; };
-		AA0000000000000000000153 /* BookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewModel.swift; sourceTree = "<group>"; };
-		AA0000000000000000000151 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
-		AA0000000000000000000143 /* BookmarkLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkLibrary.swift; sourceTree = "<group>"; };
-		AA0000000000000000000141 /* BookmarkRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkRepository.swift; sourceTree = "<group>"; };
-		AA0000000000000000000137 /* RealmImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmImport.swift; sourceTree = "<group>"; };
-		AA0000000000000000000135 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
-		AA0000000000000000000133 /* BookmarkEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkEntity.swift; sourceTree = "<group>"; };
-		AA0000000000000000000131 /* PodcastEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEntity.swift; sourceTree = "<group>"; };
-		AA0000000000000000000129 /* EpisodeLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeLibrary.swift; sourceTree = "<group>"; };
-		AA0000000000000000000127 /* EpisodeRowActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeRowActions.swift; sourceTree = "<group>"; };
-		AA0000000000000000000125 /* PodcastRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRowView.swift; sourceTree = "<group>"; };
-		AA0000000000000000000123 /* FullscreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenPlayerView.swift; sourceTree = "<group>"; };
-		AA0000000000000000000121 /* TabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBar.swift; sourceTree = "<group>"; };
-		AA0000000000000000000171 /* PlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackState.swift; sourceTree = "<group>"; };
 		AA0000000000000000000110 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		AA0000000000000000000112 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
 		AA0000000000000000000114 /* LiveIndicatorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveIndicatorViews.swift; sourceTree = "<group>"; };
+		AA0000000000000000000121 /* TabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBar.swift; sourceTree = "<group>"; };
+		AA0000000000000000000123 /* FullscreenPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FullscreenPlayerView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000125 /* PodcastRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRowView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000127 /* EpisodeRowActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeRowActions.swift; sourceTree = "<group>"; };
+		AA0000000000000000000129 /* EpisodeLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeLibrary.swift; sourceTree = "<group>"; };
+		AA0000000000000000000131 /* PodcastEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastEntity.swift; sourceTree = "<group>"; };
+		AA0000000000000000000133 /* BookmarkEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkEntity.swift; sourceTree = "<group>"; };
+		AA0000000000000000000135 /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
+		AA0000000000000000000137 /* RealmImport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealmImport.swift; sourceTree = "<group>"; };
+		AA0000000000000000000141 /* BookmarkRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkRepository.swift; sourceTree = "<group>"; };
+		AA0000000000000000000143 /* BookmarkLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkLibrary.swift; sourceTree = "<group>"; };
+		AA0000000000000000000151 /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000153 /* BookmarksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksViewModel.swift; sourceTree = "<group>"; };
+		AA0000000000000000000155 /* BookmarkToastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkToastView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000161 /* LiveBookmarkMatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveBookmarkMatcher.swift; sourceTree = "<group>"; };
+		AA0000000000000000000171 /* PlaybackState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackState.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -311,6 +315,8 @@
 			isa = PBXGroup;
 			children = (
 				4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */,
+				4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */,
+				4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */,
 			);
 			path = AlarmDMTests;
 			sourceTree = "<group>";
@@ -347,25 +353,6 @@
 				4DAF9EEC2C57B66100B4FA7F /* Root */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		AA0000000000000000000120 /* Shared */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000000000000000000155 /* BookmarkToastView.swift */,
-				AA0000000000000000000127 /* EpisodeRowActions.swift */,
-				AA0000000000000000000125 /* PodcastRowView.swift */,
-			);
-			path = Shared;
-			sourceTree = "<group>";
-		};
-		AA0000000000000000000150 /* BookmarksView */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000000000000000000153 /* BookmarksViewModel.swift */,
-				AA0000000000000000000151 /* BookmarksView.swift */,
-			);
-			path = BookmarksView;
 			sourceTree = "<group>";
 		};
 		4DAF9EEB2C57B65400B4FA7F /* PodcastEpisodesView */ = {
@@ -410,6 +397,25 @@
 				AA000000000000000000010D /* SettingsView.swift */,
 			);
 			path = SettingsView;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000120 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000155 /* BookmarkToastView.swift */,
+				AA0000000000000000000127 /* EpisodeRowActions.swift */,
+				AA0000000000000000000125 /* PodcastRowView.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		AA0000000000000000000150 /* BookmarksView */ = {
+			isa = PBXGroup;
+			children = (
+				AA0000000000000000000153 /* BookmarksViewModel.swift */,
+				AA0000000000000000000151 /* BookmarksView.swift */,
+			);
+			path = BookmarksView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -603,6 +609,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				4DAF9EC82C579D5200B4FA7F /* AlarmDMTests.swift in Sources */,
+				4D16A3273058434E00A6FEEA /* ListeningRulesTests.swift in Sources */,
+				4D16A3283058434E00A6FEEA /* PlayerStateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

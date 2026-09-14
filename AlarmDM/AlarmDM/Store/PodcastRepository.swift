@@ -32,30 +32,55 @@ final class PodcastRepository: EpisodeLookup {
     // MARK: - Reads
 
     func latestPodcasts(limit: Int = 10) -> [Podcast] {
-        fetch(limit: limit).map(Podcast.init(from:))
+        compose(fetch(limit: limit))
     }
 
     func podcasts(for show: Show, limit: Int = 200) -> [Podcast] {
         let raw = show.rawValue
-        return fetch(limit: limit, matching: #Predicate { $0.show == raw })
-            .map(Podcast.init(from:))
+        return compose(fetch(limit: limit, matching: #Predicate { $0.show == raw }))
     }
 
     /// Episodes a live bookmark could fall inside: the full cut, with a known
     /// broadcast time. Nothing else can host one.
     func broadcastEpisodes(limit: Int = 200) -> [Podcast] {
-        fetch(limit: limit, matching: #Predicate { $0.airedAt != nil && $0.isWithMusic })
-            .map(Podcast.init(from:))
+        compose(fetch(limit: limit, matching: #Predicate { $0.airedAt != nil && $0.isWithMusic }))
     }
 
     func podcast(with id: UUID) -> Podcast? {
-        entity(with: id).map(Podcast.init(from:))
+        guard let entity = entity(with: id) else { return nil }
+        return Podcast(from: entity, state: state(for: id), download: download(for: id))
+    }
+
+    /// Puts an episode back together from the three rows that describe it: the
+    /// feed's copy, what the person did with it, and whether it is on this
+    /// device.
+    ///
+    /// Two queries for the whole page rather than two per episode — a list of
+    /// two hundred would otherwise be four hundred round trips to the store
+    /// for what is, in the end, a handful of matches.
+    private func compose(_ entities: [PodcastEntity]) -> [Podcast] {
+        guard !entities.isEmpty else { return [] }
+
+        let ids = Set(entities.map(\.id))
+        let states = Dictionary(
+            fetchStates(matching: #Predicate { ids.contains($0.podcastId) }).map { ($0.podcastId, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let downloads = Dictionary(
+            fetchDownloads(matching: #Predicate { ids.contains($0.podcastId) }).map { ($0.podcastId, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        return entities.map {
+            Podcast(from: $0, state: states[$0.id], download: downloads[$0.id])
+        }
     }
 
     // MARK: - Writes
 
-    /// Upserts episodes, keeping the local state the incoming API objects know
-    /// nothing about — the downloaded file and the favourite flag.
+    /// Upserts episodes. Nothing of the person's is at risk here any more:
+    /// favourites, listening and downloads live in their own tables, so a
+    /// feed refresh cannot tread on them.
     func save(_ podcasts: [Podcast]) {
         guard !podcasts.isEmpty else { return }
 
@@ -83,8 +108,7 @@ final class PodcastRepository: EpisodeLookup {
     }
 
     func setFavorite(_ isFavorite: Bool, for id: UUID) {
-        guard let entity = entity(with: id) else { return }
-        entity.isFavorite = isFavorite
+        state(for: id, creatingIfNeeded: true)?.isFavorite = isFavorite
         commit("updating favourite")
     }
 
@@ -94,19 +118,31 @@ final class PodcastRepository: EpisodeLookup {
     /// saved on one: a second's accuracy would cost a write a second for the
     /// length of the episode.
     func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID) {
-        guard let entity = entity(with: id) else { return }
-        entity.playedPosition = max(0, position)
+        guard let state = state(for: id, creatingIfNeeded: true) else { return }
+        state.playedPosition = max(0, position)
         // Sticky. Starting an episode again does not make it unfinished, and
         // an episode left at five minutes on a second device should not undo
         // the fact that it was heard through on the first.
-        entity.isPlayed = entity.isPlayed || hasFinished
-        entity.playedAt = Date()
+        state.isPlayed = state.isPlayed || hasFinished
+        state.playedAt = Date()
         commit("recording progress")
     }
 
     func setDownloadedFile(_ fileName: String?, for id: UUID) {
-        guard let entity = entity(with: id) else { return }
-        entity.fileUrl = fileName
+        let existing = download(for: id)
+
+        switch (fileName, existing) {
+        case (let fileName?, let row?):
+            row.fileName = fileName
+            row.downloadedAt = Date()
+        case (let fileName?, nil):
+            context.insert(DownloadEntity(podcastId: id, fileName: fileName))
+        case (nil, let row?):
+            context.delete(row)
+        case (nil, nil):
+            return
+        }
+
         commit("recording downloaded file")
     }
 
@@ -114,13 +150,12 @@ final class PodcastRepository: EpisodeLookup {
         setDownloadedFile(nil, for: id)
     }
 
-    /// Clears the local file reference on every row, after the files
-    /// themselves are gone. Without this the app keeps claiming episodes are
-    /// downloaded.
+    /// Forgets every download, after the files themselves are gone. Without
+    /// this the app keeps claiming episodes are on the device.
     func clearAllDownloadReferences() {
-        let withFiles = fetch(matching: #Predicate { $0.fileUrl != nil })
-        guard !withFiles.isEmpty else { return }
-        for entity in withFiles { entity.fileUrl = nil }
+        let rows = fetchDownloads()
+        guard !rows.isEmpty else { return }
+        for row in rows { context.delete(row) }
         commit("clearing download references")
     }
 
@@ -146,6 +181,51 @@ final class PodcastRepository: EpisodeLookup {
 
     private func entity(with id: UUID) -> PodcastEntity? {
         fetch(limit: 1, matching: #Predicate { $0.id == id }).first
+    }
+
+    private func fetchStates(matching predicate: Predicate<EpisodeStateEntity>? = nil) -> [EpisodeStateEntity] {
+        do {
+            return try context.fetch(FetchDescriptor<EpisodeStateEntity>(predicate: predicate))
+        } catch {
+            debugPrint("Error reading episode state: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    private func fetchDownloads(matching predicate: Predicate<DownloadEntity>? = nil) -> [DownloadEntity] {
+        do {
+            return try context.fetch(FetchDescriptor<DownloadEntity>(predicate: predicate))
+        } catch {
+            debugPrint("Error reading downloads: \(error.localizedDescription)")
+            return []
+        }
+    }
+
+    /// The person's own row for an episode. Created on demand: most episodes
+    /// never get one, and an empty row for every episode in the feed is
+    /// exactly what this split was meant to avoid sending through iCloud.
+    ///
+    /// No unique constraint is possible on a synced store, so two devices can
+    /// arrive at two rows for the same episode. The first one wins here and
+    /// the duplicate is harmless — it says the same thing.
+    private func state(for id: UUID, creatingIfNeeded: Bool = false) -> EpisodeStateEntity? {
+        if let existing = fetchStates(matching: #Predicate { $0.podcastId == id }).first {
+            return existing
+        }
+        guard creatingIfNeeded else { return nil }
+
+        let episode = entity(with: id)
+        let state = EpisodeStateEntity(
+            podcastId: id,
+            title: episode?.title ?? "",
+            show: episode?.show
+        )
+        context.insert(state)
+        return state
+    }
+
+    private func download(for id: UUID) -> DownloadEntity? {
+        fetchDownloads(matching: #Predicate { $0.podcastId == id }).first
     }
 
     /// A hand-made ModelContext does not autosave, so every change ends here.

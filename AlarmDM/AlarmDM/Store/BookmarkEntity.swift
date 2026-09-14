@@ -30,16 +30,18 @@ final class BookmarkEntity {
     var episodeTitle: String = ""
     var show: String?
 
-    /// Nil for a live capture. Nullify rather than cascade on the episode
-    /// side: this is something a person made, and it should not disappear
-    /// because a cached row did.
-    var podcast: PodcastEntity?
+    /// The episode it belongs to, nil for a live capture that has not found
+    /// one yet. An id rather than a relationship: bookmarks sync and the
+    /// episode cache does not, and a relationship cannot reach across two
+    /// stores. Nothing is lost by it — the title and show are copied here
+    /// anyway, precisely so a bookmark survives an episode row it cannot see.
+    var podcastId: UUID?
 
     /// Caught on live radio. Kept after the episode is found, so a corrected
     /// broadcast time can move it again.
     var capturedLive: Bool = false
 
-    init(from bookmark: Bookmark, podcast: PodcastEntity? = nil) {
+    init(from bookmark: Bookmark, podcastId: UUID? = nil) {
         id = bookmark.id
         createdAt = bookmark.createdAt
         position = bookmark.position
@@ -48,7 +50,7 @@ final class BookmarkEntity {
         episodeTitle = bookmark.episodeTitle
         show = bookmark.show?.rawValue
         capturedLive = bookmark.capturedLive
-        self.podcast = podcast
+        self.podcastId = podcastId
     }
 }
 
@@ -61,7 +63,7 @@ extension Bookmark {
         self.note = entity.note
         self.episodeTitle = entity.episodeTitle
         self.show = entity.show.flatMap(Show.init(rawValue:))
-        self.podcastId = entity.podcast?.id
+        self.podcastId = entity.podcastId
         self.capturedLive = entity.capturedLive
     }
 }

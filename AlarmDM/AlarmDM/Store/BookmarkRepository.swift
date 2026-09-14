@@ -40,13 +40,10 @@ final class BookmarkRepository {
     // MARK: - Writes
 
     func add(_ bookmark: Bookmark) {
-        // Linked to the episode when the store knows it, so a later screen can
-        // jump straight to the right spot; the title is copied either way.
-        var linked: PodcastEntity?
-        if let podcastId = bookmark.podcastId {
-            linked = podcastEntity(with: podcastId)
-        }
-        context.insert(BookmarkEntity(from: bookmark, podcast: linked))
+        // The episode is named by id, and the title is copied either way — so
+        // a bookmark reads correctly on a device whose cache has never seen
+        // the episode, which is now a normal state rather than an edge case.
+        context.insert(BookmarkEntity(from: bookmark, podcastId: bookmark.podcastId))
         commit("saving bookmark")
     }
 
@@ -55,7 +52,7 @@ final class BookmarkRepository {
     /// true and is no longer.
     func link(_ id: UUID, to episode: Podcast, position: TimeInterval) {
         guard let entity = entity(with: id) else { return }
-        entity.podcast = podcastEntity(with: episode.id)
+        entity.podcastId = episode.id
         entity.position = position
         entity.episodeTitle = episode.title
         entity.show = episode.show.rawValue
@@ -108,12 +105,6 @@ final class BookmarkRepository {
 
     private func entity(with id: UUID) -> BookmarkEntity? {
         fetch(limit: 1, matching: #Predicate { $0.id == id }).first
-    }
-
-    private func podcastEntity(with id: UUID) -> PodcastEntity? {
-        var descriptor = FetchDescriptor<PodcastEntity>(predicate: #Predicate { $0.id == id })
-        descriptor.fetchLimit = 1
-        return try? context.fetch(descriptor).first
     }
 
     private func commit(_ what: String) {

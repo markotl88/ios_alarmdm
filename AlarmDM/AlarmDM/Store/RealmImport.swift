@@ -12,7 +12,11 @@ import SwiftData
 
 enum RealmImport {
 
-    private static let didRunKey = "didImportRealmIntoSwiftData"
+    /// Version two of the key. Splitting the store into a synced half and a
+    /// local one left the first SwiftData store behind — a development build
+    /// that had already run the import would otherwise start empty and never
+    /// try again, with the Realm file sitting right there.
+    private static let didRunKey = "didImportRealmIntoSwiftData.v2"
 
     /// Copies only the rows the API cannot reproduce: favourites and episodes
     /// with a downloaded file. Everything else refills from the network on the
@@ -52,16 +56,26 @@ enum RealmImport {
             let podcast = Podcast(from: row)
 
             // The store may already hold the episode if a fetch beat the
-            // import to it; carry the local state over rather than inserting
-            // a second row for the same id.
-            if let existing = try? existingEntity(with: podcast.id, in: context) {
-                existing.isFavorite = row.isFavorite
-                existing.fileUrl = row.fileUrl
-            } else {
-                let entity = PodcastEntity(from: podcast)
-                entity.isFavorite = row.isFavorite
-                entity.fileUrl = row.fileUrl
-                context.insert(entity)
+            // import to it; do not insert a second row for the same id.
+            let cached = (try? existingEntity(with: podcast.id, in: context)) ?? nil
+            if cached == nil {
+                context.insert(PodcastEntity(from: podcast))
+            }
+
+            // The favourite and the file are no longer part of the episode
+            // row. One goes to the table that syncs, the other to the one that
+            // stays here.
+            if row.isFavorite {
+                let state = EpisodeStateEntity(
+                    podcastId: podcast.id,
+                    title: podcast.title,
+                    show: podcast.show.rawValue
+                )
+                state.isFavorite = true
+                context.insert(state)
+            }
+            if let fileName = row.fileUrl {
+                context.insert(DownloadEntity(podcastId: podcast.id, fileName: fileName))
             }
             imported += 1
         }
