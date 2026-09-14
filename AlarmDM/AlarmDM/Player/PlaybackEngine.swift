@@ -267,7 +267,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         duration = 0
         liveTrack = nil
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        deactivateSession()
     }
 
     func seek(to time: TimeInterval) {
@@ -474,31 +474,50 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     // MARK: - Audio session
 
+    // AVAudioSession is an iOS idea. On the Mac there is no single session to
+    // claim, no category to declare and nothing to be interrupted by — the
+    // system mixes applications itself. So the three calls that matter are
+    // wrapped here rather than guarded at each of their call sites, and on the
+    // Mac they simply do nothing.
+
     private func configureAudioSession() {
+        #if !targetEnvironment(macCatalyst)
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
         } catch {
             debugPrint("Audio session category failed: \(error.localizedDescription)")
         }
+        #endif
     }
 
     private func activateSession() {
+        #if !targetEnvironment(macCatalyst)
         do {
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
             debugPrint("Audio session activation failed: \(error.localizedDescription)")
         }
+        #endif
+    }
+
+    private func deactivateSession() {
+        #if !targetEnvironment(macCatalyst)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     private func observeInterruptions() {
+        #if !targetEnvironment(macCatalyst)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleInterruption(_:)),
             name: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance()
         )
+        #endif
     }
 
+    #if !targetEnvironment(macCatalyst)
     @objc private func handleInterruption(_ notification: Notification) {
         guard let info = notification.userInfo,
               let rawType = info[AVAudioSessionInterruptionTypeKey] as? UInt,
@@ -520,6 +539,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             break
         }
     }
+    #endif
 
     // MARK: - Now Playing / remote commands
 

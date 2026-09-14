@@ -250,7 +250,7 @@ private struct FullscreenQRView: View {
     let image: UIImage
 
     @Environment(\.dismiss) private var dismiss
-    @State private var previousBrightness = UIScreen.main.brightness
+    @State private var previousBrightness = FullscreenQRView.screenBrightness
 
     var body: some View {
         ZStack {
@@ -282,11 +282,29 @@ private struct FullscreenQRView: View {
             .foregroundColor(.black)
         }
         .onAppear {
-            previousBrightness = UIScreen.main.brightness
-            UIScreen.main.brightness = 1.0
+            previousBrightness = FullscreenQRView.screenBrightness
+            FullscreenQRView.setScreenBrightness(1.0)
         }
         .onDisappear {
-            UIScreen.main.brightness = previousBrightness
+            FullscreenQRView.setScreenBrightness(previousBrightness)
         }
+    }
+
+    // Turning the screen up is how a QR code gets scanned across a table. The
+    // Mac neither allows it nor needs it: its display is not being held up to
+    // someone else's camera.
+
+    private static var screenBrightness: CGFloat {
+        #if targetEnvironment(macCatalyst)
+        return 1
+        #else
+        return UIScreen.main.brightness
+        #endif
+    }
+
+    private static func setScreenBrightness(_ value: CGFloat) {
+        #if !targetEnvironment(macCatalyst)
+        UIScreen.main.brightness = value
+        #endif
     }
 }

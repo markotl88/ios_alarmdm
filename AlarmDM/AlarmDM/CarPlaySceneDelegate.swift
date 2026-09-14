@@ -7,6 +7,10 @@
 //  own AVPlayer, so audio never doubles up when the user gets in the car.
 //
 
+// CarPlay does not exist on the Mac, and neither does the framework — the
+// whole file is compiled out there rather than guarded piece by piece.
+#if !targetEnvironment(macCatalyst)
+
 import CarPlay
 import UIKit
 import AVFoundation
@@ -305,3 +309,5 @@ private extension UIImage {
         }
     }
 }
+
+#endif
