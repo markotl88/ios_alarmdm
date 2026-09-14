@@ -31,13 +31,18 @@ final class AppDatabase {
     /// already wrote Realm in explicit transactions.
     let context: ModelContext
 
-    private init() {
+    /// `inMemory` is for tests, which want a store that starts empty and
+    /// leaves nothing behind. The app never passes it — and never needs to,
+    /// since the fallback below reaches the same place when the real store
+    /// cannot be opened.
+    init(inMemory: Bool = false) {
         let schema = Schema([PodcastEntity.self, BookmarkEntity.self])
+        isEphemeral = inMemory
 
         do {
             container = try ModelContainer(
                 for: schema,
-                configurations: ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+                configurations: ModelConfiguration(schema: schema, isStoredInMemoryOnly: inMemory)
             )
         } catch {
             debugPrint("SwiftData store unavailable, running in memory: \(error.localizedDescription)")

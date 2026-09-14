@@ -82,8 +82,14 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    private let engine: PlaybackEngine
+    private let engine: PlaybackEngineType
     private let playbackState: PlaybackStateStore
+    /// Where a listen is written down. A protocol rather than the library
+    /// itself, so a test can watch what is written without a store.
+    private let progressStore: ProgressRecording
+    /// Where the stored copy of an episode comes from — the one that knows
+    /// about favourites, downloads and how far it has been listened to.
+    private let episodes: EpisodeLookup
     /// Where a restored episode should start. Cleared the moment it is used,
     /// so it can never send a later press back in time.
     private var restoredPosition: TimeInterval?
@@ -96,10 +102,14 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Init
 
     init(mode: PlayerMode? = nil,
-         engine: PlaybackEngine = .shared,
-         playbackState: PlaybackStateStore = .shared) {
+         engine: PlaybackEngineType = PlaybackEngine.shared,
+         playbackState: PlaybackStateStore = .shared,
+         progressStore: ProgressRecording = EpisodeLibrary.shared,
+         episodes: EpisodeLookup = PodcastRepository.shared) {
         self.engine = engine
         self.playbackState = playbackState
+        self.progressStore = progressStore
+        self.episodes = episodes
         self.mode = mode
 
         bindEngine()
@@ -413,7 +423,7 @@ final class PlayerViewModel: ObservableObject {
         guard !isLive, let podcastId, currentTime > 0 else { return }
 
         let end = podcast?.endOfShow ?? 0
-        EpisodeLibrary.shared.recordProgress(
+        progressStore.recordProgress(
             position: currentTime,
             hasFinished: end > 0 && currentTime >= end,
             for: podcastId
@@ -427,7 +437,7 @@ final class PlayerViewModel: ObservableObject {
     func restorePlaybackState() {
         guard mode == nil, engine.source == nil else { return }
         guard let saved = playbackState.saved,
-              let podcast = PodcastRepository.shared.podcast(with: saved.podcastId) else { return }
+              let podcast = episodes.podcast(with: saved.podcastId) else { return }
 
         // After the mode, not before: applying a mode picks up the episode's
         // own saved progress, and the player's slot is the more recent of the
@@ -505,7 +515,7 @@ final class PlayerViewModel: ObservableObject {
     /// Reads go through the repository like everywhere else; writes are the
     /// library's job, so this view model no longer touches Realm directly.
     private func loadPodcastFromRealm(with id: UUID) -> Podcast? {
-        guard let podcast = PodcastRepository.shared.podcast(with: id) else {
+        guard let podcast = episodes.podcast(with: id) else {
             debugPrint("Podcast \(id) not found in Realm")
             return nil
         }

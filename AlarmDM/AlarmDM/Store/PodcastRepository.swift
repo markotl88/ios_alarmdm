@@ -10,7 +10,14 @@
 import Foundation
 import SwiftData
 
-final class PodcastRepository {
+/// Reading one episode back out of the store. The player takes this rather
+/// than the repository itself, so it can be given fixtures in a test instead
+/// of whatever happens to be in the database.
+protocol EpisodeLookup: AnyObject {
+    func podcast(with id: UUID) -> Podcast?
+}
+
+final class PodcastRepository: EpisodeLookup {
 
     static let shared = PodcastRepository()
 

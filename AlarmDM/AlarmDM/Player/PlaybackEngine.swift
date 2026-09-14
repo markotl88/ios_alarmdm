@@ -97,7 +97,36 @@ struct LiveTrack: Equatable {
 
 // MARK: - Engine
 
-final class PlaybackEngine: NSObject, ObservableObject {
+/// What the player screens actually need from the engine. It exists so the
+/// view model can be driven by something that is not an AVPlayer: every rule
+/// about swapping episodes, keeping positions and restoring state is decided
+/// in the view model, and testing it against the real engine would mean
+/// testing AVFoundation as well.
+///
+/// The engine itself is unchanged by this — it is the only thing that
+/// implements it, and it implements it by already having these members.
+protocol PlaybackEngineType: AnyObject {
+    var source: PlaybackSource? { get }
+    var hasContent: Bool { get }
+    var isLive: Bool { get }
+    var progress: Double { get }
+
+    var sourcePublisher: AnyPublisher<PlaybackSource?, Never> { get }
+    var isPlayingPublisher: AnyPublisher<Bool, Never> { get }
+    var isBufferingPublisher: AnyPublisher<Bool, Never> { get }
+    var currentTimePublisher: AnyPublisher<TimeInterval, Never> { get }
+    var durationPublisher: AnyPublisher<TimeInterval, Never> { get }
+    var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { get }
+
+    func play(_ source: PlaybackSource, startingAt position: TimeInterval?)
+    func toggle()
+    func stop()
+    func seek(to time: TimeInterval)
+    func skip(by seconds: TimeInterval)
+    func switchToLocalFile(_ fileURL: URL)
+}
+
+final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     static let shared = PlaybackEngine()
 

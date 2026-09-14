@@ -10,10 +10,16 @@
 import Foundation
 import Combine
 
+/// Writing down how far an episode has been listened to. One method, so the
+/// player can be tested without a database behind it.
+protocol ProgressRecording: AnyObject {
+    func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID)
+}
+
 /// Favouriting and deleting a download touch both the file system and Realm,
 /// and both the Radio tab and a show's list offer them. Kept in one place so
 /// the two screens cannot drift apart.
-final class EpisodeLibrary {
+final class EpisodeLibrary: ProgressRecording {
 
     static let shared = EpisodeLibrary()
 
