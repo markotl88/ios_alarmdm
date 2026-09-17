@@ -79,6 +79,21 @@ final class PodcastRepository: EpisodeLookup {
         return Podcast(from: entity, state: state(for: id), download: download(for: id))
     }
 
+    /// Where this episode should start now, or nil to start at the beginning.
+    ///
+    /// Every way into playback has to ask this — the phone, the car, the lock
+    /// screen — or the rules about where a listen resumes only hold on the
+    /// screen they were written for. That is exactly how starting an episode
+    /// from CarPlay went back to the beginning while the same episode on the
+    /// phone carried on.
+    ///
+    /// It re-reads the store first, so a position that arrived from another
+    /// device a moment ago is not missed by a copy taken at launch.
+    func resumePosition(for id: UUID) -> TimeInterval? {
+        refreshFromStore()
+        return podcast(with: id)?.resumePosition
+    }
+
     /// Puts an episode back together from the three rows that describe it: the
     /// feed's copy, what the person did with it, and whether it is on this
     /// device.

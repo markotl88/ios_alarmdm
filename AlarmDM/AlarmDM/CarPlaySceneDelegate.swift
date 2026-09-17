@@ -78,7 +78,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             image: UIImage(named: "img_radio")?.fittedToCarPlayListItem()
         )
         item.handler = { [weak self] _, completion in
-            self?.toggleRadio()
+            self?.openRadio()
             completion()
         }
         self.radioItem = item
@@ -149,7 +149,20 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         item.handler = { [weak self] _, completion in
             guard let self else { completion(); return }
-            self.engine.play(.podcast(podcast))
+
+            if case .podcast(let playing) = self.engine.source, playing.id == podcast.id {
+                // Already loaded: carry on rather than open it again, and
+                // never stop it — see openRadio.
+                if !self.engine.isPlaying { self.engine.resume() }
+            } else {
+                // Where the app would have started it. The rule lives in the
+                // repository precisely so the car cannot have its own.
+                self.engine.play(
+                    .podcast(podcast),
+                    startingAt: PodcastRepository.shared.resumePosition(for: podcast.id)
+                )
+            }
+
             self.pushNowPlaying()
             completion()
         }
@@ -158,11 +171,18 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     // MARK: - Transport
 
-    private func toggleRadio() {
-        if case .radio = engine.source {
-            engine.toggle()
-        } else if let url = AppConstants.fallbackStreamURL {
-            engine.play(.radio(url: url))
+    /// A row in a list is not a play/pause button. Tapping the thing that is
+    /// already playing should take you to it — pausing from a list, with a
+    /// glance and a moving car, is the last thing anyone means by that tap.
+    /// Pause is on the Now Playing screen and on the wheel.
+    private func openRadio() {
+        switch engine.source {
+        case .radio:
+            if !engine.isPlaying { engine.resume() }
+        default:
+            if let url = AppConstants.fallbackStreamURL {
+                engine.play(.radio(url: url))
+            }
         }
         pushNowPlaying()
     }
@@ -250,9 +270,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
+    /// What the row says it will do, which is no longer "Zaustavi" — it
+    /// stopped being able to stop anything.
     private var radioDetailText: String {
         if case .radio = engine.source {
-            return engine.isPlaying ? "Zaustavi" : "Nastavi"
+            return engine.isPlaying ? "Uživo" : "Nastavi"
         }
         return "Pusti"
     }
