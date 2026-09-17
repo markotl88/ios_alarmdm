@@ -38,6 +38,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         didConnect interfaceController: CPInterfaceController
     ) {
         self.interfaceController = interfaceController
+
+        #if DEBUG
+        debugPrint("carplay connected")
+        #endif
+
         setupRootTemplates()
         observeEngine()
         CPNowPlayingTemplate.shared.add(self)
@@ -68,7 +73,28 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         showsTemplate.tabImage = UIImage(systemName: "music.note.list")
 
         let tabBarTemplate = CPTabBarTemplate(templates: [radioTemplate, showsTemplate])
-        interfaceController?.setRootTemplate(tabBarTemplate, animated: true, completion: nil)
+        setRoot(tabBarTemplate, retriesLeft: 2)
+    }
+
+    /// A blank CarPlay screen with the audio still playing means the root
+    /// template never landed — the scene is connected and nothing was ever
+    /// handed to it. It is the one failure here with no visible cause, since
+    /// CarPlay says nothing and the app carries on, so the result is asked for
+    /// and a failure is tried again rather than left as an empty screen.
+    private func setRoot(_ template: CPTemplate, retriesLeft: Int) {
+        guard let interfaceController else { return }
+
+        interfaceController.setRootTemplate(template, animated: true) { [weak self] done, error in
+            #if DEBUG
+            debugPrint("carplay root template: \(done ? "shown" : "refused")\(error.map { " — \($0.localizedDescription)" } ?? "")")
+            #endif
+
+            guard !done, retriesLeft > 0 else { return }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self?.setRoot(template, retriesLeft: retriesLeft - 1)
+            }
+        }
     }
 
     private func makeRadioTemplate() -> CPListTemplate {
