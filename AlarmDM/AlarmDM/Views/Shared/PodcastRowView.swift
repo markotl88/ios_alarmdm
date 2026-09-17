@@ -15,6 +15,15 @@ struct PodcastRowView: View {
     /// something instead of appearing on every row.
     var showsMusicVariant: Bool = false
     var isDownloading: Bool = false
+    /// The episode the player is holding, and whether it is running. Only for
+    /// drawing the button below — the row does not decide anything about
+    /// playback.
+    var isCurrent: Bool = false
+    var isPlaying: Bool = false
+    /// Given only where a button earns its place. Nil leaves the row as it was.
+    var onPlay: (() -> Void)?
+
+    @Environment(\.horizontalSizeClass) private var widthClass
 
     var body: some View {
         HStack(spacing: 12) {
@@ -54,6 +63,23 @@ struct PodcastRowView: View {
             }
 
             Spacer(minLength: 0)
+
+            // A row the width of a Mac window is a large target for one small
+            // idea. The button says what the row does without having to be
+            // discovered, and gives the one thing a tap on the row no longer
+            // does: stop it.
+            if let onPlay, widthClass == .regular {
+                Button(action: onPlay) {
+                    Image(systemName: isCurrent && isPlaying ? "pause.fill" : "play.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(Color("primaryLink"))
+                        .frame(width: 32, height: 32)
+                        .background(Circle().fill(Color("primaryLink").opacity(0.12)))
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 4)
+                .accessibilityLabel(isCurrent && isPlaying ? "Pauziraj" : "Pusti")
+            }
 
             VStack(spacing: 6) {
                 if podcast.isPlayed {

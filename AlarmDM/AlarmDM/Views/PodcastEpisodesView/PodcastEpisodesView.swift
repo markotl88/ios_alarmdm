@@ -40,13 +40,13 @@ struct PodcastEpisodesView: View {
                     PodcastRowView(
                         podcast: podcast,
                         showsMusicVariant: viewModel.hasBothMusicVariants,
-                        isDownloading: viewModel.isDownloading(podcast)
+                        isDownloading: viewModel.isDownloading(podcast),
+                        isCurrent: playerViewModel.isCurrent(podcast),
+                        isPlaying: playerViewModel.isPlaying,
+                        onPlay: { playerViewModel.toggle(podcast) }
                     )
                         .contentShape(Rectangle())
-                        .onTapGesture {
-                            playerViewModel.mode = .podcast(podcast: podcast)
-                            playerViewModel.togglePlayPause()
-                        }
+                        .onTapGesture { playerViewModel.open(podcast) }
                         .onAppear {
                             if podcast == viewModel.podcasts.last {
                                 viewModel.fetchDataIfNeeded(currentItem: podcast)
@@ -55,10 +55,7 @@ struct PodcastEpisodesView: View {
                         .episodeRowActions(
                             podcast: podcast,
                             isDownloading: viewModel.isDownloading(podcast),
-                            play: {
-                                playerViewModel.mode = .podcast(podcast: podcast)
-                                playerViewModel.togglePlayPause()
-                            },
+                            play: { playerViewModel.toggle(podcast) },
                             toggleFavourite: { viewModel.toggleFavourite(podcast) },
                             download: { viewModel.download(podcast) },
                             deleteDownload: { viewModel.deleteDownload(podcast) }

@@ -370,6 +370,35 @@ final class PlayerViewModel: ObservableObject {
         isPresented = true
     }
 
+    /// What tapping a row means. The episode that is playing takes you to the
+    /// player; anything else starts. A row is not a pause button — the same
+    /// rule the car list follows, for the same reason: tapping the thing that
+    /// is already playing has never meant "stop it".
+    func open(_ podcast: Podcast) {
+        if case .podcast(let playing) = engine.source, playing.id == podcast.id {
+            isPresented = true
+            isExpanded = true
+            return
+        }
+
+        mode = .podcast(podcast: podcast)
+        togglePlayPause()
+    }
+
+    /// What the play button on a row means, which is the one place a list is
+    /// allowed to stop something: it is a transport control, and it looks like
+    /// one.
+    func toggle(_ podcast: Podcast) {
+        mode = .podcast(podcast: podcast)
+        togglePlayPause()
+    }
+
+    /// True while this is the episode the engine holds.
+    func isCurrent(_ podcast: Podcast) -> Bool {
+        if case .podcast(let playing) = engine.source { return playing.id == podcast.id }
+        return false
+    }
+
     /// Opens an episode at a given second — what tapping a bookmark does.
     func play(_ podcast: Podcast, startingAt position: TimeInterval) {
         mode = .podcast(podcast: podcast)
