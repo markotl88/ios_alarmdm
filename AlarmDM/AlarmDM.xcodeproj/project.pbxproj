@@ -15,6 +15,7 @@
 		4D16A3283058434E00A6FEEA /* PlayerStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */; };
 		4D16A32B305849B600A6FEEA /* DownloadEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A329305849B600A6FEEA /* DownloadEntity.swift */; };
 		4D16A32C305849B600A6FEEA /* EpisodeStateEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */; };
+		4D16A32E3060493200A6FEEA /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A32D3060493200A6FEEA /* AppLog.swift */; };
 		4D5396A52CD3FB9000CD1B71 /* TabBarItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */; };
 		4D66779B2CC7B06B00EC2ADE /* Podcast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779A2CC7B06B00EC2ADE /* Podcast.swift */; };
 		4D66779D2CC7B07A00EC2ADE /* Bookmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */; };
@@ -101,6 +102,7 @@
 		4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStateTests.swift; sourceTree = "<group>"; };
 		4D16A329305849B600A6FEEA /* DownloadEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEntity.swift; sourceTree = "<group>"; };
 		4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeStateEntity.swift; sourceTree = "<group>"; };
+		4D16A32D3060493200A6FEEA /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		4D5396A22CD3FB9000CD1B71 /* TabBarItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarItem.swift; sourceTree = "<group>"; };
 		4D66779A2CC7B06B00EC2ADE /* Podcast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Podcast.swift; sourceTree = "<group>"; };
 		4D66779C2CC7B07A00EC2ADE /* Bookmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Bookmark.swift; sourceTree = "<group>"; };
@@ -190,6 +192,7 @@
 		4D13F43E2CCA70AF00AA52D1 /* Helpers */ = {
 			isa = PBXGroup;
 			children = (
+				4D16A32D3060493200A6FEEA /* AppLog.swift */,
 				AA0000000000000000000171 /* PlaybackState.swift */,
 				4D6677A82CC9341600EC2ADE /* FileService.swift */,
 				AA0000000000000000000104 /* AppConstants.swift */,
@@ -586,6 +589,7 @@
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
 				AA0000000000000000000101 /* PlaybackEngine.swift in Sources */,
 				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,
+				4D16A32E3060493200A6FEEA /* AppLog.swift in Sources */,
 				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,
 				4D6677A42CC83D2300EC2ADE /* ShowView.swift in Sources */,

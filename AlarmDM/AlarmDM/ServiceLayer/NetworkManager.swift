@@ -282,8 +282,12 @@ final class NetworkManager: NetworkManaging {
     }}
 
 extension URLRequest {
+    /// What was asked for and where. `debugPrint(self)` used to print the
+    /// request object, which says almost nothing; a method and an address say
+    /// the whole thing in one line.
+    @discardableResult
     public func debugLog() -> Self {
-        AppLog.write(.network, self)
+        AppLog.write(.network, "\(httpMethod ?? "GET") \(url?.absoluteString ?? "bez adrese")")
         return self
     }
 }
