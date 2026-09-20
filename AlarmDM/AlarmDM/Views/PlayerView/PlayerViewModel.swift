@@ -495,7 +495,7 @@ final class PlayerViewModel: ObservableObject {
         }
 
         #if DEBUG
-        debugPrint("restoring \(Int(position))s for \(saved.podcastId) — slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
+        AppLog.write(.player, "restoring \(Int(position))s for \(saved.podcastId) — slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
         #endif
 
         restoredPosition = position
@@ -614,7 +614,7 @@ final class PlayerViewModel: ObservableObject {
     /// library's job, so this view model no longer touches the store directly.
     private func storedPodcast(with id: UUID) -> Podcast? {
         guard let podcast = episodes.podcast(with: id) else {
-            debugPrint("Podcast \(id) not found in the store")
+            AppLog.write(.player, "Podcast \(id) not found in the store")
             return nil
         }
         return podcast

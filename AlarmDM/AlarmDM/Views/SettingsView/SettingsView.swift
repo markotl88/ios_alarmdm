@@ -216,6 +216,16 @@ struct SettingsView: View {
                 Text(Self.appVersion)
                     .foregroundColor(.secondary)
             }
+
+            #if DEBUG
+            // The whole point of writing the log to a file: getting it off the
+            // phone from wherever the thing went wrong, without a cable and
+            // without a Mac. Debug builds only — a shipped app has no business
+            // offering this.
+            ShareLink(item: AppLog.fileURL) {
+                externalRow("Izvezi log", systemImage: "square.and.arrow.up")
+            }
+            #endif
         }
     }
 

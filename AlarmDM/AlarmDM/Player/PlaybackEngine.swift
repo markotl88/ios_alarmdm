@@ -404,7 +404,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 if item.status == .failed {
                     self.lastErrorMessage = item.error?.localizedDescription ?? "Reprodukcija nije uspela."
                     #if DEBUG
-                    debugPrint("item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
+                    AppLog.write(.player, "item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
                     #endif
                 }
                 if let itemDuration = self.player?.currentItem?.duration,
@@ -496,7 +496,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             .filter { $0.isFinite }
             .reduce(0, +)
 
-        debugPrint(String(format: "%@ buffer — seekable: [%@] loaded: %.1fs at %.1f",
+        AppLog.write(.player, String(format: "%@ buffer — seekable: [%@] loaded: %.1fs at %.1f",
                           isLive ? "live" : "file",
                           seekableText.isEmpty ? "none" : seekableText,
                           loadedSeconds,
@@ -539,7 +539,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
         } catch {
-            debugPrint("Audio session category failed: \(error.localizedDescription)")
+            AppLog.write(.player, "Audio session category failed: \(error.localizedDescription)")
         }
         #endif
     }
@@ -549,7 +549,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         do {
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            debugPrint("Audio session activation failed: \(error.localizedDescription)")
+            AppLog.write(.player, "Audio session activation failed: \(error.localizedDescription)")
         }
         #endif
     }
@@ -578,7 +578,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
               let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
 
         #if DEBUG
-        debugPrint("interruption \(type == .began ? "began" : "ended") at \(currentTime), item: \(String(describing: player?.currentItem?.status.rawValue))")
+        AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(currentTime), item: \(String(describing: player?.currentItem?.status.rawValue))")
         #endif
 
         switch type {

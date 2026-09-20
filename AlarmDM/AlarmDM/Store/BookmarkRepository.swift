@@ -98,7 +98,7 @@ final class BookmarkRepository {
         do {
             return try context.fetch(descriptor)
         } catch {
-            debugPrint("Error reading bookmarks: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading bookmarks: \(error.localizedDescription)")
             return []
         }
     }
@@ -111,7 +111,7 @@ final class BookmarkRepository {
         do {
             try context.save()
         } catch {
-            debugPrint("Error \(what): \(error.localizedDescription)")
+            AppLog.write(.store, "Error \(what): \(error.localizedDescription)")
             context.rollback()
         }
     }

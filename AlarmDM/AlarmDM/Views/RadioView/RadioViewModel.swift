@@ -113,7 +113,7 @@ final class RadioViewModel: ObservableObject {
                 }
             case .failure(let error):
                 self.nextPage -= 1
-                debugPrint("Error fetching page \(self.nextPage + 1): \(error.localizedDescription)")
+                AppLog.write(.library, "Error fetching page \(self.nextPage + 1): \(error.localizedDescription)")
             }
         }
     }
@@ -145,7 +145,7 @@ final class RadioViewModel: ObservableObject {
                 if self.latestPodcasts.isEmpty {
                     self.errorMessage = "Nije moguće učitati podkaste. Proveri internet konekciju."
                 }
-                debugPrint("Error fetching podcasts: \(error.localizedDescription)")
+                AppLog.write(.library, "Error fetching podcasts: \(error.localizedDescription)")
             }
         }
     }
@@ -172,7 +172,7 @@ final class RadioViewModel: ObservableObject {
             case .success(let url):
                 DispatchQueue.main.async { self?.livestreamUrl = url }
             case .failure(let error):
-                debugPrint("Error fetching livestream URL: \(error.localizedDescription)")
+                AppLog.write(.library, "Error fetching livestream URL: \(error.localizedDescription)")
             }
         }
     }

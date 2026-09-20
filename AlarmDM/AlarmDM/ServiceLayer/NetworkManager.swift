@@ -283,7 +283,7 @@ final class NetworkManager: NetworkManaging {
 
 extension URLRequest {
     public func debugLog() -> Self {
-        debugPrint(self)
+        AppLog.write(.network, self)
         return self
     }
 }

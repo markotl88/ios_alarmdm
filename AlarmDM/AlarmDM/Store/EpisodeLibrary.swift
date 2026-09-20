@@ -90,7 +90,7 @@ final class EpisodeLibrary: ProgressRecording {
         guard !podcast.isDownloaded else { return false }
         guard !downloadsInFlight.contains(podcast.id) else { return false }
         guard let url = URL(string: podcast.podcastUrl) else {
-            debugPrint("Episode \(podcast.id) has no usable media URL")
+            AppLog.write(.library, "Episode \(podcast.id) has no usable media URL")
             return false
         }
 
@@ -111,7 +111,7 @@ final class EpisodeLibrary: ProgressRecording {
             if case .success(let location) = result {
                 self.repository.setDownloadedFile(location.lastPathComponent, for: podcast.id)
             } else if case .failure(let error) = result {
-                debugPrint("Error downloading episode: \(error.localizedDescription)")
+                AppLog.write(.library, "Error downloading episode: \(error.localizedDescription)")
             }
 
             self.didChange.send()
@@ -163,7 +163,7 @@ final class EpisodeLibrary: ProgressRecording {
             didChange.send()
             return true
         case .failure(let error):
-            debugPrint("Error deleting download: \(error.localizedDescription)")
+            AppLog.write(.library, "Error deleting download: \(error.localizedDescription)")
             return false
         }
     }

@@ -50,9 +50,9 @@ final class PodcastRepository: EpisodeLookup {
         let rows = fetchStates(matching: #Predicate { $0.podcastId == id })
         let total = (try? context.fetchCount(FetchDescriptor<EpisodeStateEntity>())) ?? -1
 
-        debugPrint("state rows for \(id): \(rows.count) — of \(total) in the store")
+        AppLog.write(.store, "state rows for \(id): \(rows.count) — of \(total) in the store")
         for row in rows {
-            debugPrint("   \(Int(row.playedPosition))s at \(String(describing: row.playedAt)) fav:\(row.isFavorite)")
+            AppLog.write(.store, "   \(Int(row.playedPosition))s at \(String(describing: row.playedAt)) fav:\(row.isFavorite)")
         }
     }
     #endif
@@ -201,7 +201,7 @@ final class PodcastRepository: EpisodeLookup {
         // The id is the thing to compare between two devices: the same episode
         // has to be the same id everywhere, or each device is writing into its
         // own corner of the same database and syncing looks broken.
-        debugPrint("progress \(Int(position))s for \(id) — \(state.episodeTitle)")
+        AppLog.write(.store, "progress \(Int(position))s for \(id) — \(state.episodeTitle)")
         #endif
     }
 
@@ -251,7 +251,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             return try context.fetch(descriptor)
         } catch {
-            debugPrint("Error reading episodes: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading episodes: \(error.localizedDescription)")
             return []
         }
     }
@@ -264,7 +264,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             return try context.fetch(FetchDescriptor<EpisodeStateEntity>(predicate: predicate))
         } catch {
-            debugPrint("Error reading episode state: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading episode state: \(error.localizedDescription)")
             return []
         }
     }
@@ -273,7 +273,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             return try context.fetch(FetchDescriptor<DownloadEntity>(predicate: predicate))
         } catch {
-            debugPrint("Error reading downloads: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading downloads: \(error.localizedDescription)")
             return []
         }
     }
@@ -341,7 +341,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             try context.save()
         } catch {
-            debugPrint("Error \(what): \(error.localizedDescription)")
+            AppLog.write(.store, "Error \(what): \(error.localizedDescription)")
             context.rollback()
         }
     }

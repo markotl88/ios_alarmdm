@@ -79,7 +79,7 @@ final class AppDatabase {
             // build. Losing the whole database over that would be absurd when
             // the same store opens perfectly well unsynced, so try again
             // without it before giving up.
-            debugPrint("SwiftData store unavailable, retrying without iCloud: \(error.localizedDescription)")
+            AppLog.write(.sync, "SwiftData store unavailable, retrying without iCloud: \(error.localizedDescription)")
 
             do {
                 container = try ModelContainer(
@@ -87,7 +87,7 @@ final class AppDatabase {
                     configurations: AppDatabase.configurations(inMemory: inMemory, syncing: false)
                 )
             } catch {
-                debugPrint("SwiftData store unavailable, running in memory: \(error.localizedDescription)")
+                AppLog.write(.sync, "SwiftData store unavailable, running in memory: \(error.localizedDescription)")
                 isEphemeral = true
                 // If even an in-memory container cannot be built, the schema
                 // itself is wrong — a programmer error, not a runtime
@@ -132,11 +132,11 @@ final class AppDatabase {
             case .temporarilyUnavailable: name = "temporarily unavailable"
             @unknown default: name = "unknown"
             }
-            debugPrint("icloud account: \(name)\(error.map { " — \($0.localizedDescription)" } ?? "")")
+            AppLog.write(.sync, "icloud account: \(name)\(error.map { " — \($0.localizedDescription)" } ?? "")")
         }
 
         container.fetchUserRecordID { id, error in
-            debugPrint("icloud user: \(id?.recordName ?? "none")\(error.map { " — \($0.localizedDescription)" } ?? "")")
+            AppLog.write(.sync, "icloud user: \(id?.recordName ?? "none")\(error.map { " — \($0.localizedDescription)" } ?? "")")
         }
     }
     #endif
@@ -158,7 +158,7 @@ final class AppDatabase {
         context.autosaveEnabled = false
 
         #if DEBUG
-        debugPrint("store re-read")
+        AppLog.write(.sync, "store re-read")
         #endif
     }
 
@@ -195,14 +195,14 @@ final class AppDatabase {
             }
 
             guard event.endDate != nil else {
-                debugPrint("cloud \(kind) started")
+                AppLog.write(.sync, "cloud \(kind) started")
                 return
             }
 
             if event.succeeded {
-                debugPrint("cloud \(kind) finished")
+                AppLog.write(.sync, "cloud \(kind) finished")
             } else {
-                debugPrint("cloud \(kind) failed: \(event.error?.localizedDescription ?? "-")")
+                AppLog.write(.sync, "cloud \(kind) failed: \(event.error?.localizedDescription ?? "-")")
             }
         }
         #endif
