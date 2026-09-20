@@ -31,11 +31,12 @@ struct RadioView: View {
                             showsMusicVariant: viewModel.showsMusicVariant(for: podcast),
                             isDownloading: viewModel.isDownloading(podcast),
                             isCurrent: playerViewModel.isCurrent(podcast),
-                            isPlaying: playerViewModel.isPlaying,
-                            onPlay: { playerViewModel.toggle(podcast) }
+                            isPlaying: playerViewModel.isPlaying
                         )
                             .contentShape(Rectangle())
-                            .onTapGesture { playerViewModel.open(podcast) }
+                            .onTapGesture {
+                                playerViewModel.activate(podcast, expandingPlayer: widthClass != .regular)
+                            }
                             .episodeRowActions(
                                 podcast: podcast,
                                 isDownloading: viewModel.isDownloading(podcast),

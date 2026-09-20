@@ -11,6 +11,7 @@ struct PodcastEpisodesView: View {
 
     @StateObject private var viewModel: PodcastEpisodesViewModel
     @EnvironmentObject private var playerViewModel: PlayerViewModel
+    @Environment(\.horizontalSizeClass) private var widthClass
 
     /// Owns its view model. It used to be created inline in ShowListView's body and
     /// held with @ObservedObject, so every re-render threw away the fetched episodes.
@@ -42,11 +43,12 @@ struct PodcastEpisodesView: View {
                         showsMusicVariant: viewModel.hasBothMusicVariants,
                         isDownloading: viewModel.isDownloading(podcast),
                         isCurrent: playerViewModel.isCurrent(podcast),
-                        isPlaying: playerViewModel.isPlaying,
-                        onPlay: { playerViewModel.toggle(podcast) }
+                        isPlaying: playerViewModel.isPlaying
                     )
                         .contentShape(Rectangle())
-                        .onTapGesture { playerViewModel.open(podcast) }
+                        .onTapGesture {
+                            playerViewModel.activate(podcast, expandingPlayer: widthClass != .regular)
+                        }
                         .onAppear {
                             if podcast == viewModel.podcasts.last {
                                 viewModel.fetchDataIfNeeded(currentItem: podcast)

@@ -393,6 +393,21 @@ final class PlayerViewModel: ObservableObject {
         togglePlayPause()
     }
 
+    /// What a tap on a row means, which is not the same thing on every screen.
+    ///
+    /// On a phone the row is the only way in, so it opens the player. Where the
+    /// row draws its own play state, the row *is* the transport control: a tap
+    /// starts or stops it and nothing is thrown over the list, because the
+    /// glyph that said "playing" would otherwise be hidden by the screen the
+    /// tap just opened.
+    func activate(_ podcast: Podcast, expandingPlayer: Bool) {
+        if expandingPlayer {
+            open(podcast)
+        } else {
+            toggle(podcast)
+        }
+    }
+
     /// True while this is the episode the engine holds.
     func isCurrent(_ podcast: Podcast) -> Bool {
         if case .podcast(let playing) = engine.source { return playing.id == podcast.id }

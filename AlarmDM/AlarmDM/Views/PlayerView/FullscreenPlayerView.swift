@@ -121,8 +121,7 @@ struct FullscreenPlayerView: View {
 
                         Spacer(minLength: 16)
 
-                        leading(transportControls)
-                        leading(actionRow)
+                        leading(controlsGroup)
                     }
                     .frame(width: columnWidth(for: geometry.size, artwork: side),
                            height: side,
@@ -153,6 +152,17 @@ struct FullscreenPlayerView: View {
         return max(260, min(artwork, available))
     }
 
+    /// The transport and the row under it share a centre line, so the big
+    /// button sits over the middle of the small ones rather than over the
+    /// first of them. Left aligned against each other they read as two rows
+    /// that happen to start in the same place.
+    private var controlsGroup: some View {
+        VStack(alignment: .center, spacing: 22) {
+            transportControls
+            actionRow
+        }
+    }
+
     /// Everything in the right hand column starts at the same edge as the
     /// title. Centred rows under left aligned text read as a mistake.
     private func leading<Content: View>(_ content: Content) -> some View {
@@ -165,12 +175,12 @@ struct FullscreenPlayerView: View {
     private func titleBlock(alignment: TextAlignment) -> some View {
         VStack(alignment: alignment == .center ? .center : .leading, spacing: 6) {
             Text(playerViewModel.title)
-                .font(isWide ? .title2.weight(.bold) : .title3.weight(.bold))
+                .font(isWide ? .title.weight(.bold) : .title3.weight(.bold))
                 .foregroundColor(Color("primaryText"))
                 .multilineTextAlignment(alignment)
 
             Text(playerViewModel.subtitle)
-                .font(isWide ? .body : .subheadline)
+                .font(isWide ? .title3 : .subheadline)
                 .foregroundColor(Color("secondaryText"))
                 .multilineTextAlignment(alignment)
         }
@@ -208,7 +218,7 @@ struct FullscreenPlayerView: View {
         return VStack(alignment: alignment, spacing: 10) {
             HStack(spacing: 6) {
                 PulsingLiveDot(isAnimating: playerViewModel.isPlaying)
-                Text("UŽIVO").font(.caption.weight(.bold))
+                Text("UŽIVO").font(isWide ? .subheadline.weight(.bold) : .caption.weight(.bold))
             }
             .foregroundColor(Color("primaryText"))
             .padding(.horizontal, 12)
@@ -218,11 +228,11 @@ struct FullscreenPlayerView: View {
             if let track = playerViewModel.liveTrack {
                 VStack(alignment: alignment, spacing: 2) {
                     Text(track.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(isWide ? .title3.weight(.semibold) : .subheadline.weight(.semibold))
                         .foregroundColor(Color("primaryText"))
                     if let artist = track.artist {
                         Text(artist)
-                            .font(.caption)
+                            .font(isWide ? .subheadline : .caption)
                             .foregroundColor(Color("secondaryText"))
                     }
                 }
@@ -245,14 +255,14 @@ struct FullscreenPlayerView: View {
     }
 
     private var transportControls: some View {
-        HStack(spacing: 40) {
+        HStack(spacing: isWide ? 44 : 40) {
             // Live radio has nothing to skip through. A dimmed control still
             // invites a tap; leaving it out says what is going on.
             if !playerViewModel.isLive {
                 Button {
                     playerViewModel.skipBackward()
                 } label: {
-                    Image(systemName: "gobackward.15").font(.title2)
+                    Image(systemName: "gobackward.15").font(isWide ? .title : .title2)
                 }
             }
 
@@ -260,12 +270,13 @@ struct FullscreenPlayerView: View {
                 playerViewModel.togglePlayPause()
             } label: {
                 ZStack {
-                    Circle().fill(Color("primaryLink")).frame(width: 72, height: 72)
+                    let side: CGFloat = isWide ? 88 : 72
+                    Circle().fill(Color("primaryLink")).frame(width: side, height: side)
                     if playerViewModel.isBuffering {
                         ProgressView().tint(Color(.systemBackground))
                     } else {
                         Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 30))
+                            .font(.system(size: isWide ? 36 : 30))
                             .foregroundColor(Color(.systemBackground))
                     }
                 }
@@ -276,7 +287,7 @@ struct FullscreenPlayerView: View {
                 Button {
                     playerViewModel.skipForward()
                 } label: {
-                    Image(systemName: "goforward.15").font(.title2)
+                    Image(systemName: "goforward.15").font(isWide ? .title : .title2)
                 }
             }
         }
