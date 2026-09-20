@@ -110,6 +110,37 @@ final class ListeningRulesTests: XCTestCase {
         XCTAssertEqual(episode.listeningProgress ?? 0, 0.02, accuracy: 0.001)
     }
 
+    // MARK: - What the line says
+
+    func testRemainingIsSpelledInHoursAndMinutes() {
+        let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 5_390)
+        XCTAssertEqual(episode.remainingDescription, "Još 1 h 29 min")
+    }
+
+    /// A round hour left says so, rather than "1 h 0 min".
+    func testARoundHourDropsTheMinutes() {
+        let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 7_180)
+        XCTAssertEqual(episode.remainingDescription, "Još 1 h")
+    }
+
+    func testUnderAnHourIsMinutesAlone() {
+        let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_180)
+        XCTAssertEqual(episode.remainingDescription, "Još 10 min")
+    }
+
+    /// The last stretch is not counted down in seconds.
+    func testTheLastMinuteIsNotANumber() {
+        let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_760)
+        XCTAssertEqual(episode.remainingDescription, "Još manje od minuta")
+    }
+
+    /// The text and the bar appear and disappear together.
+    func testNothingIsSaidWhereNoLineIsDrawn() {
+        XCTAssertNil(makeEpisode(duration: "3:00:00", outro: 20).remainingDescription)
+        let finished = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_780, isPlayed: true)
+        XCTAssertNil(finished.remainingDescription)
+    }
+
     // MARK: - Helper
 
     private func makeEpisode(show: Show = .alarmSaDaskomIMladjom,

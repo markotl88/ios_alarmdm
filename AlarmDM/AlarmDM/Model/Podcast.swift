@@ -214,6 +214,25 @@ extension Podcast {
         return min(max(playedPosition / end, 0.02), 1)
     }
 
+    /// How much show is still in front of you, in words — the text beside the
+    /// bar in a list. Measured to the end of the show rather than to the end
+    /// of the file, so it does not promise twenty seconds of credits.
+    ///
+    /// Nil in exactly the cases where the bar is nil, so the two appear and
+    /// disappear together.
+    var remainingDescription: String? {
+        guard listeningProgress != nil else { return nil }
+        let left = max(0, endOfShow - playedPosition)
+        guard left >= 60 else { return "Još manje od minuta" }
+
+        let hours = Int(left) / 3600
+        let minutes = (Int(left) % 3600) / 60
+        if hours > 0 {
+            return minutes > 0 ? "Još \(hours) h \(minutes) min" : "Još \(hours) h"
+        }
+        return "Još \(minutes) min"
+    }
+
     /// True once the listen has gone past the end of the show. Kept here
     /// rather than read off the stored flag alone so a position restored
     /// mid-session answers the same way.

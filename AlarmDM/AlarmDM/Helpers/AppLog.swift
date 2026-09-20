@@ -45,6 +45,19 @@ enum AppLog {
         return documents.appendingPathComponent("alarmdm.log")
     }
 
+    /// The session before the current one, kept by the rotation below. Often
+    /// the half of the story that matters: the thing went wrong, the app was
+    /// restarted, and only then did anyone think to export anything.
+    static var previousFileURL: URL {
+        fileURL.deletingLastPathComponent().appendingPathComponent("alarmdm-previous.log")
+    }
+
+    /// What there is to hand over, newest first, skipping what was never
+    /// written.
+    static var exportURLs: [URL] {
+        [fileURL, previousFileURL].filter { FileManager.default.fileExists(atPath: $0.path) }
+    }
+
     /// Serial, so lines from the player, the store and CloudKit do not
     /// interleave halfway through a sentence.
     private static let queue = DispatchQueue(label: "AppLog", qos: .utility)
@@ -84,7 +97,7 @@ enum AppLog {
     private static func rotateIfNeeded(handle: FileHandle, url: URL) {
         guard let size = try? handle.offset(), size > sizeLimit else { return }
 
-        let previous = url.deletingLastPathComponent().appendingPathComponent("alarmdm-previous.log")
+        let previous = previousFileURL
         try? FileManager.default.removeItem(at: previous)
         try? FileManager.default.moveItem(at: url, to: previous)
     }

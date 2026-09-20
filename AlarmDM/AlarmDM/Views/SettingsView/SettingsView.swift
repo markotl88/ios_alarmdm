@@ -78,6 +78,9 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @ObservedObject private var settings = AppSettings.shared
     @State private var showDeleteConfirmation = false
+    #if DEBUG && !targetEnvironment(macCatalyst)
+    @State private var isComposingLogMail = false
+    #endif
     @Environment(\.openURL) private var openURL
 
     private enum Links {
@@ -110,6 +113,15 @@ struct SettingsView: View {
         } message: {
             Text("Epizode ostaju dostupne za slušanje preko interneta i možeš ih ponovo preuzeti.")
         }
+        #if DEBUG && !targetEnvironment(macCatalyst)
+        .sheet(isPresented: $isComposingLogMail) {
+            MailComposeView(recipient: Links.authorEmail,
+                            subject: "AlarmDM log \(Self.appVersion)",
+                            body: Self.diagnosticsBody,
+                            attachments: AppLog.exportURLs)
+                .ignoresSafeArea()
+        }
+        #endif
     }
 
     // MARK: Sections
@@ -226,6 +238,24 @@ struct SettingsView: View {
                 externalRow("Izvezi log", systemImage: "square.and.arrow.up")
             }
             #endif
+
+            #if DEBUG && !targetEnvironment(macCatalyst)
+            // The same file, one step shorter: a draft addressed to me with
+            // this session and the one before it already attached, so nothing
+            // has to be found in Files first.
+            Button {
+                if MailComposeView.canSend {
+                    isComposingLogMail = true
+                } else {
+                    // No mail account on the device. The draft would open with
+                    // nowhere to go, so this falls back to the plain contact
+                    // mail and leaves the log to the share sheet above.
+                    openURL(supportMailURL())
+                }
+            } label: {
+                externalRow("Pošalji log na mejl", systemImage: "envelope.badge")
+            }
+            #endif
         }
     }
 
@@ -236,6 +266,18 @@ struct SettingsView: View {
         let version = info?["CFBundleShortVersionString"] as? String ?? "—"
         let build = info?["CFBundleVersion"] as? String ?? "—"
         return "\(version) (\(build))"
+    }
+
+    /// The version and the OS, plus how much log is attached — an empty file
+    /// is worth noticing before reading it rather than after.
+    private static var diagnosticsBody: String {
+        let sizes = AppLog.exportURLs.map { url -> String in
+            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            let size = ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+            return "\(url.lastPathComponent): \(size)"
+        }
+        let attached = sizes.isEmpty ? "nema zapisa" : sizes.joined(separator: "\n")
+        return "\n\n---\nAplikacija: \(appVersion)\niOS: \(UIDevice.current.systemVersion)\nLog:\n\(attached)"
     }
 
     /// Pre-fills the version and OS, so a bug report arrives with the two facts
@@ -253,6 +295,61 @@ struct SettingsView: View {
         return components.url ?? URL(string: "mailto:\(Links.authorEmail)")!
     }
 }
+
+// MARK: - Log by mail
+
+#if DEBUG && !targetEnvironment(macCatalyst)
+import MessageUI
+
+/// A mail draft with the log files attached. Debug builds only, and not on
+/// Catalyst, where MFMailComposeViewController does not exist.
+struct MailComposeView: UIViewControllerRepresentable {
+    let recipient: String
+    let subject: String
+    let body: String
+    let attachments: [URL]
+
+    /// False when the device has no mail account set up, in which case the
+    /// composer would appear and send nothing.
+    static var canSend: Bool { MFMailComposeViewController.canSendMail() }
+
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator { dismiss() }
+    }
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let controller = MFMailComposeViewController()
+        controller.mailComposeDelegate = context.coordinator
+        controller.setToRecipients([recipient])
+        controller.setSubject(subject)
+        controller.setMessageBody(body, isHTML: false)
+
+        for url in attachments {
+            guard let data = try? Data(contentsOf: url) else { continue }
+            controller.addAttachmentData(data, mimeType: "text/plain", fileName: url.lastPathComponent)
+        }
+        return controller
+    }
+
+    func updateUIViewController(_ controller: MFMailComposeViewController, context: Context) {}
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        private let onFinish: () -> Void
+
+        init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+
+        /// Sent, saved or cancelled — the sheet closes either way, and a
+        /// failure is the mail app's to report.
+        func mailComposeController(_ controller: MFMailComposeViewController,
+                                   didFinishWith result: MFMailComposeResult,
+                                   error: Error?) {
+            onFinish()
+        }
+    }
+}
+#endif
 
 // MARK: - Web page
 

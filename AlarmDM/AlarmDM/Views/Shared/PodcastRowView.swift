@@ -57,8 +57,9 @@ struct PodcastRowView: View {
                     .lineLimit(2)
 
                 if let progress = podcast.listeningProgress {
-                    ListeningProgressLine(progress: progress)
-                        .padding(.top, 2)
+                    ListeningProgressLine(progress: progress,
+                                          remaining: podcast.remainingDescription)
+                        .padding(.top, 3)
                 }
             }
 
@@ -81,6 +82,9 @@ struct PodcastRowView: View {
                 .accessibilityLabel(isCurrent && isPlaying ? "Pauziraj" : "Pusti")
             }
 
+            // A fixed column, so the badges cannot push the play button
+            // sideways: a row with a download mark and a row without it put
+            // the button in the same place.
             VStack(spacing: 6) {
                 if podcast.isPlayed {
                     Image(systemName: "checkmark.circle.fill")
@@ -103,6 +107,7 @@ struct PodcastRowView: View {
                         .accessibilityLabel("Preuzeto")
                 }
             }
+            .frame(width: 22)
         }
         .padding(.vertical, 6)
         // Translucent rather than a colour of its own, so it tints whatever
@@ -117,24 +122,45 @@ struct PodcastRowView: View {
     }
 }
 
-/// The line under an episode that has been started and not finished. Two
-/// capsules rather than a ProgressView: at two points tall, the stock control
-/// brings its own padding and its own minimum height, and fights the row.
+/// What is left of an episode that was started and not finished: a short bar
+/// and the time still in front of you, the way the Podcasts app puts it.
+///
+/// The bar used to run the width of the row, which at two points tall read as
+/// a rule under the text rather than as a measure of anything. Sixty points is
+/// enough to see a position in, and what it gives up is space for the one
+/// number that answers the question actually being asked.
 struct ListeningProgressLine: View {
     let progress: Double
+    var remaining: String?
+
+    private let barWidth: CGFloat = 60
 
     var body: some View {
-        GeometryReader { geometry in
+        HStack(spacing: 6) {
             ZStack(alignment: .leading) {
                 Capsule()
                     .fill(Color(.quaternaryLabel))
                 Capsule()
                     .fill(Color("primaryLink"))
-                    .frame(width: geometry.size.width * min(max(progress, 0), 1))
+                    .frame(width: barWidth * min(max(progress, 0), 1))
+            }
+            .frame(width: barWidth, height: 3)
+
+            if let remaining {
+                Text(remaining)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
         }
-        .frame(height: 2)
-        .accessibilityLabel("Odslušano \(Int(progress * 100)) posto")
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        let heard = "Odslušano \(Int(progress * 100)) posto"
+        guard let remaining else { return heard }
+        return "\(heard), \(remaining.lowercased())"
     }
 }
 
