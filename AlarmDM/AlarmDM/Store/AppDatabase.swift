@@ -141,6 +141,55 @@ final class AppDatabase {
     }
     #endif
 
+    #if DEBUG
+    /// Everything this app has ever stored, gone — the rows on this device and
+    /// the zone in iCloud that would otherwise put them back.
+    ///
+    /// Deleting the app is not enough and never was. The synced half lives in
+    /// the private database, and a reinstalled app finds it there and imports
+    /// it within seconds, which is why "I deleted both apps" kept producing a
+    /// store that already knew where the episode had stopped.
+    ///
+    /// The zone goes first. Emptying the tables first would queue a pile of
+    /// deletions for a zone that is about to stop existing, and every one of
+    /// them has to be waited for.
+    ///
+    /// One device at a time is not enough either: another device still holding
+    /// rows will export them into the fresh zone at its next launch. All of
+    /// them have to be cleared before any of them is started again.
+    func eraseEverything() async -> [String] {
+        var report: [String] = []
+
+        let zone = CKRecordZone.ID(zoneName: "com.apple.coredata.cloudkit.zone",
+                                   ownerName: CKCurrentUserDefaultName)
+        let database = CKContainer(identifier: AppDatabase.cloudContainer).privateCloudDatabase
+
+        do {
+            _ = try await database.modifyRecordZones(saving: [], deleting: [zone])
+            report.append("iCloud: zona obrisana")
+        } catch let error as CKError where error.code == .zoneNotFound || error.code == .userDeletedZone {
+            report.append("iCloud: zone nije ni bilo")
+        } catch {
+            report.append("iCloud: \(error.localizedDescription)")
+        }
+
+        do {
+            try context.delete(model: BookmarkEntity.self)
+            try context.delete(model: EpisodeStateEntity.self)
+            try context.delete(model: PodcastEntity.self)
+            try context.delete(model: DownloadEntity.self)
+            try context.save()
+            report.append("baza: sve tabele ispražnjene")
+        } catch {
+            report.append("baza: \(error.localizedDescription)")
+        }
+
+        adoptStoreChanges()
+        AppLog.write(.sync, "erased everything — \(report.joined(separator: "; "))")
+        return report
+    }
+    #endif
+
     /// Throws away the context and takes a fresh one.
     ///
     /// A context is not a window onto the store, it is a copy of the part of

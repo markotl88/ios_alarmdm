@@ -59,6 +59,31 @@ final class SettingsViewModel: ObservableObject {
         bookmarkCount = BookmarkLibrary.shared.all().count
     }
 
+    #if DEBUG
+    /// A first install, without the install: files, both stores, the iCloud
+    /// zone and the defaults. What is left is what a phone that has never seen
+    /// this app has.
+    @MainActor
+    func eraseEverything() async -> String {
+        var report: [String] = []
+
+        switch fileService.deleteAllDownloads() {
+        case .success: report.append("fajlovi: preuzeto obrisano")
+        case .failure(let error): report.append("fajlovi: \(error.localizedDescription)")
+        }
+
+        report.append(contentsOf: await AppDatabase.shared.eraseEverything())
+
+        if let bundleId = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleId)
+            report.append("podešavanja: vraćena")
+        }
+
+        refresh()
+        return report.joined(separator: "\n")
+    }
+    #endif
+
     func deleteAllDownloads() {
         switch fileService.deleteAllDownloads() {
         case .success:
@@ -78,6 +103,10 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @ObservedObject private var settings = AppSettings.shared
     @State private var showDeleteConfirmation = false
+    #if DEBUG
+    @State private var showEraseConfirmation = false
+    @State private var eraseReport: String?
+    #endif
     #if DEBUG && !targetEnvironment(macCatalyst)
     @State private var isComposingLogMail = false
     #endif
@@ -113,6 +142,30 @@ struct SettingsView: View {
         } message: {
             Text("Epizode ostaju dostupne za slušanje preko interneta i možeš ih ponovo preuzeti.")
         }
+        #if DEBUG
+        .confirmationDialog(
+            "Obrisati baš sve?",
+            isPresented: $showEraseConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Obriši sve", role: .destructive) {
+                Task { eraseReport = await viewModel.eraseEverything() }
+            }
+            Button("Odustani", role: .cancel) {}
+        } message: {
+            Text("Zabeleške, omiljeno, dokle si stigao, preuzete epizode i podešavanja - i ovde i u iCloudu, dakle i na ostalim uređajima. Očisti sve uređaje pre nego što ijedan ponovo pokreneš, inače onaj koji još ima podatke vrati sve u iCloud.")
+        }
+        .alert("Obrisano", isPresented: Binding(get: { eraseReport != nil },
+                                               set: { if !$0 { eraseReport = nil } })) {
+            // The container in memory still points at stores that were just
+            // emptied under it. A restart is the honest way to see the state
+            // that the next launch will actually find.
+            Button("Zatvori aplikaciju") { exit(0) }
+            Button("Kasnije", role: .cancel) { eraseReport = nil }
+        } message: {
+            Text(eraseReport ?? "")
+        }
+        #endif
         #if DEBUG && !targetEnvironment(macCatalyst)
         .sheet(isPresented: $isComposingLogMail) {
             MailComposeView(recipient: Links.authorEmail,
@@ -254,6 +307,14 @@ struct SettingsView: View {
                 }
             } label: {
                 externalRow("Pošalji log na mejl", systemImage: "envelope.badge")
+            }
+            #endif
+
+            #if DEBUG
+            Button(role: .destructive) {
+                showEraseConfirmation = true
+            } label: {
+                Label("Obriši sve podatke i iCloud", systemImage: "trash.slash")
             }
             #endif
         }
