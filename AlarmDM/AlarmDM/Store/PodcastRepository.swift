@@ -79,6 +79,29 @@ final class PodcastRepository: EpisodeLookup {
         return Podcast(from: entity, state: state(for: id), download: download(for: id))
     }
 
+    /// The episode to offer as "carry on", or nil when there is nothing to
+    /// carry on with: the most recent listen that has not finished.
+    ///
+    /// It looks at the listening rows rather than the episodes, because that
+    /// is where the dates are, and it takes the first few rather than all of
+    /// them — an episode heard a hundred listens ago is not what anyone means
+    /// by continuing.
+    func lastListened() -> Podcast? {
+        refreshFromStore()
+
+        let recent = fetchStates()
+            .filter { $0.playedAt != nil && !$0.isPlayed }
+            .sorted { EpisodeStateEntity.isNewer($0, than: $1) }
+            .prefix(5)
+
+        for state in recent {
+            if let episode = podcast(with: state.podcastId), episode.resumePosition != nil {
+                return episode
+            }
+        }
+        return nil
+    }
+
     /// Where this episode should start now, or nil to start at the beginning.
     ///
     /// Every way into playback has to ask this — the phone, the car, the lock

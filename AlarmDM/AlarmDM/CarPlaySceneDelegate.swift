@@ -23,6 +23,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var cancellables = Set<AnyCancellable>()
 
     private var radioItem: CPListItem?
+    /// Kept so the sections can be rebuilt in place. Replacing the root
+    /// template instead would throw away wherever the person had navigated
+    /// to, which in a car is worse than a stale row.
+    private var radioTemplate: CPListTemplate?
     private var engine: PlaybackEngine { .shared }
 
     /// The bookmark button briefly fills in after a capture. CPNowPlayingButton
@@ -58,6 +62,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         CPNowPlayingTemplate.shared.remove(self)
         self.interfaceController = nil
         self.radioItem = nil
+        self.radioTemplate = nil
     }
 
     // MARK: - Templates
@@ -98,6 +103,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func makeRadioTemplate() -> CPListTemplate {
+        let template = CPListTemplate(title: "Radio", sections: radioSections())
+        template.tabTitle = "Radio"
+        self.radioTemplate = template
+        return template
+    }
+
+    /// First what you were in the middle of, then the radio, then what is new.
+    ///
+    /// Getting out of the car and back in is the ordinary case, and until now
+    /// it meant finding the episode again on the phone: the car knew what was
+    /// playing only while it was playing. The first row is that episode, with
+    /// the second it stopped on.
+    private func radioSections() -> [CPListSection] {
         let item = CPListItem(
             text: "Radio uživo",
             detailText: radioDetailText,
@@ -118,9 +136,33 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             sectionIndexTitle: nil
         )
 
-        let template = CPListTemplate(title: "Radio", sections: [radioSection, podcastSection])
-        template.tabTitle = "Radio"
-        return template
+        guard let unfinished = continueListening() else {
+            return [radioSection, podcastSection]
+        }
+
+        let continueSection = CPListSection(
+            items: [listItem(for: unfinished, detail: continueDetail(for: unfinished))],
+            header: "Nastavi",
+            sectionIndexTitle: nil
+        )
+
+        return [continueSection, radioSection, podcastSection]
+    }
+
+    /// What is loaded right now, or failing that the last thing left unfinished.
+    private func continueListening() -> Podcast? {
+        if case .podcast(let playing) = engine.source { return playing }
+        return PodcastRepository.shared.lastListened()
+    }
+
+    private func continueDetail(for podcast: Podcast) -> String {
+        let seconds = engine.source.flatMap { source -> TimeInterval? in
+            guard case .podcast(let playing) = source, playing.id == podcast.id else { return nil }
+            return engine.currentTime
+        } ?? podcast.playedPosition
+
+        guard seconds > 0 else { return podcast.subtitle }
+        return "Od \(ScrubberView.format(seconds)) · \(podcast.subtitle)"
     }
 
     private func makeShowsTemplate() -> CPListTemplate {
@@ -161,8 +203,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// One tap plays the episode — no intermediate menu. CarPlay guidelines want
     /// the shortest possible path to audio while driving.
-    private func listItem(for podcast: Podcast) -> CPListItem {
-        let detail = podcast.isDownloaded ? "Preuzeto · \(podcast.subtitle)" : podcast.subtitle
+    private func listItem(for podcast: Podcast, detail: String? = nil) -> CPListItem {
+        let detail = detail ?? (podcast.isDownloaded ? "Preuzeto · \(podcast.subtitle)" : podcast.subtitle)
         let item = CPListItem(
             text: podcast.title,
             detailText: detail,
@@ -280,6 +322,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshRadioItem()
+                // What to carry on with has changed along with it.
+                self?.radioTemplate?.updateSections(self?.radioSections() ?? [])
                 // The button belongs to whatever is playing, so it comes and
                 // goes with it rather than sitting there doing nothing.
                 self?.refreshNowPlayingButtons()
