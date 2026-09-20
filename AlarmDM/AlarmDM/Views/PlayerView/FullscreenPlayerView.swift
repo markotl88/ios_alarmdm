@@ -107,25 +107,24 @@ struct FullscreenPlayerView: View {
                         .shadow(radius: 16, y: 8)
 
                     // A column the height of the artwork, with everything in
-                    // it centred on the artwork's middle. Pinned to the top and
-                    // bottom edges the same three blocks read as two groups
-                    // with a hole between them, and the hole grows with the
-                    // window.
-                    VStack(alignment: .leading, spacing: 28) {
-                        titleBlock(alignment: .leading)
+                    // it centred both ways: on the artwork's middle line, and
+                    // on its own. The artwork is a centred block, and a column
+                    // of left-aligned text beside it reads as a caption that
+                    // slipped; centred, the two halves are one composition.
+                    VStack(alignment: .center, spacing: 28) {
+                        titleBlock(alignment: .center)
 
                         if playerViewModel.isLive {
-                            liveBlock(alignment: .leading)
+                            liveBlock(alignment: .center)
                         } else {
                             scrubberView
                         }
 
-                        leading(controlsGroup)
+                        controlsGroup
                             .padding(.top, 8)
                     }
                     .frame(width: columnWidth(for: geometry.size, artwork: side),
-                           height: side,
-                           alignment: .leading)
+                           height: side)
                 }
                 .padding(.horizontal, 48)
 
@@ -160,15 +159,6 @@ struct FullscreenPlayerView: View {
         VStack(alignment: .center, spacing: 22) {
             transportControls
             actionRow
-        }
-    }
-
-    /// Everything in the right hand column starts at the same edge as the
-    /// title. Centred rows under left aligned text read as a mistake.
-    private func leading<Content: View>(_ content: Content) -> some View {
-        HStack(spacing: 0) {
-            content
-            Spacer(minLength: 0)
         }
     }
 
@@ -238,7 +228,7 @@ struct FullscreenPlayerView: View {
                 }
                 .multilineTextAlignment(isCentred ? .center : .leading)
                 .lineLimit(2)
-                .padding(.horizontal, isCentred ? 32 : 0)
+                .padding(.horizontal, isCentred && !isWide ? 32 : 0)
                 .transition(.opacity)
             }
         }
