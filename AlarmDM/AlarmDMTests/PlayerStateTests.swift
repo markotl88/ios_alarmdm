@@ -360,3 +360,43 @@ private final class EpisodeStore: EpisodeLookup {
 
     func podcast(with id: UUID) -> Podcast? { rows[id] }
 }
+
+// MARK: - What the stream announces
+
+/// One string arrives from the encoder and the screen either shows it or does
+/// not. Everything here is that decision.
+final class LiveTrackTests: XCTestCase {
+
+    func testArtistAndTitleAreSplitOnTheDash() {
+        let track = LiveTrack(raw: "Leonard Cohen - Light As The Breeze")
+        XCTAssertEqual(track?.artist, "Leonard Cohen")
+        XCTAssertEqual(track?.title, "Light As The Breeze")
+    }
+
+    func testAStringWithoutADashIsAllTitle() {
+        let track = LiveTrack(raw: "Jingle")
+        XCTAssertNil(track?.artist)
+        XCTAssertEqual(track?.title, "Jingle")
+    }
+
+    /// The field name instead of the field: an untagged file, announced by an
+    /// encoder that filled in what it had.
+    func testTheWordArtistIsNotAnArtist() {
+        XCTAssertNil(LiveTrack(raw: "artist - 14"))
+        XCTAssertNil(LiveTrack(raw: "14 - artist"))
+        XCTAssertNil(LiveTrack(raw: "Artist - Title"))
+        XCTAssertNil(LiveTrack(raw: "unknown"))
+    }
+
+    func testTheStationNameSaysNothingNewAndIsDropped() {
+        XCTAssertNil(LiveTrack(raw: "Daško i Mlađa"))
+        XCTAssertNil(LiveTrack(raw: "  "))
+        XCTAssertNil(LiveTrack(raw: "https://stream.daskoimladja.com"))
+    }
+
+    /// A number is a perfectly good song title when it arrives as one.
+    func testANumericTitleFromARealArtistSurvives() {
+        let track = LiveTrack(raw: "Smashing Pumpkins - 1979")
+        XCTAssertEqual(track?.title, "1979")
+    }
+}

@@ -90,9 +90,19 @@ struct LiveTrack: Equatable {
         return "\(artist) – \(title)"
     }
 
+    /// The words an encoder sends when nobody filled the tags in: the name of
+    /// the field instead of its value. "14 - artist" is a file number and a
+    /// placeholder, not a song, and putting it on the screen as one is worse
+    /// than showing nothing — the screen already says what is playing.
+    private static let placeholders: Set<String> = [
+        "artist", "title", "artist - title", "unknown", "unknown artist",
+        "nepoznato", "n/a", "na", "-", "--",
+    ]
+
     /// Returns nil for anything that is not worth showing: empty strings, a URL
-    /// (some encoders send the stream address), or the station name on its own,
-    /// which says nothing the screen is not already saying.
+    /// (some encoders send the stream address), the station name on its own,
+    /// which says nothing the screen is not already saying, or an untagged
+    /// track announced with the field names still in it.
     init?(raw: String) {
         let cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty, cleaned.count < 200 else { return nil }
@@ -100,10 +110,18 @@ struct LiveTrack: Equatable {
 
         let stationNames = ["daskoimladja", "dasko i mladja", "daško i mlađa", "radio"]
         if stationNames.contains(cleaned.lowercased()) { return nil }
+        if LiveTrack.placeholders.contains(cleaned.lowercased()) { return nil }
 
         if let separator = cleaned.range(of: " - ") ?? cleaned.range(of: " – ") {
             let artist = String(cleaned[..<separator.lowerBound]).trimmingCharacters(in: .whitespaces)
             let title = String(cleaned[separator.upperBound...]).trimmingCharacters(in: .whitespaces)
+
+            // Either half being a placeholder condemns the whole announcement:
+            // whichever side the real value was meant to be on, it is not
+            // there, and the half that is left is a number or a station name.
+            if LiveTrack.placeholders.contains(artist.lowercased()) { return nil }
+            if LiveTrack.placeholders.contains(title.lowercased()) { return nil }
+
             if !artist.isEmpty && !title.isEmpty {
                 self.artist = artist
                 self.title = title
@@ -716,6 +734,9 @@ extension PlaybackEngine: AVPlayerItemMetadataOutputPushDelegate {
             for item in group.items {
                 sawAnyItem = true
                 guard isTitleMetadata(item), let raw = item.stringValue else { continue }
+                #if DEBUG
+                AppLog.write(.player, "stream announced: \(raw)")
+                #endif
                 if let track = LiveTrack(raw: raw) {
                     announced = track
                 }

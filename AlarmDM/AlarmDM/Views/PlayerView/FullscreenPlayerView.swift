@@ -106,11 +106,12 @@ struct FullscreenPlayerView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 20))
                         .shadow(radius: 16, y: 8)
 
-                    // A column the height of the artwork: the title sits at
-                    // the top of it, the controls at the bottom, and the two
-                    // halves of the screen share a baseline instead of each
-                    // ending wherever their contents happen to stop.
-                    VStack(alignment: .leading, spacing: 24) {
+                    // A column the height of the artwork, with everything in
+                    // it centred on the artwork's middle. Pinned to the top and
+                    // bottom edges the same three blocks read as two groups
+                    // with a hole between them, and the hole grows with the
+                    // window.
+                    VStack(alignment: .leading, spacing: 28) {
                         titleBlock(alignment: .leading)
 
                         if playerViewModel.isLive {
@@ -119,13 +120,12 @@ struct FullscreenPlayerView: View {
                             scrubberView
                         }
 
-                        Spacer(minLength: 16)
-
                         leading(controlsGroup)
+                            .padding(.top, 8)
                     }
                     .frame(width: columnWidth(for: geometry.size, artwork: side),
                            height: side,
-                           alignment: .topLeading)
+                           alignment: .leading)
                 }
                 .padding(.horizontal, 48)
 
