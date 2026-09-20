@@ -62,7 +62,7 @@ struct FullscreenPlayerView: View {
                 .padding(.top, 24)
 
             if playerViewModel.isLive {
-                liveBadge.padding(.top, 20)
+                liveBlock(alignment: .center).padding(.top, 20)
             } else {
                 scrubberView
                     .padding(.horizontal, 32)
@@ -84,38 +84,73 @@ struct FullscreenPlayerView: View {
     /// Mac window under it. Side by side the artwork can be large without
     /// pushing anything off the bottom, and the controls sit in a column of
     /// readable width instead of being stretched across the glass.
+    ///
+    /// The two columns end on the same line and the artwork grows with the
+    /// window. Held at one size, it sat in the middle of a full-screen window
+    /// as a postage stamp with a field of empty around it, and the right hand
+    /// column floated against nothing.
     private var wideBody: some View {
-        VStack(spacing: 0) {
-            handle
+        GeometryReader { geometry in
+            let side = artworkSide(for: geometry.size)
 
-            Spacer(minLength: 0)
+            VStack(spacing: 0) {
+                handle
 
-            HStack(alignment: .top, spacing: 44) {
-                Image(playerViewModel.artworkName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 340, height: 340)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .shadow(radius: 16, y: 8)
+                Spacer(minLength: 0)
 
-                VStack(alignment: .leading, spacing: 28) {
-                    titleBlock(alignment: .leading)
+                HStack(alignment: .bottom, spacing: 44) {
+                    Image(playerViewModel.artworkName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: side, height: side)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .shadow(radius: 16, y: 8)
 
-                    if playerViewModel.isLive {
-                        liveBadge
-                    } else {
-                        scrubberView
+                    // A column the height of the artwork: the title sits at
+                    // the top of it, the controls at the bottom, and the two
+                    // halves of the screen share a baseline instead of each
+                    // ending wherever their contents happen to stop.
+                    VStack(alignment: .leading, spacing: 24) {
+                        titleBlock(alignment: .leading)
+
+                        if playerViewModel.isLive {
+                            liveBlock(alignment: .leading)
+                        } else {
+                            scrubberView
+                        }
+
+                        Spacer(minLength: 16)
+
+                        leading(transportControls)
+                        leading(actionRow)
                     }
-
-                    leading(transportControls)
-                    leading(actionRow)
+                    .frame(width: columnWidth(for: geometry.size, artwork: side),
+                           height: side,
+                           alignment: .topLeading)
                 }
-                .frame(maxWidth: 440, alignment: .leading)
-            }
-            .padding(.horizontal, 48)
+                .padding(.horizontal, 48)
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+    }
+
+    /// As large as the window can hold, within reason. The lower bound keeps
+    /// it recognisable in a small window; the upper one stops a full-screen
+    /// Mac from turning a 1024 pixel drawing into wall art.
+    private func artworkSide(for size: CGSize) -> CGFloat {
+        let byHeight = size.height - 260
+        let byWidth = (size.width - 140) * 0.45
+        return min(max(min(byHeight, byWidth), 240), 460)
+    }
+
+    /// Wide enough to read a title across, never wider than the artwork it
+    /// stands beside — two columns of different widths read as one column and
+    /// a leftover.
+    private func columnWidth(for size: CGSize, artwork: CGFloat) -> CGFloat {
+        let available = size.width - artwork - 44 - 96
+        return max(260, min(artwork, available))
     }
 
     /// Everything in the right hand column starts at the same edge as the
@@ -163,8 +198,14 @@ struct FullscreenPlayerView: View {
     /// only appears when the stream actually announces a track — an empty line
     /// reserved "just in case" would push the layout around every time radio
     /// starts.
-    private var liveBadge: some View {
-        VStack(spacing: 10) {
+    ///
+    /// Takes an alignment for the same reason the title block does: centred
+    /// under a left aligned title, in a column beside the artwork, it read as
+    /// something that had come loose.
+    private func liveBlock(alignment: HorizontalAlignment) -> some View {
+        let isCentred = alignment == .center
+
+        return VStack(alignment: alignment, spacing: 10) {
             HStack(spacing: 6) {
                 PulsingLiveDot(isAnimating: playerViewModel.isPlaying)
                 Text("UŽIVO").font(.caption.weight(.bold))
@@ -175,7 +216,7 @@ struct FullscreenPlayerView: View {
             .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
 
             if let track = playerViewModel.liveTrack {
-                VStack(spacing: 2) {
+                VStack(alignment: alignment, spacing: 2) {
                     Text(track.title)
                         .font(.subheadline.weight(.semibold))
                         .foregroundColor(Color("primaryText"))
@@ -185,12 +226,13 @@ struct FullscreenPlayerView: View {
                             .foregroundColor(Color("secondaryText"))
                     }
                 }
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(isCentred ? .center : .leading)
                 .lineLimit(2)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, isCentred ? 32 : 0)
                 .transition(.opacity)
             }
         }
+        .frame(maxWidth: .infinity, alignment: isCentred ? .center : .leading)
         .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
