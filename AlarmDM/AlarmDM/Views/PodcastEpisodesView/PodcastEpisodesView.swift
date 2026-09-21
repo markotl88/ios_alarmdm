@@ -143,7 +143,7 @@ struct PodcastEpisodesView: View {
                 Image(systemName: "waveform.slash")
                     .font(.largeTitle)
                     .foregroundColor(.secondary)
-                Text(viewModel.errorMessage ?? "Nema epizoda za ovu emisiju.")
+                Text(viewModel.errorMessage ?? String(localized: "Nema epizoda za ovu emisiju."))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

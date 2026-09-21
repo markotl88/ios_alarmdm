@@ -24,16 +24,16 @@
         "sr-Latn" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld epizoda"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld epizode"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld epizoda"
                 }
               },
               "other" : {
@@ -70,16 +70,16 @@
         "sr-Latn" : {
           "variations" : {
             "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld zabeleška"
-                }
-              },
               "few" : {
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld zabeleške"
+                }
+              },
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld zabeleška"
                 }
               },
               "other" : {
@@ -149,6 +149,43 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Account number copied"
+          }
+        }
+      }
+    },
+    "carplay.bookmarked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarked"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zabeleženo"
+          }
+        }
+      }
+    },
+    "Četvrtkom o važnim temama." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Important topics, on Thursdays."
+          }
+        }
+      }
+    },
+    "Čitanje uz mikrofon." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading at the microphone."
           }
         }
       }
@@ -253,6 +290,23 @@
         }
       }
     },
+    "filter.favourites" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favourites"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omiljeno"
+          }
+        }
+      }
+    },
     "Filtriraj epizode" : {
       "localizations" : {
         "en" : {
@@ -343,16 +397,6 @@
         }
       }
     },
-    "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
-          }
-        }
-      }
-    },
     "Još %lld h" : {
       "localizations" : {
         "en" : {
@@ -403,6 +447,16 @@
         }
       }
     },
+    "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
+          }
+        }
+      }
+    },
     "Kasnije" : {
       "localizations" : {
         "en" : {
@@ -433,6 +487,16 @@
         }
       }
     },
+    "Kôd nosi unapred upisan iznos od 500 RSD." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The code carries a preset amount of 500 RSD."
+          }
+        }
+      }
+    },
     "Kontaktiraj autora" : {
       "localizations" : {
         "en" : {
@@ -449,16 +513,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy account number"
-          }
-        }
-      }
-    },
-    "Kôd nosi unapred upisan iznos od 500 RSD." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The code carries a preset amount of 500 RSD."
           }
         }
       }
@@ -503,16 +557,6 @@
         }
       }
     },
-    "Nastavi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue"
-          }
-        }
-      }
-    },
     "Naš rad u potpunosti zavisi od vaših donacija." : {
       "localizations" : {
         "en" : {
@@ -523,7 +567,18 @@
         }
       }
     },
+    "Nastavi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
     "Nema epizoda za ovu emisiju." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -613,22 +668,22 @@
         }
       }
     },
-    "O nama" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About us"
-          }
-        }
-      }
-    },
     "O čemu se radi?" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "What's it about?"
+          }
+        }
+      }
+    },
+    "O nama" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About us"
           }
         }
       }
@@ -823,16 +878,6 @@
         }
       }
     },
-    "PayPal" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "PayPal"
-          }
-        }
-      }
-    },
     "Podrži" : {
       "localizations" : {
         "en" : {
@@ -893,22 +938,22 @@
         }
       }
     },
-    "Pošalji SMS" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send a text"
-          }
-        }
-      }
-    },
     "Pošalji log na mejl" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Email the log"
+          }
+        }
+      }
+    },
+    "Pošalji SMS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a text"
           }
         }
       }
@@ -1133,6 +1178,23 @@
         }
       }
     },
+    "show.other" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostalo"
+          }
+        }
+      }
+    },
     "Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu." : {
       "localizations" : {
         "en" : {
@@ -1233,6 +1295,26 @@
         }
       }
     },
+    "Učitavanje epizoda…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading episodes…"
+          }
+        }
+      }
+    },
+    "Učitavanje…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
+          }
+        }
+      }
+    },
     "Ukloni" : {
       "localizations" : {
         "en" : {
@@ -1263,22 +1345,12 @@
         }
       }
     },
-    "Učitavanje epizoda…" : {
+    "Uživo" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading episodes…"
-          }
-        }
-      }
-    },
-    "Učitavanje…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading…"
+            "value" : "Live"
           }
         }
       }
@@ -1299,16 +1371,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LIVE · %@"
-          }
-        }
-      }
-    },
-    "Uživo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live"
           }
         }
       }
@@ -1399,77 +1461,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
-          }
-        }
-      }
-    },
-    "carplay.bookmarked" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bookmarked"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zabeleženo"
-          }
-        }
-      }
-    },
-    "filter.favourites" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favourites"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Omiljeno"
-          }
-        }
-      }
-    },
-    "show.other" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Other"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ostalo"
-          }
-        }
-      }
-    },
-    "Četvrtkom o važnim temama." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Important topics, on Thursdays."
-          }
-        }
-      }
-    },
-    "Čitanje uz mikrofon." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading at the microphone."
           }
         }
       }

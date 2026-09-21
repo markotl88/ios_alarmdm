@@ -141,7 +141,7 @@ struct BookmarkRowView: View {
                     Text(bookmark.positionText)
                         .monospacedDigit()
                     if let subtitle = bookmark.displaySubtitle {
-                        Text("·")
+                        Text(verbatim: "·")
                         Text(subtitle).lineLimit(1)
                     }
                 }

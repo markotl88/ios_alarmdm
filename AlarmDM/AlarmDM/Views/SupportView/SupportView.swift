@@ -266,9 +266,9 @@ private struct FullscreenQRView: View {
                     .padding(.horizontal, 32)
 
                 VStack(spacing: 4) {
-                    Text("325-9300600398707-66")
+                    Text(verbatim: "325-9300600398707-66")
                         .font(.callout.monospacedDigit())
-                    Text("OTP banka · 500 RSD")
+                    Text(verbatim: "OTP banka · 500 RSD")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
