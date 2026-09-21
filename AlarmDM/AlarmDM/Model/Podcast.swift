@@ -305,14 +305,11 @@ extension Podcast {
 // MARK: - Which cut
 
 extension Podcast {
-    /// Two beamed notes for the cut with the songs, one struck-through note
-    /// for the cut without. Two notes because, at a glance and from a car
-    /// seat, a pair reads as music and a single note reads as a character.
-    ///
-    /// The pair is a character rather than a symbol: SF Symbols draws single
-    /// notes and lists of notes, not two joined ones, and the font has had
-    /// this glyph for as long as there have been fonts.
-    static let withMusicGlyph = "♫"
+    /// Only the cut without music is marked. With music is how the show goes
+    /// out, so it is the default everywhere and needs no sign; the cut that
+    /// differs from it is the one that has to say so. Two different marks
+    /// never looked like a pair anyway — one was a glyph from the font, the
+    /// other a symbol.
     static let withoutMusicSymbol = "music.note.slash"
 }
 

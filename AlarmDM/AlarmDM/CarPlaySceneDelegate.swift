@@ -222,10 +222,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         item.playbackProgress = CGFloat(podcast.listeningProgress ?? (podcast.isPlayed ? 1 : 0))
 
         // The two cuts of one day have the same title, so on this screen they
-        // were two identical rows. The mark is the only difference left to
-        // show, and it goes where the eye ends a row.
-        if marksCut {
-            item.setAccessoryImage(podcast.isWithMusic ? Self.withMusicMark : Self.withoutMusicMark)
+        // were two identical rows. The one without music is marked, where the
+        // eye ends a row; the one with music is the show as it went out and
+        // is left plain, as it is everywhere else.
+        if marksCut && !podcast.isWithMusic {
+            item.setAccessoryImage(Self.withoutMusicMark)
         }
 
         if case .podcast(let playing) = engine.source, playing.id == podcast.id {
@@ -256,18 +257,6 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// Drawn once. Template images, so CarPlay tints them for its own light
     /// and dark modes rather than drawing black on black.
-    private static let withMusicMark: UIImage = {
-        let glyph = NSAttributedString(
-            string: Podcast.withMusicGlyph,
-            attributes: [.font: UIFont.systemFont(ofSize: 24, weight: .semibold),
-                         .foregroundColor: UIColor.black]
-        )
-        let size = glyph.size()
-        return UIGraphicsImageRenderer(size: size)
-            .image { _ in glyph.draw(at: .zero) }
-            .withRenderingMode(.alwaysTemplate)
-    }()
-
     private static let withoutMusicMark: UIImage? = UIImage(
         systemName: Podcast.withoutMusicSymbol,
         withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)

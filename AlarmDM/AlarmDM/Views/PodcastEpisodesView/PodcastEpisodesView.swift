@@ -90,15 +90,7 @@ struct PodcastEpisodesView: View {
                     Button {
                         withAnimation(.easeInOut(duration: 0.18)) { viewModel.toggle(filter) }
                     } label: {
-                        Label {
-                            Text(filter.title)
-                        } icon: {
-                            switch filter {
-                            case .withMusic: MusicCutMark(withMusic: true)
-                            case .withoutMusic: MusicCutMark(withMusic: false)
-                            default: Image(systemName: filter.systemImage)
-                            }
-                        }
+                        Label(filter.title, systemImage: filter.systemImage)
                             .font(.footnote.weight(isActive ? .semibold : .regular))
                             .padding(.horizontal, 12)
                             .padding(.vertical, 7)
