@@ -196,16 +196,18 @@ final class AppDatabase {
 
     /// Throws away the context and takes a fresh one.
     ///
-    /// A context is not a window onto the store, it is a copy of the part of
-    /// it that has been looked at. Rows imported from iCloud land in the store
-    /// underneath, and this context — made once at launch and kept for the
-    /// life of the app — goes on answering with what it already held. That is
-    /// what "every device only remembers its own state" looked like: the
-    /// writing worked, the transport worked, and the reading was of a
-    /// photograph taken before any of it arrived.
+    /// A precaution, not a fix. It was written on the theory that a context
+    /// kept for the life of the app goes on answering with rows it read before
+    /// an import changed them, and that this was why each device seemed to
+    /// remember only its own state. StoreChangeTests says otherwise: the
+    /// repository hands out copies and fetches on every read, so nothing it
+    /// read earlier is still held, and a second writer's change is seen
+    /// without this. What was actually wrong then was upstream — the other
+    /// device's row had not arrived at all.
     ///
-    /// Cheap: a context holds no data of its own until something is fetched
-    /// through it.
+    /// It stays because it costs nothing — a context holds no data until
+    /// something is fetched through it — and because it keeps that true if
+    /// something ever does start holding on to rows.
     func adoptStoreChanges() {
         context = ModelContext(container)
         context.autosaveEnabled = false

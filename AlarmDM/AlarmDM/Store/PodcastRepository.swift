@@ -110,8 +110,9 @@ final class PodcastRepository: EpisodeLookup {
     /// from CarPlay went back to the beginning while the same episode on the
     /// phone carried on.
     ///
-    /// It re-reads the store first, so a position that arrived from another
-    /// device a moment ago is not missed by a copy taken at launch.
+    /// Every read here fetches, so a position that arrived from another device
+    /// a moment ago is what it finds; the refresh first is belt and braces —
+    /// see AppDatabase.adoptStoreChanges.
     func resumePosition(for id: UUID) -> TimeInterval? {
         refreshFromStore()
         return podcast(with: id)?.resumePosition

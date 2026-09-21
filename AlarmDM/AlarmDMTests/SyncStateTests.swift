@@ -150,13 +150,18 @@ final class SyncMergeTests: XCTestCase {
 
 // MARK: - Something else wrote to the store
 
-/// What an import from iCloud looks like from inside the app: rows changing
-/// in the store underneath a context that has already read them. Here the
-/// "something else" is a second container on the same files, which is as
-/// close to CloudKit's own writer as a test can get without CloudKit.
+/// What an import from iCloud looks like from inside the app: another writer
+/// changing rows in the store this side has already read. Here the other
+/// writer is a second container on the same files, as close to CloudKit's own
+/// as a test gets without CloudKit.
 ///
-/// This is the failure that looked like syncing being broken: the rows had
-/// arrived, and the app went on answering from what it had read at launch.
+/// These used to claim more than they showed. The first was meant to prove
+/// that re-reading the store before a decision is what makes an arrived
+/// position visible; it passes just the same with the re-read taken out,
+/// because the repository keeps no rows between reads — it fetches every
+/// time and hands out copies. So it is now a test of that: whatever the
+/// repository reads, it reads fresh. It will fail the day something starts
+/// holding on to rows, which is the day the re-read starts to matter.
 final class StoreChangeTests: XCTestCase {
 
     private var directory: URL!
@@ -171,44 +176,34 @@ final class StoreChangeTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
-    /// The decision about where to start re-reads the store first, so a
-    /// position that arrived a moment ago is the one it acts on.
-    func testWhereToStartReadsWhatArrivedUnderneath() {
+    func testAReadAfterAnotherWriterSeesTheNewValue() {
         let phone = PodcastRepository(database: AppDatabase(storeDirectory: directory))
         let episode = makeEpisode(title: "Alarm")
         phone.save(episode)
         phone.recordProgress(position: 600, hasFinished: false, for: episode.id)
-        // Read, so this side is now holding its own copy of the row.
         XCTAssertEqual(phone.podcast(with: episode.id)?.playedPosition, 600)
 
         let otherDevice = PodcastRepository(database: AppDatabase(storeDirectory: directory))
         otherDevice.recordProgress(position: 5_400, hasFinished: false, for: episode.id)
 
+        XCTAssertEqual(phone.podcast(with: episode.id)?.playedPosition, 5_400)
         XCTAssertEqual(phone.resumePosition(for: episode.id) ?? 0, 5_397, accuracy: 0.5)
     }
 
-    /// The store's own notice that it changed is enough for the next read to
-    /// see the change — no screen has to reappear for it.
-    func testTheRemoteChangeNoticeRefreshesWhatIsRead() {
+    /// What the store's change notice is actually for: screens hold copies
+    /// they took when they appeared, and this is how they hear it is time to
+    /// take new ones. Without it an arrived bookmark sits in the database
+    /// while the list goes on showing the old one.
+    func testTheRemoteChangeNoticeReachesTheScreens() {
         let database = AppDatabase(storeDirectory: directory)
-        let phone = PodcastRepository(database: database)
-        let episode = makeEpisode(title: "Alarm")
-        phone.save(episode)
-        phone.recordProgress(position: 600, hasFinished: false, for: episode.id)
-        XCTAssertEqual(phone.podcast(with: episode.id)?.playedPosition, 600)
-
-        let otherDevice = PodcastRepository(database: AppDatabase(storeDirectory: directory))
-        otherDevice.recordProgress(position: 5_400, hasFinished: false, for: episode.id)
 
         // Posted by hand: a store without CloudKit may not post it on its
-        // own. What is under test is what this app does when it arrives.
-        let noticed = expectation(description: "the database heard about the change")
+        // own. What is under test is that the app passes it on.
+        let noticed = expectation(description: "the database passed the change on")
         let subscription = database.didChangeRemotely.sink { noticed.fulfill() }
         NotificationCenter.default.post(name: .NSPersistentStoreRemoteChange, object: nil)
         wait(for: [noticed], timeout: 2)
         subscription.cancel()
-
-        XCTAssertEqual(phone.podcast(with: episode.id)?.playedPosition, 5_400)
     }
 }
 
