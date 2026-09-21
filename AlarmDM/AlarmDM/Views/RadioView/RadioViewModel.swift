@@ -57,12 +57,7 @@ final class RadioViewModel: ObservableObject {
     /// mixed list the badge has to be decided per show: Alarm ships both, most
     /// shows ship one, and a note on every row would say nothing.
     private var showsWithBothVariants: Set<Show> {
-        var withMusic: Set<Show> = []
-        var withoutMusic: Set<Show> = []
-        for podcast in latestPodcasts {
-            if podcast.isWithMusic { withMusic.insert(podcast.show) } else { withoutMusic.insert(podcast.show) }
-        }
-        return withMusic.intersection(withoutMusic)
+        latestPodcasts.showsInBothCuts
     }
 
     func showsMusicVariant(for podcast: Podcast) -> Bool {

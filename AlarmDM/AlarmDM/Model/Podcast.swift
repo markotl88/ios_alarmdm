@@ -301,3 +301,31 @@ extension Podcast {
 // `UUID(uuidString:) ?? UUID()` over an identifier the old app generated at
 // random, so it was never the id the feed gives the same episode, and
 // everything written under it was invisible from the moment it was written.
+
+// MARK: - Which cut
+
+extension Podcast {
+    /// Two beamed notes for the cut with the songs, one struck-through note
+    /// for the cut without. Two notes because, at a glance and from a car
+    /// seat, a pair reads as music and a single note reads as a character.
+    ///
+    /// The pair is a character rather than a symbol: SF Symbols draws single
+    /// notes and lists of notes, not two joined ones, and the font has had
+    /// this glyph for as long as there have been fonts.
+    static let withMusicGlyph = "♫"
+    static let withoutMusicSymbol = "music.note.slash"
+}
+
+extension Sequence where Element == Podcast {
+    /// The shows that appear here in both cuts. Only their rows need to say
+    /// which cut they are: every other show publishes one, and a mark on it
+    /// answers a question nobody asked.
+    var showsInBothCuts: Set<Show> {
+        var withMusic: Set<Show> = []
+        var withoutMusic: Set<Show> = []
+        for podcast in self {
+            if podcast.isWithMusic { withMusic.insert(podcast.show) } else { withoutMusic.insert(podcast.show) }
+        }
+        return withMusic.intersection(withoutMusic)
+    }
+}

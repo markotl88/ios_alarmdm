@@ -42,10 +42,8 @@ struct PodcastRowView: View {
                         .lineLimit(2)
 
                     if showsMusicVariant {
-                        Image(systemName: podcast.isWithMusic ? "music.note" : "music.note.slash")
-                            .font(.caption)
+                        MusicCutMark(withMusic: podcast.isWithMusic)
                             .foregroundColor(.secondary)
-                            .accessibilityLabel(podcast.isWithMusic ? "Sa muzikom" : "Bez muzike")
                     }
                 }
 
@@ -114,6 +112,25 @@ struct PodcastRowView: View {
                 .fill(Color("primaryLink").opacity(podcast.isPlayed ? 0.07 : 0))
                 .padding(.horizontal, -8)
         )
+    }
+}
+
+/// Which cut of a show this is, the same mark everywhere it appears: the
+/// list, the filter above it, and the car.
+struct MusicCutMark: View {
+    let withMusic: Bool
+
+    var body: some View {
+        Group {
+            if withMusic {
+                Text(Podcast.withMusicGlyph)
+                    .font(.subheadline.weight(.semibold))
+            } else {
+                Image(systemName: Podcast.withoutMusicSymbol)
+                    .font(.caption)
+            }
+        }
+        .accessibilityLabel(withMusic ? "Sa muzikom" : "Bez muzike")
     }
 }
 

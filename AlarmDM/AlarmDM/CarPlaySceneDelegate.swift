@@ -130,8 +130,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let radioSection = CPListSection(items: [item], header: "Uživo", sectionIndexTitle: nil)
 
         let latest = PodcastRepository.shared.latestPodcasts(limit: 10)
+        let bothCuts = latest.showsInBothCuts
         let podcastSection = CPListSection(
-            items: latest.map { listItem(for: $0) },
+            items: latest.map { listItem(for: $0, marksCut: bothCuts.contains($0.show)) },
             header: "Najnoviji podkasti",
             sectionIndexTitle: nil
         )
@@ -141,7 +142,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
 
         let continueSection = CPListSection(
-            items: [listItem(for: unfinished, detail: continueDetail(for: unfinished))],
+            items: [listItem(for: unfinished,
+                             detail: continueDetail(for: unfinished),
+                             marksCut: bothCuts.contains(unfinished.show))],
             header: "Nastavi",
             sectionIndexTitle: nil
         )
@@ -194,7 +197,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         } else {
             template = CPListTemplate(
                 title: show.displayName,
-                sections: [CPListSection(items: episodes.map { listItem(for: $0) })]
+                sections: [CPListSection(items: episodes.map {
+                    listItem(for: $0, marksCut: episodes.showsInBothCuts.contains($0.show))
+                })]
             )
         }
 
@@ -203,13 +208,25 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     /// One tap plays the episode — no intermediate menu. CarPlay guidelines want
     /// the shortest possible path to audio while driving.
-    private func listItem(for podcast: Podcast, detail: String? = nil) -> CPListItem {
+    private func listItem(for podcast: Podcast, detail: String? = nil, marksCut: Bool = false) -> CPListItem {
         let detail = detail ?? (podcast.isDownloaded ? "Preuzeto · \(podcast.subtitle)" : podcast.subtitle)
         let item = CPListItem(
             text: podcast.title,
             detailText: detail,
             image: UIImage(named: podcast.show.imageName)?.fittedToCarPlayListItem()
         )
+
+        // CarPlay draws the bar itself, under the row, which is the one place
+        // on that screen with room to spare. Full for a finished episode: from
+        // a car seat a full bar says "heard" faster than any mark could.
+        item.playbackProgress = CGFloat(podcast.listeningProgress ?? (podcast.isPlayed ? 1 : 0))
+
+        // The two cuts of one day have the same title, so on this screen they
+        // were two identical rows. The mark is the only difference left to
+        // show, and it goes where the eye ends a row.
+        if marksCut {
+            item.setAccessoryImage(podcast.isWithMusic ? Self.withMusicMark : Self.withoutMusicMark)
+        }
 
         if case .podcast(let playing) = engine.source, playing.id == podcast.id {
             item.isPlaying = true
@@ -236,6 +253,25 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
         return item
     }
+
+    /// Drawn once. Template images, so CarPlay tints them for its own light
+    /// and dark modes rather than drawing black on black.
+    private static let withMusicMark: UIImage = {
+        let glyph = NSAttributedString(
+            string: Podcast.withMusicGlyph,
+            attributes: [.font: UIFont.systemFont(ofSize: 24, weight: .semibold),
+                         .foregroundColor: UIColor.black]
+        )
+        let size = glyph.size()
+        return UIGraphicsImageRenderer(size: size)
+            .image { _ in glyph.draw(at: .zero) }
+            .withRenderingMode(.alwaysTemplate)
+    }()
+
+    private static let withoutMusicMark: UIImage? = UIImage(
+        systemName: Podcast.withoutMusicSymbol,
+        withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+    )?.withRenderingMode(.alwaysTemplate)
 
     // MARK: - Transport
 
