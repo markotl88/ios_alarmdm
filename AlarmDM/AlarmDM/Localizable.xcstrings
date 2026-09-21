@@ -578,7 +578,6 @@
       }
     },
     "Nema epizoda za ovu emisiju." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {

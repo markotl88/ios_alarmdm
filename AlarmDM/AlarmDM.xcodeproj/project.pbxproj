@@ -12,6 +12,7 @@
 		4D13F4522CCBCA7800AA52D1 /* PlayerViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */; };
 		4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */; };
 		4D16A3273058434E00A6FEEA /* ListeningRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */; };
+		AA00000000000000000001F3 /* SyncStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000001F4 /* SyncStateTests.swift */; };
 		4D16A3283058434E00A6FEEA /* PlayerStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */; };
 		4D16A32B305849B600A6FEEA /* DownloadEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A329305849B600A6FEEA /* DownloadEntity.swift */; };
 		4D16A32C305849B600A6FEEA /* EpisodeStateEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */; };
@@ -100,6 +101,7 @@
 		4D13F4512CCBCA7800AA52D1 /* PlayerViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerViewModel.swift; sourceTree = "<group>"; };
 		4D13F4552CCBD1B100AA52D1 /* MiniPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPlayerView.swift; sourceTree = "<group>"; };
 		4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningRulesTests.swift; sourceTree = "<group>"; };
+		AA00000000000000000001F4 /* SyncStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncStateTests.swift; sourceTree = "<group>"; };
 		4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayerStateTests.swift; sourceTree = "<group>"; };
 		4D16A329305849B600A6FEEA /* DownloadEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadEntity.swift; sourceTree = "<group>"; };
 		4D16A32A305849B600A6FEEA /* EpisodeStateEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EpisodeStateEntity.swift; sourceTree = "<group>"; };
@@ -315,6 +317,7 @@
 			children = (
 				4DAF9EC72C579D5200B4FA7F /* AlarmDMTests.swift */,
 				4D16A3253058434E00A6FEEA /* ListeningRulesTests.swift */,
+				AA00000000000000000001F4 /* SyncStateTests.swift */,
 				4D16A3263058434E00A6FEEA /* PlayerStateTests.swift */,
 			);
 			path = AlarmDMTests;
@@ -609,6 +612,7 @@
 			files = (
 				4DAF9EC82C579D5200B4FA7F /* AlarmDMTests.swift in Sources */,
 				4D16A3273058434E00A6FEEA /* ListeningRulesTests.swift in Sources */,
+				AA00000000000000000001F3 /* SyncStateTests.swift in Sources */,
 				4D16A3283058434E00A6FEEA /* PlayerStateTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

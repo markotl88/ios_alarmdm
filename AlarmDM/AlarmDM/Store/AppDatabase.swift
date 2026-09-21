@@ -52,26 +52,30 @@ final class AppDatabase {
 
     /// What a person made: bookmarks, favourites, how far they got. Small,
     /// irreplaceable, and worth carrying between their devices.
-    private static let syncedModels: [any PersistentModel.Type] =
+    static let syncedModels: [any PersistentModel.Type] =
         [BookmarkEntity.self, EpisodeStateEntity.self]
 
     /// What this device happens to hold: the feed cache and the downloaded
     /// files. Both are reproducible — one from the API, the other from the
     /// network — and a file path is a fact about one machine anyway.
-    private static let localModels: [any PersistentModel.Type] =
+    static let localModels: [any PersistentModel.Type] =
         [PodcastEntity.self, DownloadEntity.self]
 
     /// `inMemory` is for tests, which want a store that starts empty and
-    /// leaves nothing behind. It also turns syncing off: a test has no
+    /// leaves nothing behind. `storeDirectory` is for the tests that need the
+    /// store to be a file two containers can open at once — which is what an
+    /// import from iCloud looks like from inside the app: something else
+    /// writing to the same store. Either one turns syncing off: a test has no
     /// business reaching iCloud.
-    init(inMemory: Bool = false) {
+    init(inMemory: Bool = false, storeDirectory: URL? = nil) {
         let schema = Schema(AppDatabase.localModels + AppDatabase.syncedModels)
+        let syncing = !inMemory && storeDirectory == nil
         isEphemeral = inMemory
 
         do {
             container = try ModelContainer(
                 for: schema,
-                configurations: AppDatabase.configurations(inMemory: inMemory, syncing: !inMemory)
+                configurations: AppDatabase.configurations(inMemory: inMemory, syncing: syncing, directory: storeDirectory)
             )
         } catch {
             // Most often this is iCloud refusing the schema — a model that
@@ -84,7 +88,7 @@ final class AppDatabase {
             do {
                 container = try ModelContainer(
                     for: schema,
-                    configurations: AppDatabase.configurations(inMemory: inMemory, syncing: false)
+                    configurations: AppDatabase.configurations(inMemory: inMemory, syncing: false, directory: storeDirectory)
                 )
             } catch {
                 AppLog.write(.sync, "SwiftData store unavailable, running in memory: \(error.localizedDescription)")
@@ -106,7 +110,7 @@ final class AppDatabase {
         observeRemoteChanges()
 
         #if DEBUG
-        describeAccount()
+        if syncing { describeAccount() }
         #endif
     }
 
@@ -259,7 +263,18 @@ final class AppDatabase {
 
     /// Two stores in one container: a context reaches both, and which one a
     /// row lands in is decided by its type.
-    private static func configurations(inMemory: Bool, syncing: Bool) -> [ModelConfiguration] {
+    private static func configurations(inMemory: Bool, syncing: Bool, directory: URL? = nil) -> [ModelConfiguration] {
+        if let directory, !inMemory {
+            return [
+                ModelConfiguration("Local", schema: Schema(localModels),
+                                   url: directory.appendingPathComponent("Local.store"),
+                                   cloudKitDatabase: .none),
+                ModelConfiguration("Synced", schema: Schema(syncedModels),
+                                   url: directory.appendingPathComponent("Synced.store"),
+                                   cloudKitDatabase: syncing ? .private(cloudContainer) : .none),
+            ]
+        }
+
         let local = ModelConfiguration(
             "Local",
             schema: Schema(localModels),
@@ -275,5 +290,14 @@ final class AppDatabase {
         )
 
         return [local, synced]
+    }
+
+    /// The synced half exactly as the app opens it — same models, same iCloud
+    /// container — at a place of the caller's choosing. For the test that
+    /// asks whether iCloud will accept the schema, which is a question only
+    /// opening the store answers.
+    static func syncedConfiguration(at url: URL) -> ModelConfiguration {
+        ModelConfiguration("Synced", schema: Schema(syncedModels), url: url,
+                           cloudKitDatabase: .private(cloudContainer))
     }
 }
