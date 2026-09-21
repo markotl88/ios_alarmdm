@@ -259,7 +259,7 @@ final class PlayerViewModel: ObservableObject {
             onlineStream = stream ?? AppConstants.fallbackStreamURL
             podcastId = nil
             podcast = nil
-            title = "Radio uživo"
+            title = String(localized: "Radio uživo")
             subtitle = "Daško i Mlađa"
             artworkName = "img_radio"
             isLive = true

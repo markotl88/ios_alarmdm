@@ -71,10 +71,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let radioTemplate = makeRadioTemplate()
         let showsTemplate = makeShowsTemplate()
 
-        radioTemplate.tabTitle = "Radio"
+        radioTemplate.tabTitle = String(localized: "Radio")
         radioTemplate.tabImage = UIImage(systemName: "dot.radiowaves.left.and.right")
 
-        showsTemplate.tabTitle = "Emisije"
+        showsTemplate.tabTitle = String(localized: "Emisije")
         showsTemplate.tabImage = UIImage(systemName: "music.note.list")
 
         let tabBarTemplate = CPTabBarTemplate(templates: [radioTemplate, showsTemplate])
@@ -103,8 +103,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func makeRadioTemplate() -> CPListTemplate {
-        let template = CPListTemplate(title: "Radio", sections: radioSections())
-        template.tabTitle = "Radio"
+        let template = CPListTemplate(title: String(localized: "Radio"), sections: radioSections())
+        template.tabTitle = String(localized: "Radio")
         self.radioTemplate = template
         return template
     }
@@ -117,7 +117,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// the second it stopped on.
     private func radioSections() -> [CPListSection] {
         let item = CPListItem(
-            text: "Radio uživo",
+            text: String(localized: "Radio uživo"),
             detailText: radioDetailText,
             image: UIImage(named: "img_radio")?.fittedToCarPlayListItem()
         )
@@ -127,13 +127,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
         self.radioItem = item
 
-        let radioSection = CPListSection(items: [item], header: "Uživo", sectionIndexTitle: nil)
+        let radioSection = CPListSection(items: [item], header: String(localized: "Uživo"), sectionIndexTitle: nil)
 
         let latest = PodcastRepository.shared.latestPodcasts(limit: 10)
         let bothCuts = latest.showsInBothCuts
         let podcastSection = CPListSection(
             items: latest.map { listItem(for: $0, marksCut: bothCuts.contains($0.show)) },
-            header: "Najnoviji podkasti",
+            header: String(localized: "Najnoviji podkasti"),
             sectionIndexTitle: nil
         )
 
@@ -145,7 +145,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             items: [listItem(for: unfinished,
                              detail: continueDetail(for: unfinished),
                              marksCut: bothCuts.contains(unfinished.show))],
-            header: "Nastavi",
+            header: String(localized: "Nastavi"),
             sectionIndexTitle: nil
         )
 
@@ -165,7 +165,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         } ?? podcast.playedPosition
 
         guard seconds > 0 else { return podcast.subtitle }
-        return "Od \(ScrubberView.format(seconds)) · \(podcast.subtitle)"
+        return String(localized: "Od \(ScrubberView.format(seconds)) · \(podcast.subtitle)")
     }
 
     private func makeShowsTemplate() -> CPListTemplate {
@@ -182,8 +182,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return item
         }
 
-        let template = CPListTemplate(title: "Emisije", sections: [CPListSection(items: items)])
-        template.tabTitle = "Emisije"
+        let template = CPListTemplate(title: String(localized: "Emisije"), sections: [CPListSection(items: items)])
+        template.tabTitle = String(localized: "Emisije")
         return template
     }
 
@@ -192,7 +192,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         let template: CPListTemplate
         if episodes.isEmpty {
-            let empty = CPListItem(text: "Nema preuzetih epizoda", detailText: "Otvori aplikaciju na telefonu da osvežiš listu.")
+            let empty = CPListItem(text: String(localized: "Nema učitanih epizoda"),
+                                   detailText: String(localized: "Otvori aplikaciju na telefonu da osvežiš listu."))
             template = CPListTemplate(title: show.displayName, sections: [CPListSection(items: [empty])])
         } else {
             template = CPListTemplate(
@@ -209,7 +210,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// One tap plays the episode — no intermediate menu. CarPlay guidelines want
     /// the shortest possible path to audio while driving.
     private func listItem(for podcast: Podcast, detail: String? = nil, marksCut: Bool = false) -> CPListItem {
-        let detail = detail ?? (podcast.isDownloaded ? "Preuzeto · \(podcast.subtitle)" : podcast.subtitle)
+        let detail = detail ?? (podcast.isDownloaded ? String(localized: "Preuzeto · \(podcast.subtitle)") : podcast.subtitle)
         let item = CPListItem(
             text: podcast.title,
             detailText: detail,
@@ -316,7 +317,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         // The one piece of text the car can show back, so the acknowledgement
         // is a word rather than a glyph that changed shape.
-        template.upNextTitle = justBookmarked ? "Zabeleženo" : "Zabeleži"
+        // Its own key: the same Serbian word is also the name of the list,
+        // and in English an acknowledgement and a list are different words.
+        template.upNextTitle = justBookmarked
+            ? String(localized: "carplay.bookmarked", defaultValue: "Zabeleženo")
+            : String(localized: "Zabeleži")
         template.isUpNextButtonEnabled = true
     }
 
@@ -369,9 +374,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// stopped being able to stop anything.
     private var radioDetailText: String {
         if case .radio = engine.source {
-            return engine.isPlaying ? "Uživo" : "Nastavi"
+            return engine.isPlaying ? String(localized: "Uživo") : String(localized: "Nastavi")
         }
-        return "Pusti"
+        return String(localized: "Pusti")
     }
 }
 

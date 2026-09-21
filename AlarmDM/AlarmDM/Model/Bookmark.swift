@@ -18,11 +18,11 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .muzika: return "Muzika"
-        case .film:   return "Film"
-        case .knjiga: return "Knjiga"
-        case .strip:  return "Strip"
-        case .fora:   return "Fora"
+        case .muzika: return String(localized: "Muzika")
+        case .film:   return String(localized: "Film")
+        case .knjiga: return String(localized: "Knjiga")
+        case .strip:  return String(localized: "Strip")
+        case .fora:   return String(localized: "Fora")
         }
     }
 

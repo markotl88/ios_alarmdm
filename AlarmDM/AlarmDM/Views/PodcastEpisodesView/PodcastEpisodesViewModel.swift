@@ -20,10 +20,12 @@ enum EpisodeFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .withMusic: return "Sa muzikom"
-        case .withoutMusic: return "Bez muzike"
-        case .downloaded: return "Preuzeto"
-        case .favourites: return "Omiljeno"
+        case .withMusic: return String(localized: "Sa muzikom")
+        case .withoutMusic: return String(localized: "Bez muzike")
+        case .downloaded: return String(localized: "Preuzeto")
+        // Its own key: as a filter this is a plural in English, where the
+        // same word on a row is an adjective.
+        case .favourites: return String(localized: "filter.favourites", defaultValue: "Omiljeno")
         }
     }
 

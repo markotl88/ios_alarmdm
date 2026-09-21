@@ -40,6 +40,7 @@
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
 		AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* PrivacyInfo.xcprivacy */; };
+		AA00000000000000000001F1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000001F2 /* Localizable.xcstrings */; };
 		AA0000000000000000000107 /* PodcastRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000108 /* PodcastRepository.swift */; };
 		AA0000000000000000000109 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010A /* SupportView.swift */; };
 		AA000000000000000000010C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000000000000000000010D /* SettingsView.swift */; };
@@ -132,6 +133,7 @@
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		AA0000000000000000000106 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		AA00000000000000000001F2 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		AA0000000000000000000108 /* PodcastRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PodcastRepository.swift; sourceTree = "<group>"; };
 		AA000000000000000000010A /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportView.swift; sourceTree = "<group>"; };
 		AA000000000000000000010D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -293,6 +295,7 @@
 				4DAF9EB62C579D5100B4FA7F /* AlarmDMApp.swift */,
 				4DAF9EBA2C579D5200B4FA7F /* Assets.xcassets */,
 				AA0000000000000000000106 /* PrivacyInfo.xcprivacy */,
+				AA00000000000000000001F2 /* Localizable.xcstrings */,
 				4D13F43A2CCA65E400AA52D1 /* Colors.xcassets */,
 				4DAF9EBC2C579D5200B4FA7F /* Preview Content */,
 			);
@@ -498,11 +501,12 @@
 			};
 			buildConfigurationList = 4DAF9EAE2C579D5100B4FA7F /* Build configuration list for PBXProject "AlarmDM" */;
 			compatibilityVersion = "Xcode 14.0";
-			developmentRegion = en;
+			developmentRegion = "sr-Latn";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
 				Base,
+				"sr-Latn",
 			);
 			mainGroup = 4DAF9EAA2C579D5100B4FA7F;
 			packageReferences = (
@@ -527,6 +531,7 @@
 				4DAF9EBE2C579D5200B4FA7F /* Preview Assets.xcassets in Resources */,
 				4DAF9EBB2C579D5200B4FA7F /* Assets.xcassets in Resources */,
 				AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */,
+				AA00000000000000000001F1 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

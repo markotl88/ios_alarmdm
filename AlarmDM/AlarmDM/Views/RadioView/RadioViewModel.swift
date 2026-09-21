@@ -138,7 +138,7 @@ final class RadioViewModel: ObservableObject {
                 BookmarkLibrary.shared.reconcileLiveCaptures()
             case .failure(let error):
                 if self.latestPodcasts.isEmpty {
-                    self.errorMessage = "Nije moguće učitati podkaste. Proveri internet konekciju."
+                    self.errorMessage = String(localized: "Nije moguće učitati podkaste. Proveri internet konekciju.")
                 }
                 AppLog.write(.library, "Error fetching podcasts: \(error.localizedDescription)")
             }

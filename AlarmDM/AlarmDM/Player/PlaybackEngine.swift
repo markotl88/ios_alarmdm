@@ -45,7 +45,7 @@ enum PlaybackSource: Equatable {
 
     var title: String {
         switch self {
-        case .radio: return "Radio uživo"
+        case .radio: return String(localized: "Radio uživo")
         case .podcast(let podcast): return podcast.title
         }
     }
@@ -255,7 +255,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         playAfterPendingSeek = position != nil
 
         guard let url = resolveURL(for: source) else {
-            lastErrorMessage = "Nije moguće pronaći audio za \(source.title)."
+            lastErrorMessage = String(localized: "Nije moguće pronaći audio za \(source.title).")
             return
         }
 
@@ -420,7 +420,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             DispatchQueue.main.async {
                 guard let self else { return }
                 if item.status == .failed {
-                    self.lastErrorMessage = item.error?.localizedDescription ?? "Reprodukcija nije uspela."
+                    self.lastErrorMessage = item.error?.localizedDescription ?? String(localized: "Reprodukcija nije uspela.")
                     #if DEBUG
                     AppLog.write(.player, "item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
                     #endif

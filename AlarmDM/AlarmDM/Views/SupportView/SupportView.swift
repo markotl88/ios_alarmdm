@@ -28,13 +28,13 @@ struct SupportView: View {
             VStack(alignment: .leading, spacing: 24) {
                 intro
 
-                sectionHeader("Daško i Mlađa")
+                sectionHeader(String(localized: "Daško i Mlađa"))
                 patreonRow
                 payPalRow
                 bankSection
 
                 if !Show.withOwnPatreon.isEmpty {
-                    sectionHeader("Emisije")
+                    sectionHeader(String(localized: "Emisije"))
                     showPatreonSection
                 }
             }
@@ -110,7 +110,7 @@ struct SupportView: View {
         Link(destination: Donation.patreon) {
             donationCard(
                 title: "Patreon",
-                detail: "Stalna mesečna ili godišnja donacija",
+                detail: String(localized: "Stalna mesečna ili godišnja donacija"),
                 systemImage: "heart.circle.fill"
             )
         }
@@ -121,7 +121,7 @@ struct SupportView: View {
         Link(destination: Donation.payPal) {
             donationCard(
                 title: "PayPal",
-                detail: "Jednokratna uplata",
+                detail: String(localized: "Jednokratna uplata"),
                 systemImage: "creditcard.circle.fill"
             )
         }

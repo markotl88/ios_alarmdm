@@ -172,8 +172,8 @@ struct LiveLabel: View {
     var textColor: Color = Color("secondaryText")
 
     private var text: String {
-        guard let track else { return "UŽIVO" }
-        return "UŽIVO · \(track.display)"
+        guard let track else { return String(localized: "UŽIVO") }
+        return String(localized: "UŽIVO · \(track.display)")
     }
 
     var body: some View {

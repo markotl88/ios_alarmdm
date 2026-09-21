@@ -34,23 +34,16 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var downloadsSummary: String {
-        guard hasDownloads else { return "Nema preuzetih epizoda" }
-        let noun: String
-        switch downloadedCount % 10 {
-        case 1 where downloadedCount % 100 != 11: noun = "epizoda"
-        case 2...4 where !(12...14).contains(downloadedCount % 100): noun = "epizode"
-        default: noun = "epizoda"
-        }
-        return "\(downloadedCount) \(noun) · \(formattedSize)"
+        guard hasDownloads else { return String(localized: "Nema preuzetih epizoda") }
+        // The plural rules live in the string catalog — Serbian has three
+        // forms, English two, and neither belongs in a switch here.
+        let episodes = String(localized: "\(downloadedCount) epizoda")
+        return "\(episodes) · \(formattedSize)"
     }
 
     var bookmarksSummary: String {
-        switch bookmarkCount {
-        case 0: return "Nema zabeleški"
-        case 1: return "1 zabeleška"
-        case 2...4: return "\(bookmarkCount) zabeleške"
-        default: return "\(bookmarkCount) zabeleški"
-        }
+        guard bookmarkCount > 0 else { return String(localized: "Nema zabeleški") }
+        return String(localized: "\(bookmarkCount) zabeleška")
     }
 
     func refresh() {
@@ -90,7 +83,7 @@ final class SettingsViewModel: ObservableObject {
             repository.clearAllDownloadReferences()
             deleteFailureMessage = nil
         case .failure(let error):
-            deleteFailureMessage = "Brisanje nije uspelo: \(error.localizedDescription)"
+            deleteFailureMessage = String(localized: "Brisanje nije uspelo: \(error.localizedDescription)")
         }
         refresh()
     }
@@ -253,7 +246,7 @@ struct SettingsView: View {
     }
 
     /// A row that leaves the app, marked as such.
-    private func externalRow(_ title: String, detail: String? = nil, systemImage: String) -> some View {
+    private func externalRow(_ title: LocalizedStringKey, detail: String? = nil, systemImage: String) -> some View {
         HStack {
             Label(title, systemImage: systemImage)
             Spacer()
@@ -274,6 +267,20 @@ struct SettingsView: View {
             } label: {
                 externalRow("Kontaktiraj autora", systemImage: "envelope")
             }
+
+            #if !targetEnvironment(macCatalyst)
+            // iOS keeps a language per app, apart from the phone's, and offers
+            // the choice on the app's own page in Settings once there is more
+            // than one language to choose from. A picker of our own would
+            // change the app and leave CarPlay, the share sheet and every
+            // system dialog behind in the other language. The Mac has the same
+            // setting in System Settings, under Language & Region.
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+            } label: {
+                externalRow("Jezik", detail: Self.languageName, systemImage: "globe")
+            }
+            #endif
 
             HStack {
                 Text("Verzija")
@@ -321,6 +328,14 @@ struct SettingsView: View {
     }
 
     // MARK: Helpers
+
+    /// The language the app is actually showing, in that language — which is
+    /// the one worth naming, since it may not be the phone's.
+    private static var languageName: String {
+        let code = Bundle.main.preferredLocalizations.first ?? "sr-Latn"
+        let name = Locale(identifier: code).localizedString(forIdentifier: code) ?? code
+        return name.prefix(1).uppercased() + name.dropFirst()
+    }
 
     private static var appVersion: String {
         let info = Bundle.main.infoDictionary

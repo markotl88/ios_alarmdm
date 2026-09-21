@@ -153,7 +153,7 @@ struct ListeningProgressLine: View {
     }
 
     private var accessibilityText: String {
-        let heard = "Odslušano \(Int(progress * 100)) posto"
+        let heard = String(localized: "Odslušano \(Int(progress * 100)) posto")
         guard let remaining else { return heard }
         return "\(heard), \(remaining.lowercased())"
     }

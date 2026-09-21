@@ -64,27 +64,29 @@ enum Show: String, CaseIterable, Identifiable {
         case .punaUstaPoezije: return "Puna usta poezije"
         case .citanjac: return "Čitanjac"
         case .falis: return "FALIŠ"
-        case .ostalo: return "Ostalo"
+        // Its own key: "Ostalo" is also the last tab, which is "More" in
+        // English, where this one is "Other".
+        case .ostalo: return String(localized: "show.other", defaultValue: "Ostalo")
         }
     }
 
     var description: String {
         switch self {
-        case .alarmSaDaskomIMladjom: return "Ponedeljak - četvrtak, od 08 do 10h."
-        case .ljudiIzPodzemlja: return "Specijalizovana za punk/hardcore zvuk."
-        case .unutrasnjaEmigracija: return "Svi mi emigranti. Svakog dana od 11h"
-        case .vecernjaSkolaRokenrola: return "Rokenrol za večernje sate."
-        case .naIviciOfsajda: return "Romantizovani fudbalski istorijat."
-        case .nepopularnoMisljenje: return "Teme o kojima se ćuti."
-        case .sportskiPozdrav: return "Sportska emisija."
-        case .jbt: return "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05."
-        case .priceUMagli: return "Radio-drama."
-        case .rastrojavanje: return "Četvrtkom o važnim temama."
-        case .topleLjuckePrice: return "Emisija sa toplim ljudskim pričama."
-        case .punaUstaPoezije: return "Emisija posvećena poeziji."
-        case .citanjac: return "Čitanje uz mikrofon."
-        case .falis: return "Prenosi sa Festivala alternative i ljevice u Šibeniku, 2024."
-        case .ostalo: return "Epizode van redovnih emisija."
+        case .alarmSaDaskomIMladjom: return String(localized: "Ponedeljak - četvrtak, od 08 do 10h.")
+        case .ljudiIzPodzemlja: return String(localized: "Specijalizovana za punk/hardcore zvuk.")
+        case .unutrasnjaEmigracija: return String(localized: "Svi mi emigranti. Svakog dana od 11h")
+        case .vecernjaSkolaRokenrola: return String(localized: "Rokenrol za večernje sate.")
+        case .naIviciOfsajda: return String(localized: "Romantizovani fudbalski istorijat.")
+        case .nepopularnoMisljenje: return String(localized: "Teme o kojima se ćuti.")
+        case .sportskiPozdrav: return String(localized: "Sportska emisija.")
+        case .jbt: return String(localized: "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05.")
+        case .priceUMagli: return String(localized: "Radio-drama.")
+        case .rastrojavanje: return String(localized: "Četvrtkom o važnim temama.")
+        case .topleLjuckePrice: return String(localized: "Emisija sa toplim ljudskim pričama.")
+        case .punaUstaPoezije: return String(localized: "Emisija posvećena poeziji.")
+        case .citanjac: return String(localized: "Čitanje uz mikrofon.")
+        case .falis: return String(localized: "Prenosi sa Festivala alternative i ljevice u Šibeniku, 2024.")
+        case .ostalo: return String(localized: "Epizode van redovnih emisija.")
         }
     }
 
@@ -223,14 +225,16 @@ extension Podcast {
     var remainingDescription: String? {
         guard listeningProgress != nil else { return nil }
         let left = max(0, endOfShow - playedPosition)
-        guard left >= 60 else { return "Još manje od minuta" }
+        guard left >= 60 else { return String(localized: "Još manje od minuta") }
 
         let hours = Int(left) / 3600
         let minutes = (Int(left) % 3600) / 60
         if hours > 0 {
-            return minutes > 0 ? "Još \(hours) h \(minutes) min" : "Još \(hours) h"
+            return minutes > 0
+                ? String(localized: "Još \(hours) h \(minutes) min")
+                : String(localized: "Još \(hours) h")
         }
-        return "Još \(minutes) min"
+        return String(localized: "Još \(minutes) min")
     }
 
     /// True once the listen has gone past the end of the show. Kept here

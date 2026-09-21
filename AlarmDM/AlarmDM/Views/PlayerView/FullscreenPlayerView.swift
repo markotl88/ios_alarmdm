@@ -389,7 +389,7 @@ struct FullscreenPlayerView: View {
 /// One shape for every action under the transport controls, so the row reads as
 /// a set rather than as three unrelated buttons.
 private struct PlayerActionButton<Content: View>: View {
-    let label: String
+    let label: LocalizedStringKey
     let action: () -> Void
     @ViewBuilder var content: () -> Content
 
