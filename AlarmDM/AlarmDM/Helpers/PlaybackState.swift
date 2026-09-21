@@ -32,6 +32,7 @@ final class PlaybackStateStore {
         static let podcastId = "lastPlayedPodcastId"
         static let position = "lastPlayedPosition"
         static let savedAt = "lastPlayedSavedAt"
+        static let clearedAt = "lastPlayerClosedAt"
     }
 
     private let defaults: UserDefaults
@@ -64,9 +65,17 @@ final class PlaybackStateStore {
         defaults.set(state.savedAt, forKey: Key.savedAt)
     }
 
+    /// When the player was last closed on this device. Closing it says there
+    /// is nothing to come back to, and a listen from another device that is
+    /// older than that must not bring it back — only one that happened after.
+    var clearedAt: Date? {
+        defaults.object(forKey: Key.clearedAt) as? Date
+    }
+
     func clear() {
         defaults.removeObject(forKey: Key.podcastId)
         defaults.removeObject(forKey: Key.position)
         defaults.removeObject(forKey: Key.savedAt)
+        defaults.set(Date(), forKey: Key.clearedAt)
     }
 }

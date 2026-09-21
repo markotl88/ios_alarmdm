@@ -18,6 +18,8 @@ final class PlayerStateTests: XCTestCase {
     private var progress: ProgressSpy!
     private var episodes: EpisodeStore!
     private var defaults: UserDefaults!
+    /// Stands in for "something arrived from another device".
+    private var storeChanges: PassthroughSubject<Void, Never>!
 
     /// Three hours, so the credits settle where it ends: 3:00:00 minus twenty
     /// seconds is 10 780, comfortably past ninety-five percent.
@@ -29,6 +31,7 @@ final class PlayerStateTests: XCTestCase {
         engine = FakePlaybackEngine()
         progress = ProgressSpy()
         episodes = EpisodeStore()
+        storeChanges = PassthroughSubject()
 
         defaults = UserDefaults(suiteName: "PlayerStateTests")
         defaults.removePersistentDomain(forName: "PlayerStateTests")
@@ -216,6 +219,104 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 5_697, accuracy: 0.5)
     }
 
+    // MARK: - Following the account
+
+    /// The Mac listened to something else after the phone last did: the phone
+    /// opens with that, where the Mac left it.
+    func testTheAccountsLaterListenOpensInsteadOfThisDevicesOwn() {
+        episodes.rows[alarm.id] = alarm
+        PlaybackStateStore(defaults: defaults).save(
+            PlaybackState(podcastId: alarm.id, position: 3_120, savedAt: Date(timeIntervalSinceNow: -3_600))
+        )
+        episodes.latest = listened(second, at: 1_800, secondsAgo: 60)
+
+        let player = makePlayer()
+        player.restorePlaybackState()
+
+        XCTAssertEqual(player.title, "Emigracija")
+        XCTAssertEqual(player.currentTime, 1_797, accuracy: 0.5)
+
+        player.togglePlayPause()
+        XCTAssertEqual(engine.lastPlayPosition ?? -1, 1_797, accuracy: 0.5)
+    }
+
+    func testThisDevicesLaterListenStays() {
+        episodes.rows[alarm.id] = alarm
+        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 3_120))
+        episodes.latest = listened(second, at: 1_800, secondsAgo: 3_600)
+
+        let player = makePlayer()
+        player.restorePlaybackState()
+
+        XCTAssertEqual(player.title, "Alarm")
+        XCTAssertEqual(player.currentTime, 3_120, accuracy: 0.5)
+    }
+
+    /// Closing the player says there is nothing to come back to. A listen
+    /// from before that does not bring it back.
+    func testClosingThePlayerIsNotUndoneByAnOlderListen() {
+        PlaybackStateStore(defaults: defaults).clear()
+        episodes.latest = listened(second, at: 1_800, secondsAgo: 3_600)
+
+        let player = makePlayer()
+        player.restorePlaybackState()
+
+        XCTAssertNil(player.mode)
+        XCTAssertFalse(player.isPresented)
+    }
+
+    /// Nothing playing here, and a listen arrives from elsewhere: the player
+    /// follows it without anyone having to relaunch.
+    func testAnIdlePlayerFollowsAListenThatArrives() {
+        episodes.rows[alarm.id] = alarm
+        PlaybackStateStore(defaults: defaults).save(
+            PlaybackState(podcastId: alarm.id, position: 3_120, savedAt: Date(timeIntervalSinceNow: -7_200))
+        )
+        let player = makePlayer()
+        player.restorePlaybackState()
+        XCTAssertEqual(player.title, "Alarm")
+
+        episodes.latest = listened(second, at: 1_800, secondsAgo: 10)
+        storeChanges.send(())
+        flush()
+
+        XCTAssertEqual(player.title, "Emigracija")
+        XCTAssertEqual(player.currentTime, 1_797, accuracy: 0.5)
+        XCTAssertTrue(engine.playCalls.isEmpty, "following must not start anything")
+    }
+
+    /// What is playing here is the truth; another device does not take it
+    /// over mid-listen.
+    func testAPlayingPlayerDoesNotFollow() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+
+        episodes.latest = listened(second, at: 1_800, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+
+        XCTAssertEqual(player.title, "Alarm")
+        XCTAssertEqual(engine.playCalls.count, 1)
+    }
+
+    /// Showing an episode is not listening to it. Writing its position down
+    /// would date it now, make it the account's newest listen, and send the
+    /// other device chasing it — and back again.
+    func testAnEpisodeOnlyShownIsNotWrittenDown() {
+        episodes.rows[alarm.id] = alarm
+        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 3_120))
+        let player = makePlayer()
+        player.restorePlaybackState()
+        flush()
+
+        player.mode = .podcast(podcast: second)
+        player.rememberPlaybackPosition()
+
+        XCTAssertTrue(progress.calls.isEmpty)
+    }
+
     // MARK: - Finishing
 
     func testStoppingPastTheEndMarksItHeard() {
@@ -251,8 +352,18 @@ final class PlayerStateTests: XCTestCase {
             engine: engine,
             playbackState: PlaybackStateStore(defaults: defaults),
             progressStore: progress,
-            episodes: episodes
+            episodes: episodes,
+            storeChanges: storeChanges.eraseToAnyPublisher()
         )
+    }
+
+    /// An episode as another device left it.
+    private func listened(_ episode: Podcast, at position: TimeInterval, secondsAgo: TimeInterval) -> Podcast {
+        var copy = episode
+        copy.playedPosition = position
+        copy.playedAt = Date(timeIntervalSinceNow: -secondsAgo)
+        episodes.rows[copy.id] = copy
+        return copy
     }
 
     private func makeEpisode(title: String, show: Show, duration: String) -> Podcast {
@@ -357,8 +468,11 @@ private final class ProgressSpy: ProgressRecording {
 
 private final class EpisodeStore: EpisodeLookup {
     var rows: [UUID: Podcast] = [:]
+    /// What the account listened to last, as the repository would answer.
+    var latest: Podcast?
 
     func podcast(with id: UUID) -> Podcast? { rows[id] }
+    func lastListened() -> Podcast? { latest }
 }
 
 // MARK: - What the stream announces

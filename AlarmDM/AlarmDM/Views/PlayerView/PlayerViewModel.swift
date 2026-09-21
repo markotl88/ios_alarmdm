@@ -105,7 +105,8 @@ final class PlayerViewModel: ObservableObject {
          engine: PlaybackEngineType = PlaybackEngine.shared,
          playbackState: PlaybackStateStore = .shared,
          progressStore: ProgressRecording = EpisodeLibrary.shared,
-         episodes: EpisodeLookup = PodcastRepository.shared) {
+         episodes: EpisodeLookup = PodcastRepository.shared,
+         storeChanges: AnyPublisher<Void, Never> = AppDatabase.shared.didChangeRemotely.eraseToAnyPublisher()) {
         self.engine = engine
         self.playbackState = playbackState
         self.progressStore = progressStore
@@ -114,6 +115,13 @@ final class PlayerViewModel: ObservableObject {
 
         bindEngine()
         if mode != nil { applyMode() }
+
+        // Something arrived from another device. While nothing plays here,
+        // the player follows the account.
+        storeChanges
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.catchUpIfIdle() }
+            .store(in: &cancellables)
     }
 
     /// Keeps the view model in step with whatever the engine is doing — including
@@ -250,6 +258,8 @@ final class PlayerViewModel: ObservableObject {
             // the app goes away, and starting another episode is neither — the
             // player carries straight on, and the position it carries on from
             // belongs to the episode being left.
+            //
+            // Only if it was actually playing here — see engineHoldsThisEpisode.
             rememberProgress()
             currentTime = 0
         }
@@ -460,7 +470,7 @@ final class PlayerViewModel: ObservableObject {
     /// when the app goes away — not on a timer, because a second's accuracy
     /// costs a write every second for the rest of the episode.
     func rememberPlaybackPosition() {
-        guard !isLive, let podcastId, currentTime > 0 else { return }
+        guard !isLive, let podcastId, currentTime > 0, engineHoldsThisEpisode else { return }
         playbackState.save(PlaybackState(podcastId: podcastId, position: currentTime))
         rememberProgress()
     }
@@ -471,7 +481,7 @@ final class PlayerViewModel: ObservableObject {
     /// what to reopen on launch. Every episode has one of these, and these are
     /// what will sync between devices.
     private func rememberProgress() {
-        guard !isLive, let podcastId, currentTime > 0 else { return }
+        guard !isLive, let podcastId, currentTime > 0, engineHoldsThisEpisode else { return }
 
         let end = podcast?.endOfShow ?? 0
         progressStore.recordProgress(
@@ -481,16 +491,41 @@ final class PlayerViewModel: ObservableObject {
         )
     }
 
+    /// Whether the episode on screen is the one the engine has loaded — that
+    /// is, whether anything was listened to here at all.
+    ///
+    /// An episode the player is only showing — restored at launch, or
+    /// followed from another device — has not been heard on this device, and
+    /// writing its position down would stamp it with this moment. That date
+    /// then makes it the newest listen on the account, the other device
+    /// follows it back, and the two hand the same two episodes to each other
+    /// for ever.
+    private var engineHoldsThisEpisode: Bool {
+        guard case .podcast(let loaded) = engine.source else { return false }
+        return loaded.id == podcastId
+    }
+
     /// Puts the player back the way it was found, without making a sound and
     /// without touching the network. Nothing is loaded into the engine: the
     /// mini player reads from here, and the first press is what opens the
     /// audio — at the right second, because of `restoredPosition`.
     func restorePlaybackState() {
         guard mode == nil, engine.source == nil else { return }
+
+        // The account's last listen, when it is a different episode and
+        // later than anything this device has to say. The player comes back
+        // to what was listened to last, not to what was listened to last here.
+        if let fromAccount = newerListenFromAccount(),
+           fromAccount.id != playbackState.saved?.podcastId {
+            #if DEBUG
+            AppLog.write(.player, "restoring from the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
+            #endif
+            showIdle(fromAccount, at: fromAccount.resumePosition ?? 0)
+            return
+        }
+
         guard let saved = playbackState.saved,
               let podcast = episodes.podcast(with: saved.podcastId) else { return }
-
-        mode = .podcast(podcast: podcast)
 
         // Two records of the same listening, and the later one is right.
         //
@@ -513,6 +548,13 @@ final class PlayerViewModel: ObservableObject {
         AppLog.write(.player, "restoring \(Int(position))s for \(saved.podcastId) — slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
         #endif
 
+        showIdle(podcast, at: position)
+    }
+
+    /// An episode in the player, not playing, ready to start at `position` on
+    /// the first press.
+    private func showIdle(_ podcast: Podcast, at position: TimeInterval) {
+        mode = .podcast(podcast: podcast)
         restoredPosition = position
         currentTime = position
         // The feed already told us how long it runs, so the scrubber and the
@@ -521,6 +563,39 @@ final class PlayerViewModel: ObservableObject {
         // moment it opens it.
         duration = podcast.durationInSeconds
         isPresented = true
+    }
+
+    /// The newest unfinished listen on the account, if it is newer than
+    /// everything this device has said: its own slot, and the last time the
+    /// player here was closed.
+    private func newerListenFromAccount() -> Podcast? {
+        guard let latest = episodes.lastListened(), let listenedAt = latest.playedAt else { return nil }
+        let lastSaidHere = max(playbackState.saved?.savedAt ?? .distantPast,
+                               playbackState.clearedAt ?? .distantPast)
+        return listenedAt > lastSaidHere ? latest : nil
+    }
+
+    /// Coming back to the app, or hearing that something arrived: while
+    /// nothing is playing here, show what the account listened to last, then
+    /// bring its position up to date.
+    ///
+    /// Not part of pressing play. A press is about the episode on screen, and
+    /// swapping it for another in the instant before it starts would play
+    /// something nobody chose.
+    func catchUpIfIdle() {
+        followAccountIfIdle()
+        refreshFromStoreIfIdle()
+    }
+
+    private func followAccountIfIdle() {
+        guard engine.source == nil else { return }
+        if case .radio = mode { return }
+        guard let fromAccount = newerListenFromAccount(), fromAccount.id != podcastId else { return }
+
+        #if DEBUG
+        AppLog.write(.player, "following the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
+        #endif
+        showIdle(fromAccount, at: fromAccount.resumePosition ?? 0)
     }
 
     /// Re-reads this episode from the store while nothing is loaded, in case

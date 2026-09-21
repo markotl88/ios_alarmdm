@@ -17,10 +17,13 @@ protocol EpisodeLookup: AnyObject {
     func podcast(with id: UUID) -> Podcast?
     /// Forget what has already been read, in case something has arrived since.
     func refreshFromStore()
+    /// The newest unfinished listen on the account — on any device.
+    func lastListened() -> Podcast?
 }
 
 extension EpisodeLookup {
     func refreshFromStore() {}
+    func lastListened() -> Podcast? { nil }
 }
 
 final class PodcastRepository: EpisodeLookup {

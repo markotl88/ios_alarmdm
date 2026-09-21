@@ -126,7 +126,7 @@ struct RootView: View {
                 // from another device — the import often lands while the app
                 // was away, and nothing else would notice until the next
                 // launch.
-                playerViewModel.refreshFromStoreIfIdle()
+                playerViewModel.catchUpIfIdle()
             }
         }
     }
