@@ -116,16 +116,12 @@ struct RootView: View {
         }
         .onAppear { playerViewModel.restorePlaybackState() }
         .onChange(of: scenePhase) { _, phase in
-            // Leaving is the last moment anything is certain. iOS can end a
-            // suspended app without warning and without calling back, so the
-            // position is written down here rather than on the way out.
-            if phase != .active {
-                playerViewModel.rememberPlaybackPosition()
-            } else {
-                // Coming back is the other moment something may have arrived
-                // from another device — the import often lands while the app
-                // was away, and nothing else would notice until the next
-                // launch.
+            // Coming back is the moment something may have arrived from
+            // another device — the import often lands while the app was away,
+            // and nothing else would notice until the next launch. Leaving is
+            // ListeningRecorder's, which hears it whether or not this window
+            // exists.
+            if phase == .active {
                 playerViewModel.catchUpIfIdle()
             }
         }

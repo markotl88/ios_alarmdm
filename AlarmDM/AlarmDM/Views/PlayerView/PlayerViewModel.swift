@@ -83,10 +83,9 @@ final class PlayerViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let engine: PlaybackEngineType
+    /// Read for what to reopen, and cleared when the player is closed.
+    /// Written only by ListeningRecorder.
     private let playbackState: PlaybackStateStore
-    /// Where a listen is written down. A protocol rather than the library
-    /// itself, so a test can watch what is written without a store.
-    private let progressStore: ProgressRecording
     /// Where the stored copy of an episode comes from — the one that knows
     /// about favourites, downloads and how far it has been listened to.
     private let episodes: EpisodeLookup
@@ -104,12 +103,10 @@ final class PlayerViewModel: ObservableObject {
     init(mode: PlayerMode? = nil,
          engine: PlaybackEngineType = PlaybackEngine.shared,
          playbackState: PlaybackStateStore = .shared,
-         progressStore: ProgressRecording = EpisodeLibrary.shared,
          episodes: EpisodeLookup = PodcastRepository.shared,
          storeChanges: AnyPublisher<Void, Never> = AppDatabase.shared.didChangeRemotely.eraseToAnyPublisher()) {
         self.engine = engine
         self.playbackState = playbackState
-        self.progressStore = progressStore
         self.episodes = episodes
         self.mode = mode
 
@@ -132,7 +129,6 @@ final class PlayerViewModel: ObservableObject {
             .sink { [weak self] playing in
                 guard let self else { return }
                 self.isPlaying = playing
-                if !playing { self.rememberPlaybackPosition() }
             }
             .store(in: &cancellables)
 
@@ -253,14 +249,9 @@ final class PlayerViewModel: ObservableObject {
         let carriesOn = engineIsAlreadyOn(mode)
 
         if !carriesOn {
-            // Written down before it is thrown away. Nothing else catches this
-            // moment: progress is otherwise saved when playback stops and when
-            // the app goes away, and starting another episode is neither — the
-            // player carries straight on, and the position it carries on from
-            // belongs to the episode being left.
-            //
-            // Only if it was actually playing here — see engineHoldsThisEpisode.
-            rememberProgress()
+            // The episode being left is written down by ListeningRecorder,
+            // when the engine actually moves on — not here, where it may only
+            // have been on screen.
             currentTime = 0
         }
 
@@ -465,45 +456,6 @@ final class PlayerViewModel: ObservableObject {
     }
 
     // MARK: - Carrying on where it was left
-
-    /// Writes down what is playing and where. Called when playback pauses and
-    /// when the app goes away — not on a timer, because a second's accuracy
-    /// costs a write every second for the rest of the episode.
-    func rememberPlaybackPosition() {
-        guard !isLive, let podcastId, currentTime > 0, engineHoldsThisEpisode else { return }
-        playbackState.save(PlaybackState(podcastId: podcastId, position: currentTime))
-        rememberProgress()
-    }
-
-    /// The library's record of this one episode: how far it has been listened
-    /// to, and whether that is far enough to call it heard. Separate from the
-    /// line above it, which is the player's own state — a single slot saying
-    /// what to reopen on launch. Every episode has one of these, and these are
-    /// what will sync between devices.
-    private func rememberProgress() {
-        guard !isLive, let podcastId, currentTime > 0, engineHoldsThisEpisode else { return }
-
-        let end = podcast?.endOfShow ?? 0
-        progressStore.recordProgress(
-            position: currentTime,
-            hasFinished: end > 0 && currentTime >= end,
-            for: podcastId
-        )
-    }
-
-    /// Whether the episode on screen is the one the engine has loaded — that
-    /// is, whether anything was listened to here at all.
-    ///
-    /// An episode the player is only showing — restored at launch, or
-    /// followed from another device — has not been heard on this device, and
-    /// writing its position down would stamp it with this moment. That date
-    /// then makes it the newest listen on the account, the other device
-    /// follows it back, and the two hand the same two episodes to each other
-    /// for ever.
-    private var engineHoldsThisEpisode: Bool {
-        guard case .podcast(let loaded) = engine.source else { return false }
-        return loaded.id == podcastId
-    }
 
     /// Puts the player back the way it was found, without making a sound and
     /// without touching the network. Nothing is loaded into the engine: the

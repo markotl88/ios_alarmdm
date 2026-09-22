@@ -15,6 +15,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
         try? AVAudioSession.sharedInstance().setActive(true)
         #endif
+
+        // Here and not in a view: when the car starts the app there is no
+        // phone window at all, and the listen still has to be written down.
+        ListeningRecorder.shared.start()
         return true
     }
 }

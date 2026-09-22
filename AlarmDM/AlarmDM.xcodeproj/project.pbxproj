@@ -39,6 +39,7 @@
 		4DAF9EF02C57B68700B4FA7F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* RootView.swift */; };
 		4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */; };
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
+		AA00000000000000000001F5 /* ListeningRecorder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000001F6 /* ListeningRecorder.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
 		AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* PrivacyInfo.xcprivacy */; };
 		AA00000000000000000001F1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AA00000000000000000001F2 /* Localizable.xcstrings */; };
@@ -133,6 +134,7 @@
 		4DAF9EEF2C57B68700B4FA7F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
+		AA00000000000000000001F6 /* ListeningRecorder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningRecorder.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		AA0000000000000000000106 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA00000000000000000001F2 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
@@ -189,6 +191,7 @@
 			isa = PBXGroup;
 			children = (
 				AA0000000000000000000102 /* PlaybackEngine.swift */,
+				AA00000000000000000001F6 /* ListeningRecorder.swift */,
 			);
 			path = Player;
 			sourceTree = "<group>";
@@ -596,6 +599,7 @@
 				AA0000000000000000000107 /* PodcastRepository.swift in Sources */,
 				AA0000000000000000000103 /* AppConstants.swift in Sources */,
 				AA0000000000000000000101 /* PlaybackEngine.swift in Sources */,
+				AA00000000000000000001F5 /* ListeningRecorder.swift in Sources */,
 				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,
 				4D16A32E3060493200A6FEEA /* AppLog.swift in Sources */,
 				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,

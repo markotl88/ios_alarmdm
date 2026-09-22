@@ -3,19 +3,19 @@
 //  AlarmDMTests
 //
 //  What the player does when what it is playing changes: which position is
-//  written down, which one is picked up, and which one wins when two of them
-//  disagree. Driven by a fake engine, so none of it needs AVFoundation, a
-//  file, or the network.
+//  picked up, which one wins when two of them disagree, and — in
+//  ListeningRecorderTests — when a listen is written down at all. Driven by
+//  a fake engine, so none of it needs AVFoundation, a file, or the network.
 //
 
 import XCTest
 import Combine
+import UIKit
 @testable import AlarmDM
 
 final class PlayerStateTests: XCTestCase {
 
     private var engine: FakePlaybackEngine!
-    private var progress: ProgressSpy!
     private var episodes: EpisodeStore!
     private var defaults: UserDefaults!
     /// Stands in for "something arrived from another device".
@@ -29,7 +29,6 @@ final class PlayerStateTests: XCTestCase {
 
     override func setUpWithError() throws {
         engine = FakePlaybackEngine()
-        progress = ProgressSpy()
         episodes = EpisodeStore()
         storeChanges = PassthroughSubject()
 
@@ -46,51 +45,6 @@ final class PlayerStateTests: XCTestCase {
 
     // MARK: - Leaving one episode for another
 
-    func testSwitchingEpisodesWritesDownWhereTheFirstGotTo() {
-        let player = makePlayer()
-
-        player.mode = .podcast(podcast: alarm)
-        player.togglePlayPause()
-        engine.advance(to: 600)
-        flush()
-
-        player.mode = .podcast(podcast: second)
-
-        XCTAssertEqual(progress.calls.count, 1)
-        XCTAssertEqual(progress.calls.first?.id, alarm.id)
-        XCTAssertEqual(progress.calls.first?.position ?? 0, 600, accuracy: 1)
-        XCTAssertEqual(progress.calls.first?.hasFinished, false)
-    }
-
-    func testSwitchingToRadioStillKeepsTheEpisodePosition() {
-        let player = makePlayer()
-
-        player.mode = .podcast(podcast: alarm)
-        player.togglePlayPause()
-        engine.advance(to: 900)
-        flush()
-
-        player.mode = .radio(stream: URL(string: "https://example.com/stream"))
-
-        XCTAssertEqual(progress.calls.first?.id, alarm.id)
-        XCTAssertEqual(progress.calls.first?.position ?? 0, 900, accuracy: 1)
-    }
-
-    /// A position in a stream means nothing an hour later, and there is no
-    /// episode to write it against.
-    func testLiveRadioWritesNothingDown() {
-        let player = makePlayer()
-
-        player.mode = .radio(stream: URL(string: "https://example.com/stream"))
-        player.togglePlayPause()
-        engine.advance(to: 300)
-        flush()
-        engine.stopPlaying()
-        flush()
-
-        XCTAssertTrue(progress.calls.isEmpty)
-    }
-
     /// The same episode arriving again as a refreshed row — a favourite
     /// toggled, a download finished — is not a swap.
     func testReselectingTheSameEpisodeLeavesPlaybackAlone() {
@@ -106,7 +60,6 @@ final class PlayerStateTests: XCTestCase {
         player.mode = .podcast(podcast: refreshed)
 
         XCTAssertEqual(player.currentTime, 600, accuracy: 1)
-        XCTAssertTrue(progress.calls.isEmpty)
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
@@ -301,57 +254,12 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
-    /// Showing an episode is not listening to it. Writing its position down
-    /// would date it now, make it the account's newest listen, and send the
-    /// other device chasing it — and back again.
-    func testAnEpisodeOnlyShownIsNotWrittenDown() {
-        episodes.rows[alarm.id] = alarm
-        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 3_120))
-        let player = makePlayer()
-        player.restorePlaybackState()
-        flush()
-
-        player.mode = .podcast(podcast: second)
-        player.rememberPlaybackPosition()
-
-        XCTAssertTrue(progress.calls.isEmpty)
-    }
-
-    // MARK: - Finishing
-
-    func testStoppingPastTheEndMarksItHeard() {
-        let player = makePlayer()
-
-        player.mode = .podcast(podcast: alarm)
-        player.togglePlayPause()
-        engine.advance(to: 10_781)
-        flush()
-        engine.stopPlaying()
-        flush()
-
-        XCTAssertEqual(progress.calls.last?.hasFinished, true)
-    }
-
-    func testStoppingBeforeTheEndDoesNotMarkItHeard() {
-        let player = makePlayer()
-
-        player.mode = .podcast(podcast: alarm)
-        player.togglePlayPause()
-        engine.advance(to: 5_000)
-        flush()
-        engine.stopPlaying()
-        flush()
-
-        XCTAssertEqual(progress.calls.last?.hasFinished, false)
-    }
-
     // MARK: - Helpers
 
     private func makePlayer() -> PlayerViewModel {
         PlayerViewModel(
             engine: engine,
             playbackState: PlaybackStateStore(defaults: defaults),
-            progressStore: progress,
             episodes: episodes,
             storeChanges: storeChanges.eraseToAnyPublisher()
         )
@@ -381,6 +289,162 @@ final class PlayerStateTests: XCTestCase {
         let delivered = expectation(description: "main queue drained")
         DispatchQueue.main.async { delivered.fulfill() }
         wait(for: [delivered], timeout: 1)
+    }
+}
+
+// MARK: - Writing a listen down
+
+/// Everything about when a listen is written down, against the engine alone —
+/// no player view model, no screen. That is the point: the car starts the app
+/// with no phone window, and the listen still has to be written.
+final class ListeningRecorderTests: XCTestCase {
+
+    private var engine: FakePlaybackEngine!
+    private var progress: ProgressSpy!
+    private var defaults: UserDefaults!
+    private var notifications: NotificationCenter!
+    private var recorder: ListeningRecorder!
+
+    private var alarm: Podcast!
+    private var second: Podcast!
+
+    override func setUpWithError() throws {
+        engine = FakePlaybackEngine()
+        progress = ProgressSpy()
+        notifications = NotificationCenter()
+        defaults = UserDefaults(suiteName: "ListeningRecorderTests")
+        defaults.removePersistentDomain(forName: "ListeningRecorderTests")
+
+        recorder = ListeningRecorder(engine: engine,
+                                     progressStore: progress,
+                                     playbackState: PlaybackStateStore(defaults: defaults),
+                                     notifications: notifications)
+        recorder.start()
+
+        alarm = episode("Alarm", duration: "3:00:00")
+        second = episode("Emigracija", duration: "2:00:00")
+    }
+
+    override func tearDownWithError() throws {
+        defaults.removePersistentDomain(forName: "ListeningRecorderTests")
+    }
+
+    /// The car: resumed at 57:45, a quarter of an hour of driving, the cable
+    /// pulled. iOS pauses the audio, and that pause is what gets written.
+    func testAListenInTheCarIsWrittenDownWhenTheCableIsPulled() {
+        engine.play(.podcast(alarm), startingAt: 3_465)
+        engine.advance(to: 4_365)
+        engine.stopPlaying()
+
+        XCTAssertEqual(progress.calls.last?.id, alarm.id)
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 4_365, accuracy: 1)
+        XCTAssertEqual(PlaybackStateStore(defaults: defaults).saved?.position ?? 0, 4_365, accuracy: 1)
+    }
+
+    func testSwitchingEpisodesWritesDownWhereTheFirstGotTo() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+
+        engine.play(.podcast(second), startingAt: nil)
+
+        XCTAssertEqual(progress.calls.count, 1)
+        XCTAssertEqual(progress.calls.first?.id, alarm.id)
+        XCTAssertEqual(progress.calls.first?.position ?? 0, 600, accuracy: 1)
+        XCTAssertEqual(progress.calls.first?.hasFinished, false)
+    }
+
+    func testSwitchingToRadioStillKeepsTheEpisodePosition() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 900)
+
+        engine.play(.radio(url: URL(string: "https://example.com/stream")!), startingAt: nil)
+
+        XCTAssertEqual(progress.calls.first?.id, alarm.id)
+        XCTAssertEqual(progress.calls.first?.position ?? 0, 900, accuracy: 1)
+    }
+
+    /// A position in a stream means nothing an hour later, and there is no
+    /// episode to write it against.
+    func testLiveRadioWritesNothingDown() {
+        engine.play(.radio(url: URL(string: "https://example.com/stream")!), startingAt: nil)
+        engine.advance(to: 300)
+        engine.stopPlaying()
+
+        XCTAssertTrue(progress.calls.isEmpty)
+    }
+
+    /// The same episode handed to the engine again — rebuilt after another
+    /// app took the audio — is not a change of episode, and the reset to
+    /// zero while it reopens is not a position.
+    func testTheSameEpisodeAgainIsNotASwitch() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        XCTAssertTrue(progress.calls.isEmpty)
+    }
+
+    /// For what is not caught as it happens: the system ending the app
+    /// mid-listen, or a crash.
+    func testAMinuteOfListeningIsWrittenWithoutAPause() {
+        engine.play(.podcast(alarm), startingAt: 1_000)
+        engine.advance(to: 1_030)
+        XCTAssertTrue(progress.calls.isEmpty)
+
+        engine.advance(to: 1_061)
+        XCTAssertEqual(progress.calls.count, 1)
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 1_061, accuracy: 1)
+
+        engine.advance(to: 1_100)
+        XCTAssertEqual(progress.calls.count, 1, "the next minute counts from the last write")
+    }
+
+    func testGoingToTheBackgroundWritesDown() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 45)
+
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 45, accuracy: 1)
+    }
+
+    /// Closing the player stops the engine, and the stop is written before
+    /// the player clears what to reopen — not a runloop later, after it.
+    func testStoppingWritesDownBeforeAnythingIsCleared() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 700)
+
+        engine.stop()
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 700, accuracy: 1)
+
+        PlaybackStateStore(defaults: defaults).clear()
+        XCTAssertNil(PlaybackStateStore(defaults: defaults).saved)
+    }
+
+    func testStoppingPastTheEndMarksItHeard() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 10_781)
+        engine.stopPlaying()
+
+        XCTAssertEqual(progress.calls.last?.hasFinished, true)
+    }
+
+    func testStoppingBeforeTheEndDoesNotMarkItHeard() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 5_000)
+        engine.stopPlaying()
+
+        XCTAssertEqual(progress.calls.last?.hasFinished, false)
+    }
+
+    private func episode(_ title: String, duration: String) -> Podcast {
+        var podcast = Podcast(show: .alarmSaDaskomIMladjom)
+        podcast.id = UUID()
+        podcast.title = title
+        podcast.podcastUrl = "https://example.com/\(title).mp3"
+        podcast.itunesDuration = duration
+        return podcast
     }
 }
 
