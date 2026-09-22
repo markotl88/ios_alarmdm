@@ -479,6 +479,15 @@ final class PlayerViewModel: ObservableObject {
         guard let saved = playbackState.saved,
               let podcast = episodes.podcast(with: saved.podcastId) else { return }
 
+        // Heard through to the end somewhere else since this device last
+        // touched it. There is nothing to come back to, and reopening at this
+        // device's old position — minutes before the end of something already
+        // finished — is the wrong answer twice over.
+        if finishedElsewhere(podcast) {
+            playbackState.clear()
+            return
+        }
+
         // Two records of the same listening, and the later one is right.
         //
         // This slot is written on this device only; the episode's own record
@@ -522,9 +531,35 @@ final class PlayerViewModel: ObservableObject {
     /// player here was closed.
     private func newerListenFromAccount() -> Podcast? {
         guard let latest = episodes.lastListened(), let listenedAt = latest.playedAt else { return nil }
-        let lastSaidHere = max(playbackState.saved?.savedAt ?? .distantPast,
-                               playbackState.clearedAt ?? .distantPast)
         return listenedAt > lastSaidHere ? latest : nil
+    }
+
+    /// The last time this device said anything about what to come back to:
+    /// a listen written down here, or the player being closed.
+    private var lastSaidHere: Date {
+        max(playbackState.saved?.savedAt ?? .distantPast, playbackState.clearedAt ?? .distantPast)
+    }
+
+    /// Nothing is playing here. Paused counts: a paused player is holding a
+    /// place, not listening, and a later listen on another device is newer
+    /// than anything it has to say. It used to take "nothing loaded at all",
+    /// and a phone paused a few minutes from the end went on showing those
+    /// minutes while the Mac played them.
+    private var isIdle: Bool { !isPlaying && !isBuffering }
+
+    /// Whether the engine holds this episode — loaded, playing or paused.
+    private func engineHolds(_ id: UUID?) -> Bool {
+        guard let id, case .podcast(let loaded) = engine.source else { return false }
+        return loaded.id == id
+    }
+
+    /// Played to the end on another device, after this one last said
+    /// anything. By position rather than by the finished flag, which is
+    /// sticky: an episode heard once and started again elsewhere keeps the
+    /// flag, and that is not the same as having been finished just now.
+    private func finishedElsewhere(_ podcast: Podcast) -> Bool {
+        guard podcast.hasReachedEnd, let at = podcast.playedAt else { return false }
+        return at > lastSaidHere
     }
 
     /// Coming back to the app, or hearing that something arrived: while
@@ -537,25 +572,42 @@ final class PlayerViewModel: ObservableObject {
     func catchUpIfIdle() {
         followAccountIfIdle()
         refreshFromStoreIfIdle()
+        putAwayIfFinishedElsewhere()
     }
 
     private func followAccountIfIdle() {
-        guard engine.source == nil else { return }
+        guard isIdle else { return }
         if case .radio = mode { return }
         guard let fromAccount = newerListenFromAccount(), fromAccount.id != podcastId else { return }
 
         #if DEBUG
         AppLog.write(.player, "following the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
         #endif
+        // A paused episode still loaded here is let go first, so the lock
+        // screen does not go on offering the one that was left. What it got
+        // to is already written down, and letting go does not write it again.
+        if engine.source != nil { engine.stop() }
         showIdle(fromAccount, at: fromAccount.resumePosition ?? 0)
     }
 
-    /// Re-reads this episode from the store while nothing is loaded, in case
+    /// The episode on screen was finished on another device, and there is
+    /// nothing newer to show instead: the player goes away, as it would have
+    /// here. Not on a press of play — see togglePlayPause.
+    private func putAwayIfFinishedElsewhere() {
+        guard isIdle, !isLive, let podcast, finishedElsewhere(podcast) else { return }
+
+        #if DEBUG
+        AppLog.write(.player, "finished elsewhere, putting the player away: \(podcast.title)")
+        #endif
+        stop()
+    }
+
+    /// Re-reads this episode from the store while nothing plays here, in case
     /// something arrived from another device since it was last read. Doing it
     /// on demand rather than only on notification means syncing does not
     /// depend on a notification arriving.
     func refreshFromStoreIfIdle() {
-        guard engine.source == nil, !isLive, let podcastId else { return }
+        guard isIdle, !isLive, let podcastId else { return }
 
         // Not just re-read: read again from a store that has been asked to
         // forget what it already showed us.
@@ -579,18 +631,24 @@ final class PlayerViewModel: ObservableObject {
     /// has restored, and without this the bar sits at the old position until
     /// the next launch — by which time the same thing happens again.
     ///
-    /// Only while nothing is loaded. Once this device is playing, its own
-    /// clock is the truth and anything from elsewhere is older by definition.
+    /// Only while nothing plays here; a playing device's own clock is the
+    /// truth. Paused is fine: if the episode is loaded, the engine is moved
+    /// to the new place, since a press of play resumes the engine where it
+    /// stands and would ignore anything written only on screen.
     private func adoptSyncedPosition(from podcast: Podcast) {
-        guard engine.source == nil, !isLive else { return }
-        guard let syncedAt = podcast.playedAt,
-              let synced = podcast.resumePosition else { return }
-        guard syncedAt > (playbackState.saved?.savedAt ?? .distantPast) else { return }
+        guard isIdle, !isLive else { return }
+        guard let syncedAt = podcast.playedAt, syncedAt > lastSaidHere else { return }
+        guard let synced = podcast.resumePosition else { return }
         guard abs(synced - currentTime) > 1 else { return }
 
-        restoredPosition = synced
+        if engineHolds(podcast.id) {
+            engine.seek(to: synced)
+            restoredPosition = nil
+        } else {
+            restoredPosition = synced
+            duration = podcast.durationInSeconds
+        }
         currentTime = synced
-        duration = podcast.durationInSeconds
     }
 
     func addBookmark() {

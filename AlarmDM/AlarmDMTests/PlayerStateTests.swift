@@ -254,6 +254,76 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
+    /// Paused on the phone a few minutes from the end, and the Mac carries
+    /// on: the paused phone moves to where the Mac got, and moves the engine
+    /// with it, so play picks up there and not where the phone stopped.
+    func testAPausedPlayerFollowsALaterPositionOnTheSameEpisode() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        engine.advance(to: 3_000)
+        flush()
+        engine.stopPlaying()
+        flush()
+
+        listened(alarm, at: 5_400, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+
+        XCTAssertEqual(engine.seekCalls.last ?? -1, 5_397, accuracy: 0.5)
+        XCTAssertEqual(player.currentTime, 5_397, accuracy: 0.5)
+    }
+
+    /// The Mac played it to the end while the phone sat paused minutes short
+    /// of it: the phone's player goes away rather than offering those minutes.
+    func testAnEpisodeFinishedElsewhereIsPutAway() {
+        episodes.rows[alarm.id] = alarm
+        PlaybackStateStore(defaults: defaults).save(
+            PlaybackState(podcastId: alarm.id, position: 10_560, savedAt: Date(timeIntervalSinceNow: -600))
+        )
+        let player = makePlayer()
+        player.restorePlaybackState()
+        XCTAssertEqual(player.title, "Alarm")
+
+        var finished = listened(alarm, at: 10_790, secondsAgo: 0)
+        finished.isPlayed = true
+        episodes.rows[alarm.id] = finished
+        storeChanges.send(())
+        flush()
+
+        XCTAssertNil(player.mode)
+        XCTAssertFalse(player.isPresented)
+    }
+
+    func testAnEpisodeFinishedElsewhereIsNotReopenedOnLaunch() {
+        var finished = listened(alarm, at: 10_790, secondsAgo: 0)
+        finished.isPlayed = true
+        episodes.rows[alarm.id] = finished
+        PlaybackStateStore(defaults: defaults).save(
+            PlaybackState(podcastId: alarm.id, position: 10_560, savedAt: Date(timeIntervalSinceNow: -600))
+        )
+
+        let player = makePlayer()
+        player.restorePlaybackState()
+
+        XCTAssertNil(player.mode)
+    }
+
+    /// Finished on this device is not finished elsewhere: the player stays.
+    func testAnEpisodeFinishedHereStays() {
+        var finished = listened(alarm, at: 10_790, secondsAgo: 60)
+        finished.isPlayed = true
+        episodes.rows[alarm.id] = finished
+        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 10_790))
+
+        let player = makePlayer()
+        player.restorePlaybackState()
+        storeChanges.send(())
+        flush()
+
+        XCTAssertEqual(player.title, "Alarm")
+    }
+
     // MARK: - Helpers
 
     private func makePlayer() -> PlayerViewModel {
@@ -266,6 +336,7 @@ final class PlayerStateTests: XCTestCase {
     }
 
     /// An episode as another device left it.
+    @discardableResult
     private func listened(_ episode: Podcast, at position: TimeInterval, secondsAgo: TimeInterval) -> Podcast {
         var copy = episode
         copy.playedPosition = position
@@ -420,6 +491,21 @@ final class ListeningRecorderTests: XCTestCase {
 
         PlaybackStateStore(defaults: defaults).clear()
         XCTAssertNil(PlaybackStateStore(defaults: defaults).saved)
+    }
+
+    /// Paused, then the app goes away an hour later: nothing moved, so
+    /// nothing is written. A second write would only change the date, and the
+    /// date decides which device listened last.
+    func testAPauseIsNotWrittenAgainWhenNothingMoved() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 3_000)
+        engine.stopPlaying()
+        XCTAssertEqual(progress.calls.count, 1)
+
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        engine.stop()
+
+        XCTAssertEqual(progress.calls.count, 1)
     }
 
     func testStoppingPastTheEndMarksItHeard() {

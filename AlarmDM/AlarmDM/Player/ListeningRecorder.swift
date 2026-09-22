@@ -46,7 +46,9 @@ final class ListeningRecorder {
     /// The last real position heard for it. Never zero: the engine reports
     /// zero while a new item opens, and that is not where anybody got to.
     private var position: TimeInterval?
-    /// Where the last write was, for the once-a-minute rule.
+    /// Where the last minute was counted from.
+    private var minuteMark: TimeInterval?
+    /// Where the last write for this episode was.
     private var lastWritten: TimeInterval?
     private var isPlaying = false
 
@@ -110,6 +112,7 @@ final class ListeningRecorder {
         write("left")
         episode = next
         position = nil
+        minuteMark = nil
         lastWritten = nil
     }
 
@@ -117,13 +120,13 @@ final class ListeningRecorder {
         guard episode != nil, time.isFinite, time > 0 else { return }
         position = time
 
-        guard let lastWritten else {
+        guard let minuteMark else {
             // The first real position is where this stretch of listening
             // starts; a minute is counted from there.
-            self.lastWritten = time
+            self.minuteMark = time
             return
         }
-        if isPlaying, abs(time - lastWritten) >= ListeningRecorder.interval {
+        if isPlaying, abs(time - minuteMark) >= ListeningRecorder.interval {
             write("minute")
         }
     }
@@ -131,10 +134,22 @@ final class ListeningRecorder {
     private func write(_ reason: String) {
         guard let episode, let position, position > 0 else { return }
 
+        // Nothing moved since the last write — paused, and then the app went
+        // to the background, or the player was closed. Writing again would
+        // only change the date, and the date is what decides which device
+        // listened last: a phone paused at 58 minutes and put away an hour
+        // later would claim the account's newest listen over the Mac that
+        // finished the episode in between.
+        if let lastWritten, abs(position - lastWritten) < 1 {
+            minuteMark = position
+            return
+        }
+
         let end = episode.endOfShow
         progressStore.recordProgress(position: position, hasFinished: end > 0 && position >= end, for: episode.id)
         playbackState.save(PlaybackState(podcastId: episode.id, position: position))
         lastWritten = position
+        minuteMark = position
 
         #if DEBUG
         AppLog.write(.player, "recorded \(Int(position))s (\(reason)) — \(episode.title)")

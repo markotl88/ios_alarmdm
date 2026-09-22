@@ -274,7 +274,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         attachObservers(to: player, item: item)
         activateSession()
-        player.play()
+        // Not when there is a position to go to first. The status observer
+        // plays once the seek has landed; playing here as well let the
+        // opening second of the file out of the speaker before the seek
+        // arrived — the blip from the beginning that the observer's own
+        // comment says is fixed, and was not.
+        if pendingSeek == nil {
+            player.play()
+        }
         updateNowPlayingInfo()
     }
 
