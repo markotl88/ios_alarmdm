@@ -147,6 +147,9 @@ struct LiveTrack: Equatable {
 protocol PlaybackEngineType: AnyObject {
     var source: PlaybackSource? { get }
     var hasContent: Bool { get }
+    /// How long the open file says it is, and zero until it has opened - see
+    /// PlayerViewModel.playbackProgress.
+    var duration: TimeInterval { get }
     var isLive: Bool { get }
     var progress: Double { get }
 
@@ -297,7 +300,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         self.player = player
         self.source = source
-        self.currentTime = 0
+        // Where this is going, not zero. The item opens at nothing and the
+        // seek arrives a moment later; for a downloaded file that moment is
+        // too short to see, and for a stream it is long enough to watch the
+        // scrubber fall to the start and climb back.
+        self.currentTime = pendingSeek ?? 0
         self.duration = 0
         self.lastErrorMessage = nil
         setLiveTrack(nil)

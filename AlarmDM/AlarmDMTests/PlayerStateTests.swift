@@ -68,6 +68,28 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
+    /// Opening a stream takes a moment, and the scrubber used to spend it at
+    /// zero: the engine reports nothing until the file is open, and the bar
+    /// believed it. It shows where the episode is going instead, from what
+    /// the feed already said about its length.
+    func testTheScrubberDoesNotFallToTheStartWhileAStreamOpens() {
+        var heard = alarm!
+        heard.playedPosition = 3_600
+        heard.playedAt = Date()
+        episodes.rows[heard.id] = heard
+
+        let player = makePlayer()
+        player.mode = .podcast(podcast: heard)
+        player.togglePlayPause()
+        flush()
+
+        // What an unopened file reports: no length at all.
+        engine.reportDuration(0)
+        flush()
+
+        XCTAssertEqual(player.playbackProgress, 3_597 / 10_800, accuracy: 0.01)
+    }
+
     /// The episode row is rewritten the moment playback pauses - that is when
     /// progress is written down - so by the time play is pressed again, the
     /// value the player holds no longer equals the one the engine was given.
@@ -687,6 +709,7 @@ private final class FakePlaybackEngine: PlaybackEngineType {
 
     var source: PlaybackSource? { sourceSubject.value }
     var hasContent: Bool { source != nil }
+    var duration: TimeInterval { durationSubject.value }
     var isLive: Bool { source?.isLive ?? false }
     var progress: Double {
         let duration = durationSubject.value

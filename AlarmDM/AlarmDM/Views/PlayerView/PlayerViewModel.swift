@@ -49,7 +49,11 @@ final class PlayerViewModel: ObservableObject {
     /// so the bar reads from what was restored instead of showing zero for
     /// something that is plainly half finished.
     var playbackProgress: Double {
-        guard engine.hasContent else {
+        // The engine knows how long a file is only once it has opened it, and
+        // answers zero until then - which put the bar back at the start for
+        // as long as a stream took to open. The feed's own duration is known
+        // before any of that, so it stands in until the file's is.
+        guard engine.hasContent, engine.duration > 0 else {
             guard duration > 0 else { return 0 }
             return min(max(currentTime / duration, 0), 1)
         }
