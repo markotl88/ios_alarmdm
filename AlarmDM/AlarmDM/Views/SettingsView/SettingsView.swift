@@ -118,6 +118,7 @@ struct SettingsView: View {
         List {
             bookmarksSection
             networkSection
+            statisticsSection
             downloadsSection
             showSection
             appSection
@@ -194,6 +195,16 @@ struct SettingsView: View {
             }
         } footer: {
             Text("Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu.")
+        }
+    }
+
+    private var statisticsSection: some View {
+        Section {
+            Toggle(isOn: settings.suppressesUsageStatisticsBinding) {
+                Label("Ne šalji anonimnu statistiku", systemImage: "chart.bar.xaxis")
+            }
+        } footer: {
+            Text("Aplikacija broji koliko se koja stvar koristi - na primer koliko puta je napravljena zabeleška. Ne šalje se ko si, šta si zabeležio ni šta slušaš, i ništa se ne povezuje sa tobom.")
         }
     }
 

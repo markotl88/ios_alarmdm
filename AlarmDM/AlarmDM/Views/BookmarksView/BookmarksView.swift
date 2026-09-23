@@ -28,7 +28,11 @@ struct BookmarksView: View {
                 ToolbarItem(placement: .topBarTrailing) { categoryMenu }
             }
         }
-        .onAppear { viewModel.reload() }
+        .onAppear {
+            viewModel.reload()
+            Analytics.record(.bookmarksOpened)
+            Analytics.recordBookmarksHeld(viewModel.bookmarks.count)
+        }
     }
 
     private var list: some View {
@@ -96,6 +100,7 @@ struct BookmarksView: View {
 
     private func open(_ bookmark: Bookmark) {
         guard let episode = viewModel.episode(for: bookmark) else { return }
+        Analytics.record(.bookmarkPlayed, ["kind": bookmark.capturedLive ? "live" : "episode"])
         playerViewModel.play(episode, startingAt: bookmark.position)
     }
 

@@ -113,6 +113,16 @@
         }
       }
     },
+    "Aplikacija broji koliko se koja stvar koristi - na primer koliko puta je napravljena zabeleška. Ne šalje se ko si, šta si zabeležio ni šta slušaš, i ništa se ne povezuje sa tobom." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The app counts how often things are used — how many bookmarks are made, for instance. It does not send who you are, what you bookmarked or what you listen to, and nothing is tied to you."
+          }
+        }
+      }
+    },
     "Arhiva" : {
       "localizations" : {
         "en" : {
@@ -149,43 +159,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Account number copied"
-          }
-        }
-      }
-    },
-    "carplay.bookmarked" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bookmarked"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zabeleženo"
-          }
-        }
-      }
-    },
-    "Četvrtkom o važnim temama." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Important topics, on Thursdays."
-          }
-        }
-      }
-    },
-    "Čitanje uz mikrofon." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading at the microphone."
           }
         }
       }
@@ -290,23 +263,6 @@
         }
       }
     },
-    "filter.favourites" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favourites"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Omiljeno"
-          }
-        }
-      }
-    },
     "Filtriraj epizode" : {
       "localizations" : {
         "en" : {
@@ -397,6 +353,16 @@
         }
       }
     },
+    "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
+          }
+        }
+      }
+    },
     "Još %lld h" : {
       "localizations" : {
         "en" : {
@@ -447,16 +413,6 @@
         }
       }
     },
-    "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
-          }
-        }
-      }
-    },
     "Kasnije" : {
       "localizations" : {
         "en" : {
@@ -487,16 +443,6 @@
         }
       }
     },
-    "Kôd nosi unapred upisan iznos od 500 RSD." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The code carries a preset amount of 500 RSD."
-          }
-        }
-      }
-    },
     "Kontaktiraj autora" : {
       "localizations" : {
         "en" : {
@@ -513,6 +459,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy account number"
+          }
+        }
+      }
+    },
+    "Kôd nosi unapred upisan iznos od 500 RSD." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The code carries a preset amount of 500 RSD."
           }
         }
       }
@@ -557,6 +513,16 @@
         }
       }
     },
+    "Nastavi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
+          }
+        }
+      }
+    },
     "Naš rad u potpunosti zavisi od vaših donacija." : {
       "localizations" : {
         "en" : {
@@ -567,12 +533,12 @@
         }
       }
     },
-    "Nastavi" : {
+    "Ne šalji anonimnu statistiku" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Continue"
+            "value" : "Don't send anonymous statistics"
           }
         }
       }
@@ -667,22 +633,22 @@
         }
       }
     },
-    "O čemu se radi?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What's it about?"
-          }
-        }
-      }
-    },
     "O nama" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "About us"
+          }
+        }
+      }
+    },
+    "O čemu se radi?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "What's it about?"
           }
         }
       }
@@ -937,22 +903,22 @@
         }
       }
     },
-    "Pošalji log na mejl" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Email the log"
-          }
-        }
-      }
-    },
     "Pošalji SMS" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Send a text"
+          }
+        }
+      }
+    },
+    "Pošalji log na mejl" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Email the log"
           }
         }
       }
@@ -1177,23 +1143,6 @@
         }
       }
     },
-    "show.other" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Other"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ostalo"
-          }
-        }
-      }
-    },
     "Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu." : {
       "localizations" : {
         "en" : {
@@ -1294,26 +1243,6 @@
         }
       }
     },
-    "Učitavanje epizoda…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading episodes…"
-          }
-        }
-      }
-    },
-    "Učitavanje…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading…"
-          }
-        }
-      }
-    },
     "Ukloni" : {
       "localizations" : {
         "en" : {
@@ -1344,12 +1273,22 @@
         }
       }
     },
-    "Uživo" : {
+    "Učitavanje epizoda…" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Live"
+            "value" : "Loading episodes…"
+          }
+        }
+      }
+    },
+    "Učitavanje…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
           }
         }
       }
@@ -1370,6 +1309,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LIVE · %@"
+          }
+        }
+      }
+    },
+    "Uživo" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Live"
           }
         }
       }
@@ -1460,6 +1409,77 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
+          }
+        }
+      }
+    },
+    "carplay.bookmarked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarked"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zabeleženo"
+          }
+        }
+      }
+    },
+    "filter.favourites" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favourites"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omiljeno"
+          }
+        }
+      }
+    },
+    "show.other" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostalo"
+          }
+        }
+      }
+    },
+    "Četvrtkom o važnim temama." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Important topics, on Thursdays."
+          }
+        }
+      }
+    },
+    "Čitanje uz mikrofon." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading at the microphone."
           }
         }
       }

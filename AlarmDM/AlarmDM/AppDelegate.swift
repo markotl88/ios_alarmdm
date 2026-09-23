@@ -19,6 +19,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Here and not in a view: when the car starts the app there is no
         // phone window at all, and the listen still has to be written down.
         ListeningRecorder.shared.start()
+        Analytics.start()
         return true
     }
 }

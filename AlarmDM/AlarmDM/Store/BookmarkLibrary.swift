@@ -99,6 +99,10 @@ final class BookmarkLibrary {
 
         repository.add(bookmark)
         didChange.send()
+Analytics.record(.bookmarkCreated, [
+            "origin": origin == .car ? "car" : "phone",
+            "kind": bookmark.capturedLive ? "live" : "episode",
+        ])
         didCapture.send((bookmark: bookmark, origin: origin))
         return bookmark
     }
