@@ -19,7 +19,56 @@ struct EpisodeRowActions: ViewModifier {
     let download: () -> Void
     let deleteDownload: () -> Void
 
+    static var showsInlineActions: Bool {
+        ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac
+    }
+
+    @ViewBuilder
     func body(content: Content) -> some View {
+        if Self.showsInlineActions {
+            // Siblings of the tappable row: these buttons must not start playback.
+            HStack(spacing: 8) {
+                content
+                inlineActions
+            }
+        } else {
+            touchActions(content: content)
+        }
+    }
+
+    private var inlineActions: some View {
+        HStack(spacing: 8) {
+            Button(action: toggleFavourite) {
+                actionIcon(podcast.isFavorite ? "heart.fill" : "heart")
+            }
+            .help(podcast.isFavorite ? Text("Ukloni iz omiljenih") : Text("Dodaj u omiljene"))
+            .accessibilityLabel(podcast.isFavorite ? Text("Ukloni iz omiljenih") : Text("Dodaj u omiljene"))
+
+            if isDownloading {
+                DownloadProgressRing(podcastId: podcast.id)
+                    .frame(width: 32, height: 32)
+                    .help(Text("Preuzimanje u toku…"))
+            } else {
+                Button(action: podcast.isDownloaded ? deleteDownload : download) {
+                    actionIcon(podcast.isDownloaded ? "trash" : "arrow.down.circle")
+                }
+                .help(podcast.isDownloaded ? Text("Obriši preuzeto") : Text("Preuzmi epizodu"))
+                .accessibilityLabel(podcast.isDownloaded ? Text("Obriši preuzeto") : Text("Preuzmi epizodu"))
+            }
+        }
+        .buttonStyle(.borderless)
+    }
+
+    private func actionIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.system(size: 15, weight: .semibold))
+            .foregroundColor(Color("primaryLink"))
+            .frame(width: 32, height: 32)
+            .background(Circle().fill(Color("primaryLink").opacity(0.10)))
+            .contentShape(Circle())
+    }
+
+    private func touchActions(content: Content) -> some View {
         content
             .swipeActions(edge: .leading, allowsFullSwipe: true) {
                 Button {

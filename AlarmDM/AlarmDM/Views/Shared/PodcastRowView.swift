@@ -87,22 +87,22 @@ struct PodcastRowView: View {
                         .foregroundColor(Color("secondaryText"))
                         .accessibilityLabel("Odslušano")
                 }
-                if podcast.isFavorite {
+                if podcast.isFavorite && !EpisodeRowActions.showsInlineActions {
                     Image(systemName: "heart.fill")
                         .font(.footnote)
                         .foregroundColor(Color("primaryLink"))
                         .accessibilityLabel("Omiljeno")
                 }
-                if isDownloading {
+                if isDownloading && !EpisodeRowActions.showsInlineActions {
                     DownloadProgressRing(podcastId: podcast.id)
-                } else if podcast.isDownloaded {
+                } else if podcast.isDownloaded && !EpisodeRowActions.showsInlineActions {
                     Image(systemName: "arrow.down.circle.fill")
                         .font(.footnote)
                         .foregroundColor(.secondary)
                         .accessibilityLabel("Preuzeto")
                 }
             }
-            .frame(width: 22)
+            .frame(width: EpisodeRowActions.showsInlineActions ? (podcast.isPlayed ? 22 : 0) : 22)
         }
         .padding(.vertical, 6)
         // Translucent rather than a colour of its own, so it tints whatever
