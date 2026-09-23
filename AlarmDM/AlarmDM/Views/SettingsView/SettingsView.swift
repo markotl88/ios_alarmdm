@@ -289,7 +289,7 @@ struct SettingsView: View {
             Button {
                 if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
             } label: {
-                externalRow("Jezik", detail: Self.languageName, systemImage: "globe")
+                externalRow("Jezik", detail: AppLanguage.currentName, systemImage: "globe")
             }
             #endif
 
@@ -339,14 +339,6 @@ struct SettingsView: View {
     }
 
     // MARK: Helpers
-
-    /// The language the app is actually showing, in that language — which is
-    /// the one worth naming, since it may not be the phone's.
-    private static var languageName: String {
-        let code = Bundle.main.preferredLocalizations.first ?? "sr-Latn"
-        let name = Locale(identifier: code).localizedString(forIdentifier: code) ?? code
-        return name.prefix(1).uppercased() + name.dropFirst()
-    }
 
     private static var appVersion: String {
         let info = Bundle.main.infoDictionary
