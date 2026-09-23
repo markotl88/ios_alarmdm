@@ -114,7 +114,6 @@
       }
     },
     "Aplikacija beleži koliko često koristiš pojedine funkcije - na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
