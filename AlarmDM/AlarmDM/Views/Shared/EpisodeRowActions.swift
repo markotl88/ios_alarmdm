@@ -27,7 +27,7 @@ struct EpisodeRowActions: ViewModifier {
     func body(content: Content) -> some View {
         if Self.showsInlineActions {
             // Siblings of the tappable row: these buttons must not start playback.
-            HStack(spacing: 8) {
+            HStack(spacing: 12) {
                 content
                 inlineActions
             }
@@ -39,7 +39,7 @@ struct EpisodeRowActions: ViewModifier {
     private var inlineActions: some View {
         HStack(spacing: 8) {
             Button(action: toggleFavourite) {
-                actionIcon(podcast.isFavorite ? "heart.fill" : "heart")
+                actionIcon(podcast.isFavorite ? "heart.fill" : "heart", isActive: podcast.isFavorite)
             }
             .help(podcast.isFavorite ? Text("Ukloni iz omiljenih") : Text("Dodaj u omiljene"))
             .accessibilityLabel(podcast.isFavorite ? Text("Ukloni iz omiljenih") : Text("Dodaj u omiljene"))
@@ -59,12 +59,12 @@ struct EpisodeRowActions: ViewModifier {
         .buttonStyle(.borderless)
     }
 
-    private func actionIcon(_ name: String) -> some View {
+    private func actionIcon(_ name: String, isActive: Bool = false) -> some View {
         Image(systemName: name)
-            .font(.system(size: 15, weight: .semibold))
-            .foregroundColor(Color("primaryLink"))
+            .font(.system(size: 15, weight: .medium))
+            .foregroundColor(isActive ? Color("primaryLink") : Color("secondaryText").opacity(0.85))
             .frame(width: 32, height: 32)
-            .background(Circle().fill(Color("primaryLink").opacity(0.10)))
+            .background(Circle().fill(Color("secondaryText").opacity(0.07)))
             .contentShape(Circle())
     }
 

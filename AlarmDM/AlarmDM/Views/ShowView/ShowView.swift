@@ -8,16 +8,33 @@
 import SwiftUI
 
 struct ShowView: View {
+    @Environment(\.horizontalSizeClass) private var widthClass
+
     var body: some View {
         ShowListView()
-            .navigationTitle("Emisije")
+            .navigationTitle(widthClass == .regular ? "" : "Emisije")
+            .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
     }
 }
 
 /// The order is fixed in `Show.featured`; everything else falls under Arhiva.
 struct ShowListView: View {
+    @Environment(\.horizontalSizeClass) private var widthClass
+
     var body: some View {
         List {
+            if widthClass == .regular {
+                Section {
+                    Text("Emisije")
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                .listSectionSpacing(12)
+            }
+
             Section {
                 ForEach(Show.featured, id: \.self) { show in
                     NavigationLink(destination: PodcastEpisodesView(show: show)) {

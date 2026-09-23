@@ -92,6 +92,8 @@ final class SettingsViewModel: ObservableObject {
 // MARK: - View
 
 struct SettingsView: View {
+    @Environment(\.horizontalSizeClass) private var widthClass
+
 
     @StateObject private var viewModel = SettingsViewModel()
     @ObservedObject private var settings = AppSettings.shared
@@ -116,6 +118,18 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            if widthClass == .regular {
+                Section {
+                    Text("Ostalo")
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                .listSectionSpacing(12)
+            }
+
             bookmarksSection
             networkSection
             statisticsSection
@@ -124,7 +138,8 @@ struct SettingsView: View {
             appSection
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Ostalo")
+        .navigationTitle(widthClass == .regular ? "" : "Ostalo")
+        .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
         .onAppear { viewModel.refresh() }
         .confirmationDialog(
             "Obrisati sve preuzete epizode?",

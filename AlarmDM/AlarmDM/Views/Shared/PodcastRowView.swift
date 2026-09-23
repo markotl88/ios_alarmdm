@@ -31,6 +31,15 @@ struct PodcastRowView: View {
                 .frame(width: 50, height: 50)
                 .cornerRadius(8)
                 .opacity(podcast.isPlayed ? 0.55 : 1)
+                .overlay(alignment: .bottomTrailing) {
+                    if EpisodeRowActions.showsInlineActions && podcast.isPlayed {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.footnote)
+                            .foregroundColor(Color("secondaryText"))
+                            .background(Circle().fill(Color(.systemBackground)))
+                            .accessibilityLabel("Odslušano")
+                    }
+                }
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
@@ -67,42 +76,45 @@ struct PodcastRowView: View {
             // the one playing. A control inside a control is one thing too
             // many on a screen that is also a touch screen, and everything it
             // could do the row already does.
-            if widthClass == .regular {
+            if widthClass == .regular || EpisodeRowActions.showsInlineActions {
                 Image(systemName: isCurrent && isPlaying ? "pause.fill" : "play.fill")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: EpisodeRowActions.showsInlineActions ? 20 : 13, weight: .bold))
                     .foregroundColor(Color("primaryLink"))
-                    .frame(width: 32, height: 32)
+                    .frame(width: EpisodeRowActions.showsInlineActions ? 48 : 32,
+                           height: EpisodeRowActions.showsInlineActions ? 48 : 32)
                     .background(Circle().fill(Color("primaryLink").opacity(isCurrent ? 0.20 : 0.10)))
-                    .padding(.trailing, 4)
+                    .padding(.trailing, EpisodeRowActions.showsInlineActions ? 0 : 4)
                     .accessibilityHidden(true)
             }
 
             // A fixed column, so the badges cannot push the glyph sideways:
             // a row with a download mark and a row without it put it in the
             // same place.
-            VStack(spacing: 6) {
-                if podcast.isPlayed {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.footnote)
-                        .foregroundColor(Color("secondaryText"))
-                        .accessibilityLabel("Odslušano")
+            if !EpisodeRowActions.showsInlineActions {
+                VStack(spacing: 6) {
+                    if podcast.isPlayed {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.footnote)
+                            .foregroundColor(Color("secondaryText"))
+                            .accessibilityLabel("Odslušano")
+                    }
+                    if podcast.isFavorite {
+                        Image(systemName: "heart.fill")
+                            .font(.footnote)
+                            .foregroundColor(Color("primaryLink"))
+                            .accessibilityLabel("Omiljeno")
+                    }
+                    if isDownloading {
+                        DownloadProgressRing(podcastId: podcast.id)
+                    } else if podcast.isDownloaded {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                            .accessibilityLabel("Preuzeto")
+                    }
                 }
-                if podcast.isFavorite && !EpisodeRowActions.showsInlineActions {
-                    Image(systemName: "heart.fill")
-                        .font(.footnote)
-                        .foregroundColor(Color("primaryLink"))
-                        .accessibilityLabel("Omiljeno")
-                }
-                if isDownloading && !EpisodeRowActions.showsInlineActions {
-                    DownloadProgressRing(podcastId: podcast.id)
-                } else if podcast.isDownloaded && !EpisodeRowActions.showsInlineActions {
-                    Image(systemName: "arrow.down.circle.fill")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .accessibilityLabel("Preuzeto")
-                }
+                .frame(width: 22)
             }
-            .frame(width: EpisodeRowActions.showsInlineActions ? (podcast.isPlayed ? 22 : 0) : 22)
         }
         .padding(.vertical, 6)
         // Translucent rather than a colour of its own, so it tints whatever

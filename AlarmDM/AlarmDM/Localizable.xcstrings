@@ -1,45 +1,8 @@
 {
   "sourceLanguage" : "sr-Latn",
   "strings" : {
-    "Bes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rage"
-          }
-        }
-      }
-    },
-    "Zoli" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zoli"
-          }
-        }
-      }
-    },
-    "Dobar čovek" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Good guy"
-          }
-        }
-      }
-    },
-    "Masti" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fibbing"
-          }
-        }
-      }
+    "" : {
+
     },
     "%lld epizoda" : {
       "localizations" : {
@@ -183,6 +146,16 @@
         }
       }
     },
+    "Bes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rage"
+          }
+        }
+      }
+    },
     "Bez muzike" : {
       "localizations" : {
         "en" : {
@@ -300,6 +273,16 @@
         }
       }
     },
+    "Dobar čovek" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good guy"
+          }
+        }
+      }
+    },
     "Dodaj u omiljene" : {
       "localizations" : {
         "en" : {
@@ -413,16 +396,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filter episodes"
-          }
-        }
-      }
-    },
-    "Urnebesno" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hilarious"
           }
         }
       }
@@ -603,6 +576,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy account number"
+          }
+        }
+      }
+    },
+    "Masti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fibbing"
           }
         }
       }
@@ -1424,6 +1407,16 @@
         }
       }
     },
+    "Urnebesno" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hilarious"
+          }
+        }
+      }
+    },
     "Uživo" : {
       "localizations" : {
         "en" : {
@@ -1530,6 +1523,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Zoli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoli"
           }
         }
       }

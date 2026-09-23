@@ -14,6 +14,18 @@ struct RadioView: View {
 
     var body: some View {
         List {
+            if isWide {
+                Section {
+                    Text("Radio")
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                .listSectionSpacing(12)
+            }
+
             // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
                 liveCard
@@ -78,7 +90,9 @@ struct RadioView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Radio")
+        // A wide page owns its heading so it shares the cards' margins.
+        .navigationTitle(isWide ? "" : "Radio")
+        .navigationBarTitleDisplayMode(isWide ? .inline : .automatic)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
         }
