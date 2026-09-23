@@ -14,6 +14,9 @@ struct AlarmDMApp: SwiftUI.App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // Only ever different from the phone's on the first launch -
+                // see AppLanguage.
+                .environment(\.locale, AppLanguage.localeForThisLaunch)
         }
         #if targetEnvironment(macCatalyst)
         // Closing the window no longer quits the app, which is the point: the

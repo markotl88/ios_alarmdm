@@ -26,6 +26,10 @@ enum AppLanguage {
 
     static let serbian = "sr-Latn"
 
+    /// True for the launch that wrote the default, and only that one. The
+    /// views ask, because SwiftUI does not take the answer from the bundle.
+    private(set) static var isForcingThisLaunch = false
+
     private enum Key {
         /// Apple's own, in this app's defaults domain.
         static let languages = "AppleLanguages"
@@ -49,7 +53,7 @@ enum AppLanguage {
     }
 
     /// The line above takes effect at the next launch, and this one is about
-    /// the launch happening now — the first one, where an app in Serbian for a
+    /// the launch happening now - the first one, where an app in Serbian for a
     /// Serbian station would otherwise introduce itself in English and only
     /// get it right the second time anybody opened it.
     ///
@@ -60,17 +64,33 @@ enum AppLanguage {
     /// on its own, and anyone who later picks English in Settings is never
     /// touched, because this never runs again.
     ///
-    /// What it cannot move is the text iOS itself supplies — the share sheet,
-    /// system alerts — which stays in the phone's language for this one
+    /// What it cannot move is the text iOS itself supplies - the share sheet,
+    /// system alerts - which stays in the phone's language for this one
     /// launch. And if a future iOS stops resolving strings this way, nothing
     /// breaks: the launch is in the phone's language, exactly as before.
     private static func speakSerbianForThisLaunch() {
-        guard Bundle.main.preferredLocalizations.first != serbian,
-              let path = Bundle.main.path(forResource: serbian, ofType: "lproj"),
-              let serbianBundle = Bundle(path: path) else { return }
+        guard Bundle.main.preferredLocalizations.first != serbian else { return }
+
+        isForcingThisLaunch = true
+
+        AppLog.write(.library, "forcing \(serbian) for this launch - bundle has \(Bundle.main.localizations), prefers \(Bundle.main.preferredLocalizations)")
+
+        guard let path = Bundle.main.path(forResource: serbian, ofType: "lproj"),
+              let serbianBundle = Bundle(path: path) else {
+            AppLog.write(.library, "no \(serbian).lproj in the bundle")
+            return
+        }
 
         LanguageBundle.strings = serbianBundle
         object_setClass(Bundle.main, LanguageBundle.self)
+    }
+
+    /// What the views are given. SwiftUI resolves a literal against the
+    /// locale in the environment, which is the one lever that reaches the
+    /// text on screen - the bundle above does not reach it, as one launch in
+    /// English proved.
+    static var localeForThisLaunch: Locale {
+        isForcingThisLaunch ? Locale(identifier: serbian) : .current
     }
 
     /// What the app is speaking right now, in that language.
