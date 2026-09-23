@@ -459,11 +459,11 @@ final class PlayerViewModel: ObservableObject {
         guard engine.hasContent else {
             restoredPosition = max(0, time)
             currentTime = max(0, time)
+            // Nothing is loaded, so the engine cannot announce this one.
             recorder.noteMovedByHand(to: max(0, time))
             return
         }
-        engine.seek(to: time)
-        recorder.noteMovedByHand(to: max(0, time))
+        engine.moveByHand(to: time)
     }
     func skipForward() { engine.skip(by: 15) }
     func skipBackward() { engine.skip(by: -15) }

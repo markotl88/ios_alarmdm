@@ -156,11 +156,19 @@ protocol PlaybackEngineType: AnyObject {
     var currentTimePublisher: AnyPublisher<TimeInterval, Never> { get }
     var durationPublisher: AnyPublisher<TimeInterval, Never> { get }
     var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { get }
+    /// Every move made by a person, wherever the press came from: the
+    /// scrubber, the skip buttons, the lock screen, the car. The engine is
+    /// the one place all of them pass through, so it is the one place that
+    /// can say so - see ListeningRecorder.noteMovedByHand.
+    var movedByHandPublisher: AnyPublisher<TimeInterval, Never> { get }
 
     func play(_ source: PlaybackSource, startingAt position: TimeInterval?)
     func toggle()
     func stop()
     func seek(to time: TimeInterval, completion: (() -> Void)?)
+    /// A seek somebody here asked for, as opposed to one adopted from
+    /// another device.
+    func moveByHand(to time: TimeInterval)
     func skip(by seconds: TimeInterval)
     func switchToLocalFile(_ fileURL: URL)
 }
@@ -196,6 +204,9 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     var currentTimePublisher: AnyPublisher<TimeInterval, Never> { $currentTime.eraseToAnyPublisher() }
     var durationPublisher: AnyPublisher<TimeInterval, Never> { $duration.eraseToAnyPublisher() }
     var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { $liveTrack.eraseToAnyPublisher() }
+    var movedByHandPublisher: AnyPublisher<TimeInterval, Never> { movedByHand.eraseToAnyPublisher() }
+
+    private let movedByHand = PassthroughSubject<TimeInterval, Never>()
 
     var hasContent: Bool { source != nil }
     var isLive: Bool { source?.isLive ?? false }
@@ -388,7 +399,16 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     func skip(by seconds: TimeInterval) {
         guard !isLive else { return }
-        seek(to: currentTime + seconds)
+        moveByHand(to: currentTime + seconds)
+    }
+
+    /// Fifteen seconds from a button, a drag of the scrubber, the same from
+    /// the lock screen or the car: all of them somebody here deciding where
+    /// to be, and all of them announced as such.
+    func moveByHand(to time: TimeInterval) {
+        guard !isLive else { return }
+        seek(to: time)
+        movedByHand.send(max(0, time))
     }
 
     /// Swaps a streaming podcast for its freshly downloaded file without losing position.
@@ -677,7 +697,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         centre.changePlaybackPositionCommand.addTarget { [weak self] event in
             guard let self, !self.isLive,
                   let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
-            self.seek(to: event.positionTime)
+            self.moveByHand(to: event.positionTime)
             return .success
         }
     }

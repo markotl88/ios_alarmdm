@@ -87,6 +87,10 @@ final class ListeningRecorder {
             .sink { [weak self] in self?.timeChanged(to: $0) }
             .store(in: &cancellables)
 
+        engine.movedByHandPublisher
+            .sink { [weak self] in self?.noteMovedByHand(to: $0) }
+            .store(in: &cancellables)
+
         engine.isPlayingPublisher
             .sink { [weak self] playing in
                 guard let self else { return }
@@ -144,9 +148,11 @@ final class ListeningRecorder {
         isAdopted = true
     }
 
-    /// Somebody here dragged the scrubber. That is this device listening -
-    /// or at least deciding - so whatever was adopted is now this device's
-    /// own position, and writing resumes.
+    /// Somebody here moved it: the scrubber, a skip button, the lock screen,
+    /// the car. That is this device deciding where to be, so whatever was
+    /// adopted from elsewhere is now this device's own position, and writing
+    /// resumes. Reached through the engine's own publisher, because a press
+    /// on the lock screen never passes through any screen of ours.
     func noteMovedByHand(to position: TimeInterval) {
         guard position > 0 else { return }
         self.position = position

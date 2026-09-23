@@ -552,6 +552,24 @@ final class ListeningRecorderTests: XCTestCase {
         XCTAssertEqual(progress.calls.last?.position ?? 0, 5_460, accuracy: 1)
     }
 
+    /// Fifteen seconds from a button is as much a decision as a drag, and
+    /// the press may never pass through a screen of ours at all - the lock
+    /// screen and the car go straight to the engine. So the engine announces
+    /// every move a person makes, and the recorder listens there.
+    func testASkipAfterAdoptingIsWrittenDown() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+
+        recorder.noteAdopted(position: 5_397)
+        engine.advance(to: 5_397)
+        engine.skip(by: 15)
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.count, 2)
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 5_412, accuracy: 1)
+    }
+
     /// Dragging the scrubber is somebody here, and is written down.
     func testAMoveByHandIsWrittenDown() {
         engine.play(.podcast(alarm), startingAt: nil)
@@ -657,6 +675,7 @@ private final class FakePlaybackEngine: PlaybackEngineType {
     private let timeSubject = CurrentValueSubject<TimeInterval, Never>(0)
     private let durationSubject = CurrentValueSubject<TimeInterval, Never>(0)
     private let trackSubject = CurrentValueSubject<LiveTrack?, Never>(nil)
+    private let movedSubject = PassthroughSubject<TimeInterval, Never>()
 
     private(set) var playCalls: [(source: PlaybackSource, position: TimeInterval?)] = []
     /// Flattened, so a test can ask "was it started from nowhere in
@@ -681,6 +700,7 @@ private final class FakePlaybackEngine: PlaybackEngineType {
     var currentTimePublisher: AnyPublisher<TimeInterval, Never> { timeSubject.eraseToAnyPublisher() }
     var durationPublisher: AnyPublisher<TimeInterval, Never> { durationSubject.eraseToAnyPublisher() }
     var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { trackSubject.eraseToAnyPublisher() }
+    var movedByHandPublisher: AnyPublisher<TimeInterval, Never> { movedSubject.eraseToAnyPublisher() }
 
     func play(_ source: PlaybackSource, startingAt position: TimeInterval?) {
         playCalls.append((source, position))
@@ -707,7 +727,12 @@ private final class FakePlaybackEngine: PlaybackEngineType {
     }
 
     func skip(by seconds: TimeInterval) {
-        seek(to: timeSubject.value + seconds)
+        moveByHand(to: timeSubject.value + seconds)
+    }
+
+    func moveByHand(to time: TimeInterval) {
+        seek(to: time)
+        movedSubject.send(max(0, time))
     }
 
     func switchToLocalFile(_ fileURL: URL) {}
