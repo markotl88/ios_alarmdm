@@ -785,6 +785,27 @@ final class ListeningRecorderTests: XCTestCase {
     }
 }
 
+// MARK: - Categories that were renamed
+
+/// A category is kept as its raw value, in the store and in iCloud, so the
+/// names the app used before are names it still has to be able to read.
+final class BookmarkCategoryTests: XCTestCase {
+
+    func testTheOldNameForUrnebesnoIsStillRead() {
+        XCTAssertEqual(BookmarkCategory(stored: "fora"), .urnebesnoSmijesno)
+    }
+
+    func testEveryCurrentNameReadsBackAsItself() {
+        for category in BookmarkCategory.allCases {
+            XCTAssertEqual(BookmarkCategory(stored: category.rawValue), category)
+        }
+    }
+
+    func testAnUnknownNameIsNoCategory() {
+        XCTAssertNil(BookmarkCategory(stored: "nesto-sasvim-drugo"))
+    }
+}
+
 // MARK: - Doubles
 
 /// An engine with no player behind it. It reports what it is told to report,

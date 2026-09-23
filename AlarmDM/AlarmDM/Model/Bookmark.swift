@@ -20,6 +20,24 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Reads what is in the store, including the names it used to have.
+    ///
+    /// The categories were renamed after 3.0, and a category is kept as its
+    /// raw value - in this device's store and in iCloud, on every device. A
+    /// plain `init(rawValue:)` answers nil for the old name, so every
+    /// bookmark filed under "fora" would have quietly lost its category the
+    /// first time this version read it, everywhere at once. It is the same
+    /// category under a new name, so it is read as that one and stored under
+    /// the new name the next time that bookmark is saved.
+    init?(stored raw: String) {
+        switch raw {
+        case "fora": self = .urnebesnoSmijesno
+        default:
+            guard let category = BookmarkCategory(rawValue: raw) else { return nil }
+            self = category
+        }
+    }
+
     var title: String {
         switch self {
         case .muzika: return String(localized: "Muzika")

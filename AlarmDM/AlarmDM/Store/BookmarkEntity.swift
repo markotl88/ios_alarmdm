@@ -59,7 +59,7 @@ extension Bookmark {
         self.id = entity.id
         self.createdAt = entity.createdAt
         self.position = entity.position
-        self.category = entity.category.flatMap(BookmarkCategory.init(rawValue:))
+        self.category = entity.category.flatMap(BookmarkCategory.init(stored:))
         self.note = entity.note
         self.episodeTitle = entity.episodeTitle
         self.show = entity.show.flatMap(Show.init(rawValue:))
