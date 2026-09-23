@@ -95,7 +95,10 @@ struct RadioView: View {
         }
         .listStyle(.insetGrouped)
         // A wide page owns its heading so it shares the cards' margins.
-        .navigationTitle(isWide ? "" : "Radio")
+        // Text(verbatim:) for the empty one: a bare "" is a
+        // LocalizedStringKey, and Xcode kept collecting it into the catalog
+        // as a key with no string on either side of it.
+        .navigationTitle(isWide ? Text(verbatim: "") : Text("Radio"))
         .navigationBarTitleDisplayMode(isWide ? .inline : .automatic)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
