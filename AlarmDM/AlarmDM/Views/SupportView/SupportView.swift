@@ -251,12 +251,20 @@ private struct FullscreenQRView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var previousBrightness = FullscreenQRView.screenBrightness
+    @State private var dragOffset: CGFloat = 0
 
     var body: some View {
         ZStack {
             Color.white.ignoresSafeArea()
 
             VStack(spacing: 24) {
+                // The same handle every sheet has, so the pull down below is
+                // something the screen offers rather than something to guess.
+                Capsule()
+                    .fill(Color.black.opacity(0.18))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 10)
+
                 Spacer()
 
                 Image(uiImage: image)
@@ -280,6 +288,23 @@ private struct FullscreenQRView: View {
                     .padding(.bottom, 24)
             }
             .foregroundColor(.black)
+            .offset(y: dragOffset)
+            // Held up to somebody else's phone across a table, this is the
+            // screen most likely to be put away in a hurry, and a hand coming
+            // back down the screen is the quickest way to do it. The white
+            // stays put underneath so nothing dark shows through at the top.
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.height > 0 { dragOffset = value.translation.height }
+                    }
+                    .onEnded { value in
+                        if value.translation.height > 120 {
+                            dismiss()
+                        }
+                        withAnimation { dragOffset = 0 }
+                    }
+            )
         }
         .onAppear {
             previousBrightness = FullscreenQRView.screenBrightness
