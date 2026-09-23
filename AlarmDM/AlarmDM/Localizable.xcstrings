@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "sr-Latn",
   "strings" : {
+    "Bes" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rage"
+          }
+        }
+      }
+    },
     "Zoli" : {
       "localizations" : {
         "en" : {
@@ -11,22 +21,22 @@
         }
       }
     },
-    "mlađa opet dobar čovek" : {
+    "Dobar čovek" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mlađa’s being a good guy again"
+            "value" : "Good guy"
           }
         }
       }
     },
-    "daško opet masti" : {
+    "Masti" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Daško’s exaggerating again"
+            "value" : "Fibbing"
           }
         }
       }
@@ -407,7 +417,7 @@
         }
       }
     },
-    "urnebesno smiješno" : {
+    "Urnebesno" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {

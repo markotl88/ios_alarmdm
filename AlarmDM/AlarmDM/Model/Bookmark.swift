@@ -13,6 +13,7 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
     case knjiga
     case strip
     case urnebesnoSmijesno
+    case bes
     case dasko
     case mladja
     case zoli
@@ -25,16 +26,17 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         case .film:   return String(localized: "Film")
         case .knjiga: return String(localized: "Knjiga")
         case .strip:  return String(localized: "Strip")
-        case .urnebesnoSmijesno:   return String(localized: "urnebesno smiješno")
-        case .dasko:  return String(localized: "daško opet masti")
-        case .mladja: return String(localized: "mlađa opet dobar čovek")
+        case .urnebesnoSmijesno:   return String(localized: "Urnebesno")
+        case .bes:    return String(localized: "Bes")
+        case .dasko:  return String(localized: "Masti")
+        case .mladja: return String(localized: "Dobar čovek")
         case .zoli:   return String(localized: "Zoli")
         }
     }
 
     var assetName: String? {
         switch self {
-        case .dasko: return "bookmark-dasko"
+        case .bes, .dasko: return "bookmark-dasko"
         case .mladja: return "bookmark-mladja"
         default: return nil
         }
@@ -47,7 +49,7 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         case .knjiga: return "book"
         case .strip:  return "books.vertical"
         case .urnebesnoSmijesno:   return "face.smiling"
-        case .dasko, .mladja: return "person.crop.circle"
+        case .bes, .dasko, .mladja: return "person.crop.circle"
         case .zoli:   return "guitars"
         }
     }
