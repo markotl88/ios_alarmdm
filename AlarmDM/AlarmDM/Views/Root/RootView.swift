@@ -24,13 +24,13 @@ struct RootView: View {
     }
 
     /// The WiFi-only warning lives here rather than in each list, so the same
-    /// alert answers a blocked download wherever it was started — a row, the
+    /// alert answers a blocked download wherever it was started - a row, the
     /// player, either tab.
     @State private var blockedEpisode: Podcast?
     @State private var showsMeteredAlert = false
 
     /// The bookmark confirmation lives here too, so it shows wherever the
-    /// capture came from — the player, and later the car.
+    /// capture came from - the player, and later the car.
     @State private var capturedBookmark: Bookmark?
     @State private var capturedFromPhone = true
     /// Set the moment the toast is touched. Typing a note takes longer than
@@ -102,7 +102,7 @@ struct RootView: View {
             blockedEpisode = podcast
             showsMeteredAlert = true
         }
-        .alert("Preuzimanje samo preko WiFi-ja", isPresented: $showsMeteredAlert) {
+        .alert("Preuzimanje samo preko Wi-Fi mreže", isPresented: $showsMeteredAlert) {
             Button("Preuzmi svejedno") {
                 if let blockedEpisode { EpisodeLibrary.shared.download(blockedEpisode, force: true) }
             }
@@ -112,21 +112,17 @@ struct RootView: View {
             }
             Button("Otkaži", role: .cancel) { blockedEpisode = nil }
         } message: {
-            Text("Trenutno si na mobilnoj mreži. Možeš preuzeti samo ovu epizodu, ili ukloniti ograničenje za ubuduće - kasnije ga vraćaš u Ostalo.")
+            Text("Trenutno koristiš mobilnu mrežu. Možeš preuzeti samo ovu epizodu ili isključiti ograničenje i za buduća preuzimanja. Ograničenje možeš ponovo uključiti u odeljku Ostalo.")
         }
         .onAppear { playerViewModel.restorePlaybackState() }
         .onChange(of: scenePhase) { _, phase in
-            // Leaving is the last moment anything is certain. iOS can end a
-            // suspended app without warning and without calling back, so the
-            // position is written down here rather than on the way out.
-            if phase != .active {
-                playerViewModel.rememberPlaybackPosition()
-            } else {
-                // Coming back is the other moment something may have arrived
-                // from another device — the import often lands while the app
-                // was away, and nothing else would notice until the next
-                // launch.
-                playerViewModel.refreshFromStoreIfIdle()
+            // Coming back is the moment something may have arrived from
+            // another device - the import often lands while the app was away,
+            // and nothing else would notice until the next launch. Leaving is
+            // ListeningRecorder's, which hears it whether or not this window
+            // exists.
+            if phase == .active {
+                playerViewModel.catchUpIfIdle()
             }
         }
     }
@@ -137,7 +133,7 @@ struct RootView: View {
 
     /// Two shapes for the same four screens. A phone gets the tab bar along
     /// the bottom; anything wider gets them down the side, where an iPad and a
-    /// Mac both expect to find navigation — and where the empty half of a wide
+    /// Mac both expect to find navigation - and where the empty half of a wide
     /// window turns into something useful rather than a margin.
     @ViewBuilder
     private var shell: some View {
@@ -158,8 +154,8 @@ struct RootView: View {
         }
         .navigationSplitViewStyle(.balanced)
         // Across the whole window, under the sidebar as well. What is playing
-        // does not belong to the section you happen to be looking at — it
-        // keeps playing while you move between all four — so the bar anchors
+        // does not belong to the section you happen to be looking at - it
+        // keeps playing while you move between all four - so the bar anchors
         // the window rather than one column of it. As a safe area inset rather
         // than an overlay, so the list above it scrolls to its own end instead
         // of underneath.

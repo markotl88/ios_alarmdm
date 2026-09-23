@@ -57,19 +57,14 @@ final class RadioViewModel: ObservableObject {
     /// mixed list the badge has to be decided per show: Alarm ships both, most
     /// shows ship one, and a note on every row would say nothing.
     private var showsWithBothVariants: Set<Show> {
-        var withMusic: Set<Show> = []
-        var withoutMusic: Set<Show> = []
-        for podcast in latestPodcasts {
-            if podcast.isWithMusic { withMusic.insert(podcast.show) } else { withoutMusic.insert(podcast.show) }
-        }
-        return withMusic.intersection(withoutMusic)
+        latestPodcasts.showsInBothCuts
     }
 
     func showsMusicVariant(for podcast: Podcast) -> Bool {
         showsWithBothVariants.contains(podcast.show)
     }
 
-    /// Across shows, "with music" says little — each show does its own thing.
+    /// Across shows, "with music" says little - each show does its own thing.
     /// Only the two that mean the same everywhere are offered here.
     let availableFilters: [EpisodeFilter] = [.downloaded, .favourites]
 
@@ -113,7 +108,7 @@ final class RadioViewModel: ObservableObject {
                 }
             case .failure(let error):
                 self.nextPage -= 1
-                debugPrint("Error fetching page \(self.nextPage + 1): \(error.localizedDescription)")
+                AppLog.write(.library, "Error fetching page \(self.nextPage + 1): \(error.localizedDescription)")
             }
         }
     }
@@ -143,9 +138,9 @@ final class RadioViewModel: ObservableObject {
                 BookmarkLibrary.shared.reconcileLiveCaptures()
             case .failure(let error):
                 if self.latestPodcasts.isEmpty {
-                    self.errorMessage = "Nije moguće učitati podkaste. Proveri internet konekciju."
+                    self.errorMessage = String(localized: "Nije moguće učitati epizode. Proveri internet vezu.")
                 }
-                debugPrint("Error fetching podcasts: \(error.localizedDescription)")
+                AppLog.write(.library, "Error fetching podcasts: \(error.localizedDescription)")
             }
         }
     }
@@ -172,7 +167,7 @@ final class RadioViewModel: ObservableObject {
             case .success(let url):
                 DispatchQueue.main.async { self?.livestreamUrl = url }
             case .failure(let error):
-                debugPrint("Error fetching livestream URL: \(error.localizedDescription)")
+                AppLog.write(.library, "Error fetching livestream URL: \(error.localizedDescription)")
             }
         }
     }

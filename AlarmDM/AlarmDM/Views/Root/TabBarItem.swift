@@ -18,10 +18,10 @@ enum TabBarItem: Hashable {
     
     var title: String {
         switch self {
-        case .radio: return "Radio"
-        case .shows: return "Emisije"
-        case .support: return "Podrži"
-        case .settings: return "Ostalo"
+        case .radio: return String(localized: "Radio")
+        case .shows: return String(localized: "Emisije")
+        case .support: return String(localized: "Podrži")
+        case .settings: return String(localized: "Ostalo")
         }
     }
 

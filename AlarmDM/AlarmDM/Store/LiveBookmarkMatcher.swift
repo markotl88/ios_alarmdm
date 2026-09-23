@@ -12,7 +12,7 @@ enum LiveBookmarkMatcher {
 
     /// Finds the episode a live capture fell inside, and where in it.
     ///
-    /// The episode carries `airedAt` — when the broadcast started — worked out
+    /// The episode carries `airedAt` - when the broadcast started - worked out
     /// by the backend from the publish time and the running time. Subtracting
     /// it from the moment the button was pressed gives the position directly.
     /// No schedule is involved, which is the point: the show has run 07–10 and

@@ -79,7 +79,7 @@ final class ListeningRulesTests: XCTestCase {
         XCTAssertNil(episode.resumePosition)
     }
 
-    /// Past the end of the show but never marked — the flag is written when
+    /// Past the end of the show but never marked - the flag is written when
     /// playback stops, and this is the same answer without it.
     func testAPositionPastTheEndStartsOver() {
         let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_790)
@@ -108,6 +108,44 @@ final class ListeningRulesTests: XCTestCase {
     func testAMinuteInIsStillVisible() {
         let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 60)
         XCTAssertEqual(episode.listeningProgress ?? 0, 0.02, accuracy: 0.001)
+    }
+
+    // MARK: - What the line says
+    //
+    // The words come from the string catalog and follow whichever language
+    // the test runner happens to be in, so these check the numbers - the part
+    // this code decides - and leave the wording to the catalog.
+
+    func testRemainingIsSpelledInHoursAndMinutes() {
+        let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 5_390)
+        XCTAssertTrue(episode.remainingDescription?.contains("1 h 29 min") ?? false)
+    }
+
+    /// A round hour left says so, rather than "1 h 0 min".
+    func testARoundHourDropsTheMinutes() {
+        let text = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 7_180).remainingDescription ?? ""
+        XCTAssertTrue(text.contains("1 h"))
+        XCTAssertFalse(text.contains("min"))
+    }
+
+    func testUnderAnHourIsMinutesAlone() {
+        let text = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_180).remainingDescription ?? ""
+        XCTAssertTrue(text.contains("10 min"))
+        XCTAssertFalse(text.contains(" h "))
+    }
+
+    /// The last stretch is not counted down in seconds.
+    func testTheLastMinuteIsNotANumber() {
+        let text = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_760).remainingDescription
+        XCTAssertNotNil(text)
+        XCTAssertNil(text?.rangeOfCharacter(from: .decimalDigits))
+    }
+
+    /// The text and the bar appear and disappear together.
+    func testNothingIsSaidWhereNoLineIsDrawn() {
+        XCTAssertNil(makeEpisode(duration: "3:00:00", outro: 20).remainingDescription)
+        let finished = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_780, isPlayed: true)
+        XCTAssertNil(finished.remainingDescription)
     }
 
     // MARK: - Helper

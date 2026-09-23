@@ -28,7 +28,11 @@ struct BookmarksView: View {
                 ToolbarItem(placement: .topBarTrailing) { categoryMenu }
             }
         }
-        .onAppear { viewModel.reload() }
+        .onAppear {
+            viewModel.reload()
+            Analytics.record(.bookmarksOpened)
+            Analytics.recordBookmarksHeld(viewModel.bookmarks.count)
+        }
     }
 
     private var list: some View {
@@ -96,6 +100,7 @@ struct BookmarksView: View {
 
     private func open(_ bookmark: Bookmark) {
         guard let episode = viewModel.episode(for: bookmark) else { return }
+        Analytics.record(.bookmarkPlayed, ["kind": bookmark.capturedLive ? "live" : "episode"])
         playerViewModel.play(episode, startingAt: bookmark.position)
     }
 
@@ -107,7 +112,7 @@ struct BookmarksView: View {
             Text("Još nema zabeleški.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            Text("Dok slušaš, pritisni dugme sa oznakom na plejeru — zabeleži se trenutak pet sekundi unazad.")
+            Text("Dok slušaš, dodirni dugme za zabelešku u plejeru. Zabeleška se čuva pet sekundi pre trenutne pozicije.")
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -141,7 +146,7 @@ struct BookmarkRowView: View {
                     Text(bookmark.positionText)
                         .monospacedDigit()
                     if let subtitle = bookmark.displaySubtitle {
-                        Text("·")
+                        Text(verbatim: "·")
                         Text(subtitle).lineLimit(1)
                     }
                 }
@@ -152,9 +157,12 @@ struct BookmarkRowView: View {
             Spacer(minLength: 0)
 
             if bookmark.isAwaitingEpisode {
+                // "UŽIVO" said where it came from, next to a broadcast symbol,
+                // which together read as something to press. It came from the
+                // radio, which the subtitle already says; what this has to say
+                // is that there is nothing behind it yet.
                 HStack(spacing: 4) {
-                    Circle().fill(Color.red).frame(width: 5, height: 5)
-                    Text("UŽIVO")
+                    Text("BELEŠKA")
                         .font(.caption2.weight(.bold))
                 }
                 .foregroundColor(Color("noteAccent"))
@@ -166,21 +174,24 @@ struct BookmarkRowView: View {
         .padding(.vertical, 4)
     }
 
+    /// A triangle where a tap plays something, and the category's own symbol
+    /// where it does not - a note for a song, a bookmark for anything else.
+    /// Every row used to carry a symbol that said nothing about which of the
+    /// two it was.
     private var leadingSymbol: String {
-        if bookmark.isAwaitingEpisode { return "dot.radiowaves.left.and.right" }
+        if !bookmark.isAwaitingEpisode { return "play.fill" }
         if let category = bookmark.category { return category.systemImage }
         return "bookmark"
     }
 
     /// One that has not found its episode is a note and nothing more: tapping
     /// it plays nothing. It used to be dimmed as a whole, which read as
-    /// disabled — as if the row were broken rather than waiting. A colour of
+    /// disabled - as if the row were broken rather than waiting. A colour of
     /// its own says the same thing without taking the text away, and the
     /// category symbol gives way to the broadcast one so the reason is legible
     /// at a glance.
     private var leadingColor: Color {
-        if bookmark.isAwaitingEpisode { return Color("noteAccent") }
-        return bookmark.category != nil ? Color("primaryLink") : .secondary
+        bookmark.isAwaitingEpisode ? Color("noteAccent") : Color("primaryLink")
     }
 
     private var badgeFill: Color {

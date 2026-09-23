@@ -2,7 +2,7 @@
 //  SupportView.swift
 //  AlarmDM
 //
-//  The Podrži tab. Donations are handled outside the app — the buttons open
+//  The Podrži tab. Donations are handled outside the app - the buttons open
 //  Patreon and PayPal in the browser, and the bank details can be copied or
 //  scanned. Nothing here unlocks anything in the app, which is what keeps it
 //  out of in-app purchase territory.
@@ -28,13 +28,13 @@ struct SupportView: View {
             VStack(alignment: .leading, spacing: 24) {
                 intro
 
-                sectionHeader("Daško i Mlađa")
+                sectionHeader(String(localized: "Daško i Mlađa"))
                 patreonRow
                 payPalRow
                 bankSection
 
                 if !Show.withOwnPatreon.isEmpty {
-                    sectionHeader("Emisije")
+                    sectionHeader(String(localized: "Emisije"))
                     showPatreonSection
                 }
             }
@@ -48,7 +48,7 @@ struct SupportView: View {
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Naš rad u potpunosti zavisi od vaših donacija.")
+            Text("Naš rad u potpunosti zavisi od tvojih donacija.")
                 .font(.headline)
                 .foregroundColor(Color("primaryText"))
             Text("Možeš nas podržati na sledeće načine:")
@@ -110,7 +110,7 @@ struct SupportView: View {
         Link(destination: Donation.patreon) {
             donationCard(
                 title: "Patreon",
-                detail: "Stalna mesečna ili godišnja donacija",
+                detail: String(localized: "Redovna mesečna ili godišnja donacija"),
                 systemImage: "heart.circle.fill"
             )
         }
@@ -121,7 +121,7 @@ struct SupportView: View {
         Link(destination: Donation.payPal) {
             donationCard(
                 title: "PayPal",
-                detail: "Jednokratna uplata",
+                detail: String(localized: "Jednokratna uplata"),
                 systemImage: "creditcard.circle.fill"
             )
         }
@@ -185,10 +185,10 @@ struct SupportView: View {
                     .accessibilityLabel("Prikaži kôd preko celog ekrana")
 
                     VStack(spacing: 3) {
-                        Label("Klikni na kôd za skeniranje", systemImage: "arrow.up.left.and.arrow.down.right")
+                        Label("Dodirni kôd za uvećani prikaz", systemImage: "arrow.up.left.and.arrow.down.right")
                             .font(.caption.weight(.medium))
                             .foregroundColor(Color("primaryLink"))
-                        Text("Kôd nosi unapred upisan iznos od 500 RSD.")
+                        Text("U kôd je unapred upisan iznos od 500 RSD.")
                             .font(.caption)
                             .multilineTextAlignment(.center)
                             .foregroundColor(Color("secondaryText"))
@@ -266,9 +266,9 @@ private struct FullscreenQRView: View {
                     .padding(.horizontal, 32)
 
                 VStack(spacing: 4) {
-                    Text("325-9300600398707-66")
+                    Text(verbatim: "325-9300600398707-66")
                         .font(.callout.monospacedDigit())
-                    Text("OTP banka · 500 RSD")
+                    Text(verbatim: "OTP banka · 500 RSD")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

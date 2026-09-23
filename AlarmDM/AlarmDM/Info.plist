@@ -9,8 +9,11 @@
         <false/>
         <key>UIApplicationSceneManifest</key>
         <dict>
+            <!-- True so the Mac keeps running with no window open: a Catalyst
+                 app that supports only one window quits when it is closed,
+                 and the radio with it. -->
             <key>UIApplicationSupportsMultipleScenes</key>
-            <false/>
+            <true/>
             <key>UISceneConfigurations</key>
             <dict>
                 <key>CPTemplateApplicationSceneSessionRoleApplication</key>

@@ -7,7 +7,7 @@
 //  own AVPlayer, so audio never doubles up when the user gets in the car.
 //
 
-// CarPlay does not exist on the Mac, and neither does the framework — the
+// CarPlay does not exist on the Mac, and neither does the framework - the
 // whole file is compiled out there rather than guarded piece by piece.
 #if !targetEnvironment(macCatalyst)
 
@@ -23,6 +23,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var cancellables = Set<AnyCancellable>()
 
     private var radioItem: CPListItem?
+    /// Kept so the sections can be rebuilt in place. Replacing the root
+    /// template instead would throw away wherever the person had navigated
+    /// to, which in a car is worse than a stale row.
+    private var radioTemplate: CPListTemplate?
     private var engine: PlaybackEngine { .shared }
 
     /// The bookmark button briefly fills in after a capture. CPNowPlayingButton
@@ -38,6 +42,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         didConnect interfaceController: CPInterfaceController
     ) {
         self.interfaceController = interfaceController
+
+        #if DEBUG
+        AppLog.write(.carplay, "carplay connected")
+        #endif
+
         setupRootTemplates()
         observeEngine()
         CPNowPlayingTemplate.shared.add(self)
@@ -53,6 +62,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         CPNowPlayingTemplate.shared.remove(self)
         self.interfaceController = nil
         self.radioItem = nil
+        self.radioTemplate = nil
     }
 
     // MARK: - Templates
@@ -61,19 +71,53 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let radioTemplate = makeRadioTemplate()
         let showsTemplate = makeShowsTemplate()
 
-        radioTemplate.tabTitle = "Radio"
+        radioTemplate.tabTitle = String(localized: "Radio")
         radioTemplate.tabImage = UIImage(systemName: "dot.radiowaves.left.and.right")
 
-        showsTemplate.tabTitle = "Emisije"
+        showsTemplate.tabTitle = String(localized: "Emisije")
         showsTemplate.tabImage = UIImage(systemName: "music.note.list")
 
         let tabBarTemplate = CPTabBarTemplate(templates: [radioTemplate, showsTemplate])
-        interfaceController?.setRootTemplate(tabBarTemplate, animated: true, completion: nil)
+        setRoot(tabBarTemplate, retriesLeft: 2)
+    }
+
+    /// A blank CarPlay screen with the audio still playing means the root
+    /// template never landed - the scene is connected and nothing was ever
+    /// handed to it. It is the one failure here with no visible cause, since
+    /// CarPlay says nothing and the app carries on, so the result is asked for
+    /// and a failure is tried again rather than left as an empty screen.
+    private func setRoot(_ template: CPTemplate, retriesLeft: Int) {
+        guard let interfaceController else { return }
+
+        interfaceController.setRootTemplate(template, animated: true) { [weak self] done, error in
+            #if DEBUG
+            AppLog.write(.carplay, "carplay root template: \(done ? "shown" : "refused")\(error.map { " - \($0.localizedDescription)" } ?? "")")
+            #endif
+
+            guard !done, retriesLeft > 0 else { return }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                self?.setRoot(template, retriesLeft: retriesLeft - 1)
+            }
+        }
     }
 
     private func makeRadioTemplate() -> CPListTemplate {
+        let template = CPListTemplate(title: String(localized: "Radio"), sections: radioSections())
+        template.tabTitle = String(localized: "Radio")
+        self.radioTemplate = template
+        return template
+    }
+
+    /// First what you were in the middle of, then the radio, then what is new.
+    ///
+    /// Getting out of the car and back in is the ordinary case, and until now
+    /// it meant finding the episode again on the phone: the car knew what was
+    /// playing only while it was playing. The first row is that episode, with
+    /// the second it stopped on.
+    private func radioSections() -> [CPListSection] {
         let item = CPListItem(
-            text: "Radio uživo",
+            text: String(localized: "Radio uživo"),
             detailText: radioDetailText,
             image: UIImage(named: "img_radio")?.fittedToCarPlayListItem()
         )
@@ -83,18 +127,45 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
         self.radioItem = item
 
-        let radioSection = CPListSection(items: [item], header: "Uživo", sectionIndexTitle: nil)
+        let radioSection = CPListSection(items: [item], header: String(localized: "Uživo"), sectionIndexTitle: nil)
 
         let latest = PodcastRepository.shared.latestPodcasts(limit: 10)
+        let bothCuts = latest.showsInBothCuts
         let podcastSection = CPListSection(
-            items: latest.map { listItem(for: $0) },
-            header: "Najnoviji podkasti",
+            items: latest.map { listItem(for: $0, marksCut: bothCuts.contains($0.show)) },
+            header: String(localized: "Najnovije epizode"),
             sectionIndexTitle: nil
         )
 
-        let template = CPListTemplate(title: "Radio", sections: [radioSection, podcastSection])
-        template.tabTitle = "Radio"
-        return template
+        guard let unfinished = continueListening() else {
+            return [radioSection, podcastSection]
+        }
+
+        let continueSection = CPListSection(
+            items: [listItem(for: unfinished,
+                             detail: continueDetail(for: unfinished),
+                             marksCut: bothCuts.contains(unfinished.show))],
+            header: String(localized: "Nastavi"),
+            sectionIndexTitle: nil
+        )
+
+        return [continueSection, radioSection, podcastSection]
+    }
+
+    /// What is loaded right now, or failing that the last thing left unfinished.
+    private func continueListening() -> Podcast? {
+        if case .podcast(let playing) = engine.source { return playing }
+        return PodcastRepository.shared.lastListened()
+    }
+
+    private func continueDetail(for podcast: Podcast) -> String {
+        let seconds = engine.source.flatMap { source -> TimeInterval? in
+            guard case .podcast(let playing) = source, playing.id == podcast.id else { return nil }
+            return engine.currentTime
+        } ?? podcast.playedPosition
+
+        guard seconds > 0 else { return podcast.subtitle }
+        return String(localized: "Od \(ScrubberView.format(seconds)) · \(podcast.subtitle)")
     }
 
     private func makeShowsTemplate() -> CPListTemplate {
@@ -111,8 +182,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             return item
         }
 
-        let template = CPListTemplate(title: "Emisije", sections: [CPListSection(items: items)])
-        template.tabTitle = "Emisije"
+        let template = CPListTemplate(title: String(localized: "Emisije"), sections: [CPListSection(items: items)])
+        template.tabTitle = String(localized: "Emisije")
         return template
     }
 
@@ -121,27 +192,43 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         let template: CPListTemplate
         if episodes.isEmpty {
-            let empty = CPListItem(text: "Nema preuzetih epizoda", detailText: "Otvori aplikaciju na telefonu da osvežiš listu.")
+            let empty = CPListItem(text: String(localized: "Nema učitanih epizoda"),
+                                   detailText: String(localized: "Otvori aplikaciju na telefonu da osvežiš listu."))
             template = CPListTemplate(title: show.displayName, sections: [CPListSection(items: [empty])])
         } else {
             template = CPListTemplate(
                 title: show.displayName,
-                sections: [CPListSection(items: episodes.map { listItem(for: $0) })]
+                sections: [CPListSection(items: episodes.map {
+                    listItem(for: $0, marksCut: episodes.showsInBothCuts.contains($0.show))
+                })]
             )
         }
 
         interfaceController?.pushTemplate(template, animated: true, completion: nil)
     }
 
-    /// One tap plays the episode — no intermediate menu. CarPlay guidelines want
+    /// One tap plays the episode - no intermediate menu. CarPlay guidelines want
     /// the shortest possible path to audio while driving.
-    private func listItem(for podcast: Podcast) -> CPListItem {
-        let detail = podcast.isDownloaded ? "Preuzeto · \(podcast.subtitle)" : podcast.subtitle
+    private func listItem(for podcast: Podcast, detail: String? = nil, marksCut: Bool = false) -> CPListItem {
+        let detail = detail ?? (podcast.isDownloaded ? String(localized: "Preuzeto · \(podcast.subtitle)") : podcast.subtitle)
         let item = CPListItem(
             text: podcast.title,
             detailText: detail,
             image: UIImage(named: podcast.show.imageName)?.fittedToCarPlayListItem()
         )
+
+        // CarPlay draws the bar itself, under the row, which is the one place
+        // on that screen with room to spare. Full for a finished episode: from
+        // a car seat a full bar says "heard" faster than any mark could.
+        item.playbackProgress = CGFloat(podcast.listeningProgress ?? (podcast.isPlayed ? 1 : 0))
+
+        // The two cuts of one day have the same title, so on this screen they
+        // were two identical rows. The one without music is marked, where the
+        // eye ends a row; the one with music is the show as it went out and
+        // is left plain, as it is everywhere else.
+        if marksCut && !podcast.isWithMusic {
+            item.setAccessoryImage(Self.withoutMusicMark)
+        }
 
         if case .podcast(let playing) = engine.source, playing.id == podcast.id {
             item.isPlaying = true
@@ -152,7 +239,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
             if case .podcast(let playing) = self.engine.source, playing.id == podcast.id {
                 // Already loaded: carry on rather than open it again, and
-                // never stop it — see openRadio.
+                // never stop it - see openRadio.
                 if !self.engine.isPlaying { self.engine.resume() }
             } else {
                 // Where the app would have started it. The rule lives in the
@@ -169,10 +256,17 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         return item
     }
 
+    /// Drawn once. Template images, so CarPlay tints them for its own light
+    /// and dark modes rather than drawing black on black.
+    private static let withoutMusicMark: UIImage? = UIImage(
+        systemName: Podcast.withoutMusicSymbol,
+        withConfiguration: UIImage.SymbolConfiguration(pointSize: 20, weight: .semibold)
+    )?.withRenderingMode(.alwaysTemplate)
+
     // MARK: - Transport
 
     /// A row in a list is not a play/pause button. Tapping the thing that is
-    /// already playing should take you to it — pausing from a list, with a
+    /// already playing should take you to it - pausing from a list, with a
     /// glance and a moving car, is the last thing anyone means by that tap.
     /// Pause is on the Now Playing screen and on the wheel.
     private func openRadio() {
@@ -196,8 +290,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     // MARK: - Bookmarks
 
-    /// It saves on the press. Anything that asks a follow-up question — a
-    /// category, a confirmation — is a menu to read while driving, which is the
+    /// It saves on the press. Anything that asks a follow-up question - a
+    /// category, a confirmation - is a menu to read while driving, which is the
     /// one thing this cannot be.
     ///
     /// Two ways into the same action, because CarPlay only offers one of each.
@@ -223,7 +317,11 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         // The one piece of text the car can show back, so the acknowledgement
         // is a word rather than a glyph that changed shape.
-        template.upNextTitle = justBookmarked ? "Zabeleženo" : "Zabeleži"
+        // Its own key: the same Serbian word is also the name of the list,
+        // and in English an acknowledgement and a list are different words.
+        template.upNextTitle = justBookmarked
+            ? String(localized: "carplay.bookmarked", defaultValue: "Zabeleženo")
+            : String(localized: "Zabeleži")
         template.isUpNextButtonEnabled = true
     }
 
@@ -254,6 +352,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshRadioItem()
+                // What to carry on with has changed along with it.
+                self?.radioTemplate?.updateSections(self?.radioSections() ?? [])
                 // The button belongs to whatever is playing, so it comes and
                 // goes with it rather than sitting there doing nothing.
                 self?.refreshNowPlayingButtons()
@@ -270,13 +370,13 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
-    /// What the row says it will do, which is no longer "Zaustavi" — it
+    /// What the row says it will do, which is no longer "Zaustavi" - it
     /// stopped being able to stop anything.
     private var radioDetailText: String {
         if case .radio = engine.source {
-            return engine.isPlaying ? "Uživo" : "Nastavi"
+            return engine.isPlaying ? String(localized: "Uživo") : String(localized: "Nastavi")
         }
-        return "Pusti"
+        return String(localized: "Pusti")
     }
 }
 
@@ -294,7 +394,7 @@ extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
 private extension UIImage {
 
     /// A bookmark is taller than it is wide, and CarPlay fits button images
-    /// into a square — so the glyph came out stretched. Drawing it centred on
+    /// into a square - so the glyph came out stretched. Drawing it centred on
     /// a square canvas keeps its own proportions and lets the empty space do
     /// the fitting instead.
     static func carPlayButtonSymbol(_ name: String) -> UIImage? {

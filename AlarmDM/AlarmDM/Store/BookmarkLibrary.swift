@@ -2,7 +2,7 @@
 //  BookmarkLibrary.swift
 //  AlarmDM
 //
-//  Capturing a bookmark, from wherever the button was pressed — the phone,
+//  Capturing a bookmark, from wherever the button was pressed - the phone,
 //  CarPlay, or the lock screen. One place, so the three cannot disagree.
 //
 
@@ -25,10 +25,10 @@ final class BookmarkLibrary {
     let didChange = PassthroughSubject<Void, Never>()
 
     /// Fires when a bookmark was just captured, for whatever wants to
-    /// acknowledge it — a flash on the button, a line in CarPlay.
+    /// acknowledge it - a flash on the button, a line in CarPlay.
     let didCapture = PassthroughSubject<(bookmark: Bookmark, origin: BookmarkOrigin), Never>()
 
-    /// You press the button after the thing has happened, never before — but
+    /// You press the button after the thing has happened, never before - but
     /// only just after, since the reaction is what makes you reach for it.
     /// Five seconds lands on the thing itself; fifteen lands on whatever came
     /// before it.
@@ -80,7 +80,7 @@ final class BookmarkLibrary {
 
         case .radio:
             // Live radio has no position to point at, so the moment it was
-            // caught is the only handle — along with whatever the station
+            // caught is the only handle - along with whatever the station
             // happened to be announcing. If it announced a song, the category
             // is not a guess: that is what was playing.
             let announced = engine.liveTrack != nil
@@ -99,6 +99,10 @@ final class BookmarkLibrary {
 
         repository.add(bookmark)
         didChange.send()
+Analytics.record(.bookmarkCreated, [
+            "origin": origin == .car ? "car" : "phone",
+            "kind": bookmark.capturedLive ? "live" : "episode",
+        ])
         didCapture.send((bookmark: bookmark, origin: origin))
         return bookmark
     }

@@ -26,12 +26,12 @@ final class EpisodeLibrary: ProgressRecording {
     /// Fires whenever an episode's local state changes. Lists hold snapshots
     /// taken from the store when they appeared, so without this a download made
     /// from the player leaves every visible row still claiming it is not
-    /// downloaded — and the Preuzeto filter cannot see it.
+    /// downloaded - and the Preuzeto filter cannot see it.
     let didChange = PassthroughSubject<Void, Never>()
 
     /// Fires when the WiFi-only rule stopped a download, so the UI can offer to
     /// go ahead anyway or to drop the rule. The library refuses rather than
-    /// deciding for the person — it has no way to ask.
+    /// deciding for the person - it has no way to ask.
     let downloadBlocked = PassthroughSubject<Podcast, Never>()
 
     private let repository = PodcastRepository.shared
@@ -76,7 +76,7 @@ final class EpisodeLibrary: ProgressRecording {
     }
 
     /// Downloads an episode and records the local file. `didChange` fires when
-    /// the download starts and when it ends — never per tick, so a list is not
+    /// the download starts and when it ends - never per tick, so a list is not
     /// rebuilt sixty times a minute; progress goes out on `progressPublisher`
     /// instead. On a metered connection this refuses and emits `downloadBlocked`
     /// unless `force` says the person has already chosen.
@@ -90,7 +90,7 @@ final class EpisodeLibrary: ProgressRecording {
         guard !podcast.isDownloaded else { return false }
         guard !downloadsInFlight.contains(podcast.id) else { return false }
         guard let url = URL(string: podcast.podcastUrl) else {
-            debugPrint("Episode \(podcast.id) has no usable media URL")
+            AppLog.write(.library, "Episode \(podcast.id) has no usable media URL")
             return false
         }
 
@@ -111,7 +111,7 @@ final class EpisodeLibrary: ProgressRecording {
             if case .success(let location) = result {
                 self.repository.setDownloadedFile(location.lastPathComponent, for: podcast.id)
             } else if case .failure(let error) = result {
-                debugPrint("Error downloading episode: \(error.localizedDescription)")
+                AppLog.write(.library, "Error downloading episode: \(error.localizedDescription)")
             }
 
             self.didChange.send()
@@ -131,7 +131,7 @@ final class EpisodeLibrary: ProgressRecording {
         return true
     }
 
-    /// Called by whoever wrote to the store outside this type — the player,
+    /// Called by whoever wrote to the store outside this type - the player,
     /// after a download finishes.
     func episodeDidChange() {
         didChange.send()
@@ -163,7 +163,7 @@ final class EpisodeLibrary: ProgressRecording {
             didChange.send()
             return true
         case .failure(let error):
-            debugPrint("Error deleting download: \(error.localizedDescription)")
+            AppLog.write(.library, "Error deleting download: \(error.localizedDescription)")
             return false
         }
     }

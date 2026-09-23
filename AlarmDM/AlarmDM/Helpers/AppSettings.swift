@@ -14,6 +14,7 @@ final class AppSettings: ObservableObject {
 
     private enum Key {
         static let downloadsOverWiFiOnly = "downloadsOverWiFiOnly"
+        static let suppressesUsageStatistics = "suppressesUsageStatistics"
     }
 
     private let defaults: UserDefaults
@@ -23,7 +24,7 @@ final class AppSettings: ObservableObject {
     }
 
     /// On by default. An hour of radio is a few megabytes; a back catalogue of
-    /// episodes on a metered plan is real money — and the person who finds out
+    /// episodes on a metered plan is real money - and the person who finds out
     /// afterwards is the one who paid for it. `object(forKey:)` rather than
     /// `bool(forKey:)`: an unset key has to read as true, not as false.
     var downloadsOverWiFiOnly: Bool {
@@ -38,6 +39,25 @@ final class AppSettings: ObservableObject {
         Binding(
             get: { self.downloadsOverWiFiOnly },
             set: { self.downloadsOverWiFiOnly = $0 }
+        )
+    }
+
+    /// Off by default, which means the counts are sent: they carry no
+    /// identifier and describe nobody, and asking everyone to opt in to a
+    /// count of button presses buys a worse answer and an extra screen. The
+    /// switch is there for whoever would rather send nothing at all.
+    var suppressesUsageStatistics: Bool {
+        get { defaults.bool(forKey: Key.suppressesUsageStatistics) }
+        set {
+            objectWillChange.send()
+            defaults.set(newValue, forKey: Key.suppressesUsageStatistics)
+        }
+    }
+
+    var suppressesUsageStatisticsBinding: Binding<Bool> {
+        Binding(
+            get: { self.suppressesUsageStatistics },
+            set: { self.suppressesUsageStatistics = $0 }
         )
     }
 }

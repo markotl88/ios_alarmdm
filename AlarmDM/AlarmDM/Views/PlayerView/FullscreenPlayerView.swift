@@ -62,7 +62,7 @@ struct FullscreenPlayerView: View {
                 .padding(.top, 24)
 
             if playerViewModel.isLive {
-                liveBadge.padding(.top, 20)
+                liveBlock(alignment: .center).padding(.top, 20)
             } else {
                 scrubberView
                     .padding(.horizontal, 32)
@@ -84,58 +84,93 @@ struct FullscreenPlayerView: View {
     /// Mac window under it. Side by side the artwork can be large without
     /// pushing anything off the bottom, and the controls sit in a column of
     /// readable width instead of being stretched across the glass.
+    ///
+    /// The two columns end on the same line and the artwork grows with the
+    /// window. Held at one size, it sat in the middle of a full-screen window
+    /// as a postage stamp with a field of empty around it, and the right hand
+    /// column floated against nothing.
     private var wideBody: some View {
-        VStack(spacing: 0) {
-            handle
+        GeometryReader { geometry in
+            let side = artworkSide(for: geometry.size)
 
-            Spacer(minLength: 0)
+            VStack(spacing: 0) {
+                handle
 
-            HStack(alignment: .top, spacing: 44) {
-                Image(playerViewModel.artworkName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 340, height: 340)
-                    .clipShape(RoundedRectangle(cornerRadius: 20))
-                    .shadow(radius: 16, y: 8)
+                Spacer(minLength: 0)
 
-                VStack(alignment: .leading, spacing: 28) {
-                    titleBlock(alignment: .leading)
+                HStack(alignment: .bottom, spacing: 44) {
+                    Image(playerViewModel.artworkName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: side, height: side)
+                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                        .shadow(radius: 16, y: 8)
 
-                    if playerViewModel.isLive {
-                        liveBadge
-                    } else {
-                        scrubberView
+                    // A column the height of the artwork, with everything in
+                    // it centred both ways: on the artwork's middle line, and
+                    // on its own. The artwork is a centred block, and a column
+                    // of left-aligned text beside it reads as a caption that
+                    // slipped; centred, the two halves are one composition.
+                    VStack(alignment: .center, spacing: 28) {
+                        titleBlock(alignment: .center)
+
+                        if playerViewModel.isLive {
+                            liveBlock(alignment: .center)
+                        } else {
+                            scrubberView
+                        }
+
+                        controlsGroup
+                            .padding(.top, 8)
                     }
-
-                    leading(transportControls)
-                    leading(actionRow)
+                    .frame(width: columnWidth(for: geometry.size, artwork: side),
+                           height: side)
                 }
-                .frame(maxWidth: 440, alignment: .leading)
-            }
-            .padding(.horizontal, 48)
+                .padding(.horizontal, 48)
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
-    /// Everything in the right hand column starts at the same edge as the
-    /// title. Centred rows under left aligned text read as a mistake.
-    private func leading<Content: View>(_ content: Content) -> some View {
-        HStack(spacing: 0) {
-            content
-            Spacer(minLength: 0)
+    /// As large as the window can hold, within reason. The lower bound keeps
+    /// it recognisable in a small window; the upper one stops a full-screen
+    /// Mac from turning a 1024 pixel drawing into wall art.
+    private func artworkSide(for size: CGSize) -> CGFloat {
+        let byHeight = size.height - 260
+        let byWidth = (size.width - 140) * 0.45
+        return min(max(min(byHeight, byWidth), 240), 460)
+    }
+
+    /// Wide enough to read a title across, never wider than the artwork it
+    /// stands beside - two columns of different widths read as one column and
+    /// a leftover.
+    private func columnWidth(for size: CGSize, artwork: CGFloat) -> CGFloat {
+        let available = size.width - artwork - 44 - 96
+        return max(260, min(artwork, available))
+    }
+
+    /// The transport and the row under it share a centre line, so the big
+    /// button sits over the middle of the small ones rather than over the
+    /// first of them. Left aligned against each other they read as two rows
+    /// that happen to start in the same place.
+    private var controlsGroup: some View {
+        VStack(alignment: .center, spacing: 22) {
+            transportControls
+            actionRow
         }
     }
 
     private func titleBlock(alignment: TextAlignment) -> some View {
         VStack(alignment: alignment == .center ? .center : .leading, spacing: 6) {
             Text(playerViewModel.title)
-                .font(isWide ? .title2.weight(.bold) : .title3.weight(.bold))
+                .font(isWide ? .title.weight(.bold) : .title3.weight(.bold))
                 .foregroundColor(Color("primaryText"))
                 .multilineTextAlignment(alignment)
 
             Text(playerViewModel.subtitle)
-                .font(isWide ? .body : .subheadline)
+                .font(isWide ? .title3 : .subheadline)
                 .foregroundColor(Color("secondaryText"))
                 .multilineTextAlignment(alignment)
         }
@@ -160,14 +195,20 @@ struct FullscreenPlayerView: View {
     }
 
     /// The badge, and under it whatever the station says is playing. The label
-    /// only appears when the stream actually announces a track — an empty line
+    /// only appears when the stream actually announces a track - an empty line
     /// reserved "just in case" would push the layout around every time radio
     /// starts.
-    private var liveBadge: some View {
-        VStack(spacing: 10) {
+    ///
+    /// Takes an alignment for the same reason the title block does: centred
+    /// under a left aligned title, in a column beside the artwork, it read as
+    /// something that had come loose.
+    private func liveBlock(alignment: HorizontalAlignment) -> some View {
+        let isCentred = alignment == .center
+
+        return VStack(alignment: alignment, spacing: 10) {
             HStack(spacing: 6) {
                 PulsingLiveDot(isAnimating: playerViewModel.isPlaying)
-                Text("UŽIVO").font(.caption.weight(.bold))
+                Text("UŽIVO").font(isWide ? .subheadline.weight(.bold) : .caption.weight(.bold))
             }
             .foregroundColor(Color("primaryText"))
             .padding(.horizontal, 12)
@@ -175,22 +216,23 @@ struct FullscreenPlayerView: View {
             .background(Capsule().fill(Color("primaryLink").opacity(0.18)))
 
             if let track = playerViewModel.liveTrack {
-                VStack(spacing: 2) {
+                VStack(alignment: alignment, spacing: 2) {
                     Text(track.title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(isWide ? .title3.weight(.semibold) : .subheadline.weight(.semibold))
                         .foregroundColor(Color("primaryText"))
                     if let artist = track.artist {
                         Text(artist)
-                            .font(.caption)
+                            .font(isWide ? .subheadline : .caption)
                             .foregroundColor(Color("secondaryText"))
                     }
                 }
-                .multilineTextAlignment(.center)
+                .multilineTextAlignment(isCentred ? .center : .leading)
                 .lineLimit(2)
-                .padding(.horizontal, 32)
+                .padding(.horizontal, isCentred && !isWide ? 32 : 0)
                 .transition(.opacity)
             }
         }
+        .frame(maxWidth: .infinity, alignment: isCentred ? .center : .leading)
         .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
@@ -203,14 +245,14 @@ struct FullscreenPlayerView: View {
     }
 
     private var transportControls: some View {
-        HStack(spacing: 40) {
+        HStack(spacing: isWide ? 44 : 40) {
             // Live radio has nothing to skip through. A dimmed control still
             // invites a tap; leaving it out says what is going on.
             if !playerViewModel.isLive {
                 Button {
                     playerViewModel.skipBackward()
                 } label: {
-                    Image(systemName: "gobackward.15").font(.title2)
+                    Image(systemName: "gobackward.15").font(isWide ? .title : .title2)
                 }
             }
 
@@ -218,12 +260,13 @@ struct FullscreenPlayerView: View {
                 playerViewModel.togglePlayPause()
             } label: {
                 ZStack {
-                    Circle().fill(Color("primaryLink")).frame(width: 72, height: 72)
+                    let side: CGFloat = isWide ? 88 : 72
+                    Circle().fill(Color("primaryLink")).frame(width: side, height: side)
                     if playerViewModel.isBuffering {
                         ProgressView().tint(Color(.systemBackground))
                     } else {
                         Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: 30))
+                            .font(.system(size: isWide ? 36 : 30))
                             .foregroundColor(Color(.systemBackground))
                     }
                 }
@@ -234,7 +277,7 @@ struct FullscreenPlayerView: View {
                 Button {
                     playerViewModel.skipForward()
                 } label: {
-                    Image(systemName: "goforward.15").font(.title2)
+                    Image(systemName: "goforward.15").font(isWide ? .title : .title2)
                 }
             }
         }
@@ -242,7 +285,7 @@ struct FullscreenPlayerView: View {
         .foregroundColor(Color("primaryText"))
     }
 
-    /// Icon-only, evenly sized: favourite, download, output — and the bookmark
+    /// Icon-only, evenly sized: favourite, download, output - and the bookmark
     /// button will join them. Labels under every one would crowd the screen and
     /// say what the glyphs already say. Live radio has nothing to favourite or
     /// download, so only the output picker remains.
@@ -346,7 +389,7 @@ struct FullscreenPlayerView: View {
 /// One shape for every action under the transport controls, so the row reads as
 /// a set rather than as three unrelated buttons.
 private struct PlayerActionButton<Content: View>: View {
-    let label: String
+    let label: LocalizedStringKey
     let action: () -> Void
     @ViewBuilder var content: () -> Content
 
@@ -364,7 +407,7 @@ private struct PlayerActionButton<Content: View>: View {
 // MARK: - Output picker
 
 /// AVRoutePickerView has no SwiftUI equivalent. Volume stays on the hardware
-/// buttons — a slider here would only duplicate them and steal room.
+/// buttons - a slider here would only duplicate them and steal room.
 struct RoutePickerView: UIViewRepresentable {
     let tintColor: UIColor
     let activeTintColor: UIColor
@@ -387,8 +430,8 @@ struct RoutePickerView: UIViewRepresentable {
 
 /// Plain @State bound straight to the Slider, on purpose.
 ///
-/// It used to be a computed Binding — `scrubTime ?? currentTime` to read, the
-/// dragged value into `scrubTime` to write — and after one drag the slider
+/// It used to be a computed Binding - `scrubTime ?? currentTime` to read, the
+/// dragged value into `scrubTime` to write - and after one drag the slider
 /// stopped following playback until the player was minimised, which is when
 /// that state was destroyed. So something wrote the dragged value back after
 /// the gesture handler had cleared it. With no setter of our own there is

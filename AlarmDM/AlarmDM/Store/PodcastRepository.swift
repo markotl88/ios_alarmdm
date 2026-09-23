@@ -3,8 +3,8 @@
 //  AlarmDM
 //
 //  The one place that reads and writes episodes. Used by the app, by the
-//  CarPlay scene and by the view models, so the saving rules — stable ids,
-//  preserved downloads — live in a single place.
+//  CarPlay scene and by the view models, so the saving rules - stable ids,
+//  preserved downloads - live in a single place.
 //
 
 import Foundation
@@ -17,10 +17,13 @@ protocol EpisodeLookup: AnyObject {
     func podcast(with id: UUID) -> Podcast?
     /// Forget what has already been read, in case something has arrived since.
     func refreshFromStore()
+    /// The newest unfinished listen on the account - on any device.
+    func lastListened() -> Podcast?
 }
 
 extension EpisodeLookup {
     func refreshFromStore() {}
+    func lastListened() -> Podcast? { nil }
 }
 
 final class PodcastRepository: EpisodeLookup {
@@ -50,9 +53,9 @@ final class PodcastRepository: EpisodeLookup {
         let rows = fetchStates(matching: #Predicate { $0.podcastId == id })
         let total = (try? context.fetchCount(FetchDescriptor<EpisodeStateEntity>())) ?? -1
 
-        debugPrint("state rows for \(id): \(rows.count) — of \(total) in the store")
+        AppLog.write(.store, "state rows for \(id): \(rows.count) - of \(total) in the store")
         for row in rows {
-            debugPrint("   \(Int(row.playedPosition))s at \(String(describing: row.playedAt)) fav:\(row.isFavorite)")
+            AppLog.write(.store, "   \(Int(row.playedPosition))s at \(String(describing: row.playedAt)) fav:\(row.isFavorite)")
         }
     }
     #endif
@@ -79,16 +82,40 @@ final class PodcastRepository: EpisodeLookup {
         return Podcast(from: entity, state: state(for: id), download: download(for: id))
     }
 
+    /// The episode to offer as "carry on", or nil when there is nothing to
+    /// carry on with: the most recent listen that has not finished.
+    ///
+    /// It looks at the listening rows rather than the episodes, because that
+    /// is where the dates are, and it takes the first few rather than all of
+    /// them - an episode heard a hundred listens ago is not what anyone means
+    /// by continuing.
+    func lastListened() -> Podcast? {
+        refreshFromStore()
+
+        let recent = fetchStates()
+            .filter { $0.playedAt != nil && !$0.isPlayed }
+            .sorted { EpisodeStateEntity.isNewer($0, than: $1) }
+            .prefix(5)
+
+        for state in recent {
+            if let episode = podcast(with: state.podcastId), episode.resumePosition != nil {
+                return episode
+            }
+        }
+        return nil
+    }
+
     /// Where this episode should start now, or nil to start at the beginning.
     ///
-    /// Every way into playback has to ask this — the phone, the car, the lock
-    /// screen — or the rules about where a listen resumes only hold on the
+    /// Every way into playback has to ask this - the phone, the car, the lock
+    /// screen - or the rules about where a listen resumes only hold on the
     /// screen they were written for. That is exactly how starting an episode
     /// from CarPlay went back to the beginning while the same episode on the
     /// phone carried on.
     ///
-    /// It re-reads the store first, so a position that arrived from another
-    /// device a moment ago is not missed by a copy taken at launch.
+    /// Every read here fetches, so a position that arrived from another device
+    /// a moment ago is what it finds; the refresh first is belt and braces —
+    /// see AppDatabase.adoptStoreChanges.
     func resumePosition(for id: UUID) -> TimeInterval? {
         refreshFromStore()
         return podcast(with: id)?.resumePosition
@@ -98,7 +125,7 @@ final class PodcastRepository: EpisodeLookup {
     /// feed's copy, what the person did with it, and whether it is on this
     /// device.
     ///
-    /// Two queries for the whole page rather than two per episode — a list of
+    /// Two queries for the whole page rather than two per episode - a list of
     /// two hundred would otherwise be four hundred round trips to the store
     /// for what is, in the end, a handful of matches.
     private func compose(_ entities: [PodcastEntity]) -> [Podcast] {
@@ -178,7 +205,7 @@ final class PodcastRepository: EpisodeLookup {
         // The id is the thing to compare between two devices: the same episode
         // has to be the same id everywhere, or each device is writing into its
         // own corner of the same database and syncing looks broken.
-        debugPrint("progress \(Int(position))s for \(id) — \(state.episodeTitle)")
+        AppLog.write(.store, "progress \(Int(position))s for \(id) - \(state.episodeTitle)")
         #endif
     }
 
@@ -228,7 +255,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             return try context.fetch(descriptor)
         } catch {
-            debugPrint("Error reading episodes: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading episodes: \(error.localizedDescription)")
             return []
         }
     }
@@ -241,7 +268,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             return try context.fetch(FetchDescriptor<EpisodeStateEntity>(predicate: predicate))
         } catch {
-            debugPrint("Error reading episode state: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading episode state: \(error.localizedDescription)")
             return []
         }
     }
@@ -250,7 +277,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             return try context.fetch(FetchDescriptor<DownloadEntity>(predicate: predicate))
         } catch {
-            debugPrint("Error reading downloads: \(error.localizedDescription)")
+            AppLog.write(.store, "Error reading downloads: \(error.localizedDescription)")
             return []
         }
     }
@@ -263,7 +290,7 @@ final class PodcastRepository: EpisodeLookup {
     /// to an episode before either has heard of the other each create a row,
     /// and both rows then exist everywhere. Taking whichever came back first
     /// is how a device ends up reading its own old row forever with the other
-    /// device's newer one sitting beside it — which looks exactly like syncing
+    /// device's newer one sitting beside it - which looks exactly like syncing
     /// having stopped working.
     private func state(for id: UUID, creatingIfNeeded: Bool = false) -> EpisodeStateEntity? {
         let existing = fetchStates(matching: #Predicate { $0.podcastId == id })
@@ -318,7 +345,7 @@ final class PodcastRepository: EpisodeLookup {
         do {
             try context.save()
         } catch {
-            debugPrint("Error \(what): \(error.localizedDescription)")
+            AppLog.write(.store, "Error \(what): \(error.localizedDescription)")
             context.rollback()
         }
     }

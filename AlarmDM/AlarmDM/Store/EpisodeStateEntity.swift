@@ -23,8 +23,8 @@ import SwiftData
 @Model
 final class EpisodeStateEntity {
 
-    /// The episode this is about. Not `@Attribute(.unique)` — CloudKit refuses
-    /// unique constraints — so the repository fetches before it inserts.
+    /// The episode this is about. Not `@Attribute(.unique)` - CloudKit refuses
+    /// unique constraints - so the repository fetches before it inserts.
     var podcastId: UUID = UUID()
 
     var isFavorite: Bool = false
@@ -37,7 +37,7 @@ final class EpisodeStateEntity {
     /// not the same as the listen that happened last.
     var playedAt: Date?
 
-    /// Crossed the end of the show — see Podcast.endOfShow. Sticky: listening
+    /// Crossed the end of the show - see Podcast.endOfShow. Sticky: listening
     /// again from the start does not un-finish an episode.
     var isPlayed: Bool = false
 

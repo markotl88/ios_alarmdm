@@ -29,20 +29,18 @@ struct RadioView: View {
                         PodcastRowView(
                             podcast: podcast,
                             showsMusicVariant: viewModel.showsMusicVariant(for: podcast),
-                            isDownloading: viewModel.isDownloading(podcast)
+                            isDownloading: viewModel.isDownloading(podcast),
+                            isCurrent: playerViewModel.isCurrent(podcast),
+                            isPlaying: playerViewModel.isPlaying
                         )
                             .contentShape(Rectangle())
                             .onTapGesture {
-                                playerViewModel.mode = .podcast(podcast: podcast)
-                                playerViewModel.togglePlayPause()
+                                playerViewModel.activate(podcast, expandingPlayer: widthClass != .regular)
                             }
                             .episodeRowActions(
                                 podcast: podcast,
                                 isDownloading: viewModel.isDownloading(podcast),
-                                play: {
-                                    playerViewModel.mode = .podcast(podcast: podcast)
-                                    playerViewModel.togglePlayPause()
-                                },
+                                play: { playerViewModel.toggle(podcast) },
                                 toggleFavourite: { viewModel.toggleFavourite(podcast) },
                                 download: { viewModel.download(podcast) },
                                 deleteDownload: { viewModel.deleteDownload(podcast) }
@@ -60,7 +58,7 @@ struct RadioView: View {
                 }
             } header: {
                 HStack {
-                    Text("Najnoviji podkasti")
+                    Text("Najnovije epizode")
                     if let active = viewModel.activeFilter {
                         Spacer()
                         Label(active.title, systemImage: active.systemImage)
@@ -136,7 +134,7 @@ struct RadioView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Internet radio Daško i Mlađa")
                 .font(.headline)
-            Text("Alarm od 8h do 10h, Varnju od 11h, dobra muzika non-stop!")
+            Text("Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -164,7 +162,7 @@ struct RadioView: View {
 
     /// The filter lives in the toolbar rather than in a bar under the title.
     /// Chips here would sit directly below the navigation bar once the card
-    /// scrolls away — two stacked bars saying the same thing.
+    /// scrolls away - two stacked bars saying the same thing.
     private var filterMenu: some View {
         Menu {
             Picker("Filter", selection: filterBinding) {
@@ -205,7 +203,7 @@ struct RadioView: View {
             }
             .padding(.vertical, 8)
         } else {
-            Text("Nema podkasta za prikaz.")
+            Text("Nema epizoda za prikaz.")
                 .foregroundColor(.secondary)
                 .padding(.vertical, 8)
         }

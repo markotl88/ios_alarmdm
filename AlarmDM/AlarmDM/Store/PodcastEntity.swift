@@ -37,14 +37,14 @@ final class PodcastEntity {
     var itunesDuration: String = ""
     var show: String = Show.ostalo.rawValue
     /// The closing credits, in seconds, as the backend measured them. Zero is
-    /// unmeasured — Podcast.outro falls back to the show's own figure.
+    /// unmeasured - Podcast.outro falls back to the show's own figure.
     var outroSeconds: Double = 0
 
     var isWithMusic: Bool = false
 
     // What a person did with this episode is deliberately not here. Favourites
     // and listening live in EpisodeStateEntity, the downloaded file in
-    // DownloadEntity — those two are the halves that sync and that stay on the
+    // DownloadEntity - those two are the halves that sync and that stay on the
     // device, and neither belongs to a row that is rebuilt from the feed.
 
     init(from podcast: Podcast) {
