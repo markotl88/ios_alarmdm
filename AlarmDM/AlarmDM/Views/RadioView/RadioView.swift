@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct RadioView: View {
+    @ObservedObject private var settings = AppSettings.shared
     @StateObject private var viewModel = RadioViewModel()
     @EnvironmentObject private var playerViewModel: PlayerViewModel
     @Environment(\.horizontalSizeClass) private var widthClass
@@ -68,13 +69,16 @@ struct RadioView: View {
                             .onAppear { viewModel.loadMoreIfNeeded(currentItem: podcast) }
                     }
 
-                    if viewModel.isLoadingMore {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
-                        }
+                }
+
+                if viewModel.isLoadingMore {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
                     }
+                } else if viewModel.canLoadMore && !viewModel.latestPodcasts.isEmpty {
+                    Button("Učitaj još epizoda") { viewModel.loadMore() }
                 }
             } header: {
                 HStack {
@@ -189,6 +193,8 @@ struct RadioView: View {
     /// scrolls away - two stacked bars saying the same thing.
     private var filterMenu: some View {
         Menu {
+            Toggle("Prikaži preslušane", isOn: settings.showsPlayedEpisodesBinding)
+            Divider()
             Picker("Filter", selection: filterBinding) {
                 Text("Sve epizode").tag(EpisodeFilter?.none)
                 ForEach(viewModel.availableFilters) { filter in
@@ -226,6 +232,14 @@ struct RadioView: View {
                     .font(.subheadline)
             }
             .padding(.vertical, 8)
+        } else if !viewModel.latestPodcasts.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Nijedna epizoda ne odgovara filteru.")
+                Button("Prikaži sve") {
+                    viewModel.activeFilter = nil
+                    settings.showsPlayedEpisodes = true
+                }
+            }
         } else {
             Text("Nema epizoda za prikaz.")
                 .foregroundColor(.secondary)

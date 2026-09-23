@@ -279,8 +279,18 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         let isLoadedAndWell = player != nil && player?.currentItem?.status != .failed
 
         if source.isSameContent(as: self.source), isLoadedAndWell {
-            if let position { seek(to: position) }
-            resume()
+            if let position {
+                // An explicit bookmark/seek keeps its exact target, even
+                // inside the outro. Automatic replay belongs to resume().
+                seek(to: position) { [weak self] in
+                    self?.activateSession()
+                    self?.player?.play()
+                    self?.updateNowPlayingPlaybackState()
+                }
+                movedByHand.send(max(0, position))
+            } else {
+                resume()
+            }
             return
         }
 
@@ -343,13 +353,27 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         guard !isBroken else {
             guard let source else { return }
-            let resumeAt = source.isLive ? nil : currentTime
+            let resumeAt: TimeInterval?
+            if case .podcast(let podcast) = source {
+                resumeAt = podcast.hasReachedEnd(at: currentTime, duration: duration) ? 0 : currentTime
+            } else {
+                resumeAt = nil
+            }
             play(source, startingAt: resumeAt)
             return
         }
 
         activateSession()
-        player?.play()
+        if case .podcast(let podcast) = source,
+           podcast.hasReachedEnd(at: currentTime, duration: duration) {
+            seek(to: 0) { [weak self] in
+                self?.player?.play()
+                self?.updateNowPlayingPlaybackState()
+            }
+            movedByHand.send(0)
+        } else {
+            player?.play()
+        }
         updateNowPlayingPlaybackState()
     }
 
@@ -534,8 +558,10 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            self.isPlaying = false
+            // Publish the final position before the pause writes progress.
             self.currentTime = self.duration
+            self.isPlaying = false
+            self.isBuffering = false
             self.updateNowPlayingPlaybackState()
         }
     }

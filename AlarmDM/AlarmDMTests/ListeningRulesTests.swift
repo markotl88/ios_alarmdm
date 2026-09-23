@@ -148,6 +148,26 @@ final class ListeningRulesTests: XCTestCase {
         XCTAssertNil(finished.remainingDescription)
     }
 
+    func testLastSecondOfUnmeasuredShowCountsAsFinished() {
+        let episode = makeEpisode(show: .ostalo, duration: "1:00:00", playedPosition: 3_599)
+        XCTAssertTrue(episode.hasReachedEnd)
+        XCTAssertNil(episode.resumePosition)
+        XCTAssertNil(episode.remainingDescription)
+    }
+
+    func testRemainingLastMinuteStillResumesBeforeFinalSecond() {
+        let episode = makeEpisode(show: .ostalo, duration: "1:00:00", playedPosition: 3_580)
+        XCTAssertFalse(episode.hasReachedEnd)
+        XCTAssertNotNil(episode.resumePosition)
+    }
+
+    func testMeasuredDurationWinsOverFeedAtPlaybackEnd() {
+        let episode = makeEpisode(show: .ostalo, duration: "1:00:00")
+        XCTAssertTrue(episode.hasReachedEnd(at: 3_579, duration: 3_580))
+        XCTAssertFalse(episode.hasReachedEnd(at: 3_579))
+        XCTAssertFalse(episode.hasReachedEnd(at: 0, duration: 3_580))
+    }
+
     // MARK: - Helper
 
     private func makeEpisode(show: Show = .alarmSaDaskomIMladjom,
@@ -161,5 +181,73 @@ final class ListeningRulesTests: XCTestCase {
         podcast.playedPosition = playedPosition
         podcast.isPlayed = isPlayed
         return podcast
+    }
+}
+
+
+final class EpisodeVisibilityTests: XCTestCase {
+    private func episode(finished: Bool = false) -> Podcast {
+        var value = Podcast(show: .ostalo)
+        value.id = UUID()
+        value.itunesDuration = "1:00:00"
+        value.isPlayed = finished
+        return value
+    }
+
+    func testFinishedRowsAreHiddenByDefaultAndCanBeShown() {
+        let heard = episode(finished: true)
+        let fresh = episode()
+        var visibility = EpisodeVisibility()
+        visibility.remember([heard, fresh])
+        XCTAssertEqual(visibility.visible([heard, fresh], filter: nil, showsPlayed: false).map(\.id), [fresh.id])
+        XCTAssertEqual(visibility.visible([heard, fresh], filter: nil, showsPlayed: true).count, 2)
+    }
+
+    func testFinishingDoesNotRemoveARowUntilRefresh() {
+        var value = episode()
+        var visibility = EpisodeVisibility()
+        visibility.remember([value])
+        value.isPlayed = true
+        visibility.remember([value])
+        XCTAssertEqual(visibility.visible([value], filter: nil, showsPlayed: false).count, 1)
+        visibility = EpisodeVisibility()
+        visibility.remember([value])
+        XCTAssertTrue(visibility.visible([value], filter: nil, showsPlayed: false).isEmpty)
+    }
+
+    func testFavoriteAndDownloadedFiltersIncludeFinishedRows() {
+        var saved = episode(finished: true)
+        saved.isFavorite = true
+        saved.fileUrl = "saved.mp3"
+        let other = episode(finished: true)
+        let visibility = EpisodeVisibility()
+        XCTAssertEqual(visibility.visible([saved, other], filter: .favourites, showsPlayed: false).map(\.id), [saved.id])
+        XCTAssertEqual(visibility.visible([saved, other], filter: .downloaded, showsPlayed: false).map(\.id), [saved.id])
+    }
+
+    func testLastSecondIsHiddenEvenBeforeFinishedFlagArrives() {
+        var value = episode()
+        value.playedPosition = 3_599
+        var visibility = EpisodeVisibility()
+        visibility.remember([value])
+        XCTAssertTrue(visibility.visible([value], filter: nil, showsPlayed: false).isEmpty)
+    }
+
+    func testMusicFilterStillAppliesWhenPlayedEpisodesAreShown() {
+        var value = episode(finished: true)
+        value.isWithMusic = true
+        let visibility = EpisodeVisibility()
+        XCTAssertTrue(visibility.visible([value], filter: .withoutMusic, showsPlayed: true).isEmpty)
+        XCTAssertEqual(visibility.visible([value], filter: .withMusic, showsPlayed: true).count, 1)
+    }
+
+    func testShowPlayedPreferenceDefaultsToOffAndPersists() {
+        let suite = "EpisodeVisibilityTests-" + UUID().uuidString
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = AppSettings(defaults: defaults)
+        XCTAssertFalse(settings.showsPlayedEpisodes)
+        settings.showsPlayedEpisodes = true
+        XCTAssertTrue(AppSettings(defaults: defaults).showsPlayedEpisodes)
     }
 }

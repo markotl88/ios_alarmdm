@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PodcastEpisodesView: View {
+    @ObservedObject private var settings = AppSettings.shared
 
     @StateObject private var viewModel: PodcastEpisodesViewModel
     @EnvironmentObject private var playerViewModel: PlayerViewModel
@@ -37,6 +38,9 @@ struct PodcastEpisodesView: View {
             filterBar
 
             List {
+                if viewModel.visiblePodcasts.isEmpty && !viewModel.podcasts.isEmpty {
+                    filteredEmptyState
+                }
                 ForEach(viewModel.visiblePodcasts) { podcast in
                     PodcastRowView(
                         podcast: podcast,
@@ -50,8 +54,8 @@ struct PodcastEpisodesView: View {
                             playerViewModel.activate(podcast, expandingPlayer: widthClass != .regular)
                         }
                         .onAppear {
-                            if podcast == viewModel.podcasts.last {
-                                viewModel.fetchDataIfNeeded(currentItem: podcast)
+                            if podcast == viewModel.visiblePodcasts.last {
+                                viewModel.fetchDataIfNeeded(currentItem: viewModel.podcasts.last)
                             }
                         }
                         .episodeRowActions(
@@ -70,21 +74,23 @@ struct PodcastEpisodesView: View {
                         ProgressView()
                         Spacer()
                     }
+                } else if viewModel.hasMoreData {
+                    Button("Učitaj još epizoda") {
+                        viewModel.fetchDataIfNeeded(currentItem: viewModel.podcasts.last)
+                    }
                 }
             }
             .listStyle(.plain)
             .refreshable { viewModel.fetchData() }
-            .overlay {
-                if viewModel.visiblePodcasts.isEmpty && !viewModel.podcasts.isEmpty {
-                    filteredEmptyState
-                }
-            }
         }
     }
 
     private var filterBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
+                Toggle("Prikaži preslušane", isOn: settings.showsPlayedEpisodesBinding)
+                    .toggleStyle(.button)
+                    .font(.footnote)
                 ForEach(viewModel.availableFilters) { filter in
                     let isActive = viewModel.activeFilter == filter
                     Button {
@@ -122,7 +128,10 @@ struct PodcastEpisodesView: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
             Button("Prikaži sve") {
-                withAnimation { viewModel.activeFilter = nil }
+                withAnimation {
+                    viewModel.activeFilter = nil
+                    settings.showsPlayedEpisodes = true
+                }
             }
             .font(.subheadline)
         }

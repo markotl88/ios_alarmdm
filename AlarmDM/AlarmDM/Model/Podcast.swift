@@ -194,8 +194,7 @@ extension Podcast {
     /// of the last listen, not an invitation to sit through the credits again.
     var resumePosition: TimeInterval? {
         guard !isPlayed, playedPosition > Podcast.resumeFloor else { return nil }
-        let end = endOfShow
-        guard end <= 0 || playedPosition < end else { return nil }
+        guard !hasReachedEnd else { return nil }
         // A few seconds back, for the same reason a bookmark takes a few: you
         // stopped listening slightly before you stopped playing.
         return max(0, playedPosition - 3)
@@ -208,7 +207,7 @@ extension Podcast {
     /// finished: an empty line and a full line each say nothing, and drawing
     /// them puts a rule under every row in the list for no reason.
     var listeningProgress: Double? {
-        guard !isPlayed, playedPosition > 0 else { return nil }
+        guard !isPlayed, !hasReachedEnd, playedPosition > 0 else { return nil }
         let end = endOfShow
         guard end > 0 else { return nil }
         // A minimum, so a minute into a three-hour episode is still visible as
@@ -241,8 +240,16 @@ extension Podcast {
     /// rather than read off the stored flag alone so a position restored
     /// mid-session answers the same way.
     var hasReachedEnd: Bool {
-        let end = endOfShow
-        return end > 0 && playedPosition >= end
+        hasReachedEnd(at: playedPosition)
+    }
+
+    /// Allow for the last fractional second not being reported by the player.
+    /// Prefer the opened file's duration when the feed's estimate differs.
+    func hasReachedEnd(at position: TimeInterval, duration: TimeInterval? = nil) -> Bool {
+        let length = duration.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? durationInSeconds
+        guard position.isFinite, position > 0, length.isFinite, length > 0 else { return false }
+        let end = max(length * Podcast.playedFraction, length - outro)
+        return position >= end || position >= length - 1
     }
 
     /// How much of an episode has to be behind you before it counts as heard.

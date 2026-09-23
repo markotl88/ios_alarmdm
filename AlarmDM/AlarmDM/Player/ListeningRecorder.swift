@@ -154,7 +154,7 @@ final class ListeningRecorder {
     /// resumes. Reached through the engine's own publisher, because a press
     /// on the lock screen never passes through any screen of ours.
     func noteMovedByHand(to position: TimeInterval) {
-        guard position > 0 else { return }
+        guard position.isFinite, position >= 0 else { return }
         self.position = position
         minuteMark = position
         isAdopted = false
@@ -195,8 +195,9 @@ final class ListeningRecorder {
             return
         }
 
-        let end = episode.endOfShow
-        progressStore.recordProgress(position: position, hasFinished: end > 0 && position >= end, for: episode.id)
+        progressStore.recordProgress(position: position,
+                                     hasFinished: episode.hasReachedEnd(at: position, duration: engine.duration),
+                                     for: episode.id)
         playbackState.save(PlaybackState(podcastId: episode.id, position: position))
         lastWritten = position
         minuteMark = position

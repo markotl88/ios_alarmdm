@@ -11,6 +11,7 @@
 import XCTest
 import Combine
 import UIKit
+import AVFoundation
 @testable import AlarmDM
 
 final class PlayerStateTests: XCTestCase {
@@ -151,11 +152,12 @@ final class PlayerStateTests: XCTestCase {
         let player = makePlayer()
         player.mode = .podcast(podcast: finished)
 
-        XCTAssertEqual(player.currentTime, 0)
+        XCTAssertTrue(player.offersReplay)
 
         player.togglePlayPause()
         flush()
-        XCTAssertNil(engine.lastPlayPosition)
+        XCTAssertEqual(engine.lastPlayPosition, 0)
+        XCTAssertFalse(player.offersReplay)
     }
 
     func testABookmarkBeatsTheStoredPosition() {
@@ -344,9 +346,8 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 5_397, accuracy: 0.5)
     }
 
-    /// The Mac played it to the end while the phone sat paused minutes short
-    /// of it: the phone's player goes away rather than offering those minutes.
-    func testAnEpisodeFinishedElsewhereIsPutAway() {
+    /// A synced finish stays visible and offers an explicit replay.
+    func testAnEpisodeFinishedElsewhereOffersReplay() {
         episodes.rows[alarm.id] = alarm
         PlaybackStateStore(defaults: defaults).save(
             PlaybackState(podcastId: alarm.id, position: 10_560, savedAt: Date(timeIntervalSinceNow: -600))
@@ -361,11 +362,15 @@ final class PlayerStateTests: XCTestCase {
         storeChanges.send(())
         flush()
 
-        XCTAssertNil(player.mode)
-        XCTAssertFalse(player.isPresented)
+        XCTAssertNotNil(player.mode)
+        XCTAssertTrue(player.isPresented)
+        XCTAssertTrue(player.offersReplay)
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.lastPlayPosition, 0)
     }
 
-    func testAnEpisodeFinishedElsewhereIsNotReopenedOnLaunch() {
+    func testAnEpisodeFinishedElsewhereOffersReplayOnLaunch() {
         var finished = listened(alarm, at: 10_790, secondsAgo: 0)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
@@ -376,7 +381,9 @@ final class PlayerStateTests: XCTestCase {
         let player = makePlayer()
         player.restorePlaybackState()
 
-        XCTAssertNil(player.mode)
+        XCTAssertNotNil(player.mode)
+        XCTAssertTrue(player.isPresented)
+        XCTAssertTrue(player.offersReplay)
     }
 
     /// Finished on this device is not finished elsewhere: the player stays.
@@ -392,6 +399,78 @@ final class PlayerStateTests: XCTestCase {
         flush()
 
         XCTAssertEqual(player.title, "Alarm")
+    }
+
+    func testLoadedEpisodeAtLastSecondRestartsWithoutHidingPlayer() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        // Actual file duration can be shorter than the feed's estimate.
+        engine.reportDuration(7_200)
+        engine.advance(to: 7_199)
+        engine.stopPlaying()
+        flush()
+
+        XCTAssertTrue(player.offersReplay)
+        XCTAssertEqual(player.playButtonSymbol, "arrow.counterclockwise")
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.lastPlayPosition, 0)
+        XCTAssertEqual(player.currentTime, 0)
+        XCTAssertTrue(player.isPresented)
+        XCTAssertFalse(player.offersReplay)
+    }
+
+    func testPausedLoadedEpisodeAdoptsSyncedFinishAndReplays() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        flush()
+
+        listened(alarm, at: 10_799, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+        XCTAssertTrue(player.isPresented)
+        XCTAssertTrue(player.offersReplay)
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.lastPlayPosition, 0)
+    }
+
+    func testPreviouslyHeardEpisodePausedDuringReplayStillResumes() {
+        var heard = alarm!
+        heard.isPlayed = true
+        let player = makePlayer()
+        player.mode = .podcast(podcast: heard)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        flush()
+
+        XCTAssertFalse(player.offersReplay)
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.playCalls.count, 1)
+        XCTAssertEqual(player.currentTime, 600)
+    }
+
+    func testSeekingBackFromEndRemovesReplayOffer() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 10_800)
+        engine.stopPlaying()
+        flush()
+        XCTAssertTrue(player.offersReplay)
+        player.seek(to: 600)
+        flush()
+        XCTAssertFalse(player.offersReplay)
     }
 
     // MARK: - Helpers
@@ -667,6 +746,27 @@ final class ListeningRecorderTests: XCTestCase {
         XCTAssertEqual(progress.calls.last?.hasFinished, true)
     }
 
+    func testMeasuredLastSecondIsRecordedAsFinished() {
+        var short = alarm!
+        short.show = .ostalo
+        engine.play(.podcast(short), startingAt: nil)
+        engine.reportDuration(3_600)
+        engine.advance(to: 3_599)
+        engine.stopPlaying()
+        XCTAssertEqual(progress.calls.last?.hasFinished, true)
+    }
+
+    func testMovingToZeroDoesNotWriteTheOldEndPosition() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        recorder.noteAdopted(position: 10_799)
+        engine.advance(to: 10_799)
+        engine.moveByHand(to: 0)
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertEqual(progress.calls.count, 1)
+    }
+
     func testStoppingBeforeTheEndDoesNotMarkItHeard() {
         engine.play(.podcast(alarm), startingAt: nil)
         engine.advance(to: 5_000)
@@ -821,5 +921,81 @@ final class LiveTrackTests: XCTestCase {
     func testANumericTitleFromARealArtistSurvives() {
         let track = LiveTrack(raw: "Smashing Pumpkins - 1979")
         XCTAssertEqual(track?.title, "1979")
+    }
+}
+
+
+/// Exercise AVPlayer itself at EOF, not just the presentation test double.
+final class PlaybackReplayTests: XCTestCase {
+    func testActualPlayerCanResumeAndExplicitlyReplayAfterEOF() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".wav")
+        var wave = Data()
+        func text(_ value: String) { wave.append(contentsOf: value.utf8) }
+        func word(_ value: UInt16) {
+            var value = value.littleEndian
+            withUnsafeBytes(of: &value) { wave.append(contentsOf: $0) }
+        }
+        func number(_ value: UInt32) {
+            var value = value.littleEndian
+            withUnsafeBytes(of: &value) { wave.append(contentsOf: $0) }
+        }
+        let bytes: UInt32 = 44_100 * 4 * 2
+        text("RIFF"); number(36 + bytes); text("WAVEfmt "); number(16)
+        word(1); word(1); number(44_100); number(88_200); word(2); word(16)
+        text("data"); number(bytes); wave.append(Data(count: Int(bytes)))
+        try wave.write(to: url)
+
+        let engine = PlaybackEngine.shared
+        var subscriptions = Set<AnyCancellable>()
+        defer {
+            subscriptions.removeAll()
+            engine.stop()
+            try? FileManager.default.removeItem(at: url)
+        }
+        var episode = Podcast(show: .ostalo)
+        episode.id = UUID()
+        episode.podcastUrl = url.absoluteString
+        episode.itunesDuration = "0:04"
+
+        let ended = expectation(description: "AVPlayer reaches EOF")
+        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)
+            .prefix(1)
+            .sink { _ in ended.fulfill() }
+            .store(in: &subscriptions)
+        engine.play(.podcast(episode), startingAt: 3)
+        wait(for: [ended], timeout: 15)
+
+        let resumed = expectation(description: "Remote-style resume restarts at zero")
+        engine.isPlayingPublisher
+            .filter { $0 && engine.currentTime < 1 }
+            .prefix(1)
+            .sink { _ in resumed.fulfill() }
+            .store(in: &subscriptions)
+        engine.resume()
+        wait(for: [resumed], timeout: 10)
+        engine.pause()
+
+        let bookmark = expectation(description: "Explicit near-end bookmark keeps its position")
+        engine.isPlayingPublisher
+            .filter { $0 && engine.currentTime >= 3 }
+            .prefix(1)
+            .sink { _ in bookmark.fulfill() }
+            .store(in: &subscriptions)
+        engine.play(.podcast(episode), startingAt: 3)
+        wait(for: [bookmark], timeout: 10)
+        engine.pause()
+
+        let positioned = expectation(description: "Seek back to EOF")
+        engine.seek(to: engine.duration) { positioned.fulfill() }
+        wait(for: [positioned], timeout: 10)
+
+        let replayed = expectation(description: "Explicit replay starts at zero")
+        engine.isPlayingPublisher
+            .filter { $0 && engine.currentTime < 1 }
+            .prefix(1)
+            .sink { _ in replayed.fulfill() }
+            .store(in: &subscriptions)
+        engine.play(.podcast(episode), startingAt: 0)
+        wait(for: [replayed], timeout: 10)
     }
 }

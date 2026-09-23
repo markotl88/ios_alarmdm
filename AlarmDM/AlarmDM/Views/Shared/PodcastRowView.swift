@@ -23,6 +23,8 @@ struct PodcastRowView: View {
 
     @Environment(\.horizontalSizeClass) private var widthClass
 
+    private var isFinished: Bool { podcast.isPlayed || podcast.hasReachedEnd }
+
     var body: some View {
         HStack(spacing: 12) {
             Image(podcast.show.imageName)
@@ -30,10 +32,9 @@ struct PodcastRowView: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 50, height: 50)
                 .cornerRadius(8)
-                .opacity(podcast.isPlayed ? 0.55 : 1)
                 .overlay(alignment: .bottomTrailing) {
-                    if EpisodeRowActions.showsInlineActions && podcast.isPlayed {
-                        Image(systemName: "checkmark.circle.fill")
+                    if EpisodeRowActions.showsInlineActions && isFinished {
+                        Image(systemName: "checkmark")
                             .font(.footnote)
                             .foregroundColor(Color("secondaryText"))
                             .background(Circle().fill(Color(.systemBackground)))
@@ -45,9 +46,7 @@ struct PodcastRowView: View {
                 HStack(spacing: 6) {
                     Text(podcast.title)
                         .font(.headline)
-                        // Heard: still legible, no longer competing with the
-                        // episodes that have not been.
-                        .foregroundColor(podcast.isPlayed ? Color("secondaryText") : Color("primaryText"))
+                        .foregroundColor(Color("primaryText"))
                         .lineLimit(2)
 
                     if showsMusicVariant && !podcast.isWithMusic {
@@ -67,6 +66,7 @@ struct PodcastRowView: View {
                     ListeningProgressLine(progress: progress,
                                           remaining: podcast.remainingDescription)
                         .padding(.top, 3)
+
                 }
             }
 
@@ -92,8 +92,8 @@ struct PodcastRowView: View {
             // same place.
             if !EpisodeRowActions.showsInlineActions {
                 VStack(spacing: 6) {
-                    if podcast.isPlayed {
-                        Image(systemName: "checkmark.circle.fill")
+                    if isFinished {
+                        Image(systemName: "checkmark")
                             .font(.footnote)
                             .foregroundColor(Color("secondaryText"))
                             .accessibilityLabel("Odslušano")
@@ -117,15 +117,7 @@ struct PodcastRowView: View {
             }
         }
         .padding(.vertical, 6)
-        // Translucent rather than a colour of its own, so it tints whatever
-        // the list is drawing underneath - the Radio tab's grouped cards and
-        // the episode list's plain rows both come out right without either
-        // screen having to say anything.
-        .background(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Color("primaryLink").opacity(podcast.isPlayed ? 0.07 : 0))
-                .padding(.horizontal, -8)
-        )
+
     }
 }
 

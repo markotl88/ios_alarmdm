@@ -9,7 +9,10 @@ import Combine
 final class RadioViewModel: ObservableObject {
 
     @Published var livestreamUrl: URL?
-    @Published var latestPodcasts: [Podcast] = []
+    @Published var latestPodcasts: [Podcast] = [] {
+        didSet { visibility.remember(latestPodcasts) }
+    }
+    private var visibility = EpisodeVisibility()
     @Published var isLoading = false
     @Published var isLoadingMore = false
     @Published var errorMessage: String?
@@ -45,13 +48,10 @@ final class RadioViewModel: ObservableObject {
     }
 
     var visiblePodcasts: [Podcast] {
-        guard let activeFilter else { return latestPodcasts }
-        switch activeFilter {
-        case .downloaded: return latestPodcasts.filter { $0.isDownloaded }
-        case .favourites: return latestPodcasts.filter { $0.isFavorite }
-        case .withMusic, .withoutMusic: return latestPodcasts
-        }
+        visibility.visible(latestPodcasts, filter: activeFilter, showsPlayed: AppSettings.shared.showsPlayedEpisodes)
     }
+
+    var canLoadMore: Bool { !reachedEnd }
 
     /// Which shows publish both cuts, worked out from the loaded episodes. On a
     /// mixed list the badge has to be decided per show: Alarm ships both, most
@@ -76,9 +76,13 @@ final class RadioViewModel: ObservableObject {
     /// network once the local rows are used up.
     func loadMoreIfNeeded(currentItem: Podcast) {
         guard !isLoadingMore, !reachedEnd else { return }
-        guard let index = latestPodcasts.firstIndex(where: { $0.id == currentItem.id }) else { return }
-        guard index >= latestPodcasts.count - 5 else { return }
+        guard let index = visiblePodcasts.firstIndex(where: { $0.id == currentItem.id }) else { return }
+        guard index >= visiblePodcasts.count - 5 else { return }
+        loadMore()
+    }
 
+    func loadMore() {
+        guard !isLoading, !isLoadingMore, !reachedEnd else { return }
         displayLimit += 20
         let widened = repository.latestPodcasts(limit: displayLimit)
 
@@ -115,9 +119,11 @@ final class RadioViewModel: ObservableObject {
 
     func refresh() {
         guard !isLoading else { return }
+        visibility = EpisodeVisibility()
         // Pulling the list down asks the network for new episodes; it should
         // also ask the store for anything another device has sent since.
         repository.refreshFromStore()
+        loadCached()
         isLoading = true
         errorMessage = nil
         reachedEnd = false

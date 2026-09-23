@@ -1170,6 +1170,16 @@
         }
       }
     },
+    "Prikaži preslušane" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show played episodes"
+          }
+        }
+      }
+    },
     "Prikaži sve" : {
       "localizations" : {
         "en" : {
@@ -1196,6 +1206,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Play"
+          }
+        }
+      }
+    },
+    "Pusti od početka" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Play from beginning"
           }
         }
       }
@@ -1353,6 +1373,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "The code has a preset AMount of 500 RSD."
+          }
+        }
+      }
+    },
+    "Učitaj još epizoda" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Load more episodes"
           }
         }
       }
@@ -1523,6 +1553,17 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Završeno" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Finished"
           }
         }
       }
