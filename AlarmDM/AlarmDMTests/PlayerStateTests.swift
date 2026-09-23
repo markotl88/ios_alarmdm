@@ -146,7 +146,7 @@ final class PlayerStateTests: XCTestCase {
 
     func testAFinishedEpisodeOpensAtTheBeginning() {
         var finished = alarm!
-        finished.playedPosition = 10_790
+        finished.playedPosition = 10_800
         finished.isPlayed = true
 
         let player = makePlayer()
@@ -356,7 +356,7 @@ final class PlayerStateTests: XCTestCase {
         player.restorePlaybackState()
         XCTAssertEqual(player.title, "Alarm")
 
-        var finished = listened(alarm, at: 10_790, secondsAgo: 0)
+        var finished = listened(alarm, at: 10_800, secondsAgo: 0)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
         storeChanges.send(())
@@ -371,7 +371,7 @@ final class PlayerStateTests: XCTestCase {
     }
 
     func testAnEpisodeFinishedElsewhereOffersReplayOnLaunch() {
-        var finished = listened(alarm, at: 10_790, secondsAgo: 0)
+        var finished = listened(alarm, at: 10_800, secondsAgo: 0)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
         PlaybackStateStore(defaults: defaults).save(
@@ -388,10 +388,10 @@ final class PlayerStateTests: XCTestCase {
 
     /// Finished on this device is not finished elsewhere: the player stays.
     func testAnEpisodeFinishedHereStays() {
-        var finished = listened(alarm, at: 10_790, secondsAgo: 60)
+        var finished = listened(alarm, at: 10_800, secondsAgo: 60)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
-        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 10_790))
+        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 10_800))
 
         let player = makePlayer()
         player.restorePlaybackState()
@@ -457,6 +457,24 @@ final class PlayerStateTests: XCTestCase {
         flush()
         XCTAssertEqual(engine.playCalls.count, 1)
         XCTAssertEqual(player.currentTime, 600)
+    }
+
+    /// Ninety-five percent in counts as heard, and the row goes grey. It is
+    /// still a pause: pressing play again carries on, it does not rewind.
+    func testPausingInTheClosingCreditsCarriesOn() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 10_500)
+        engine.stopPlaying()
+        flush()
+
+        XCTAssertFalse(player.offersReplay)
+        XCTAssertEqual(player.playButtonSymbol, "play.fill")
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(player.currentTime, 10_500, accuracy: 0.5)
     }
 
     func testSeekingBackFromEndRemovesReplayOffer() {
@@ -782,27 +800,6 @@ final class ListeningRecorderTests: XCTestCase {
         podcast.podcastUrl = "https://example.com/\(title).mp3"
         podcast.itunesDuration = duration
         return podcast
-    }
-}
-
-// MARK: - Categories that were renamed
-
-/// A category is kept as its raw value, in the store and in iCloud, so the
-/// names the app used before are names it still has to be able to read.
-final class BookmarkCategoryTests: XCTestCase {
-
-    func testTheOldNameForUrnebesnoIsStillRead() {
-        XCTAssertEqual(BookmarkCategory(stored: "fora"), .urnebesnoSmijesno)
-    }
-
-    func testEveryCurrentNameReadsBackAsItself() {
-        for category in BookmarkCategory.allCases {
-            XCTAssertEqual(BookmarkCategory(stored: category.rawValue), category)
-        }
-    }
-
-    func testAnUnknownNameIsNoCategory() {
-        XCTAssertNil(BookmarkCategory(stored: "nesto-sasvim-drugo"))
     }
 }
 

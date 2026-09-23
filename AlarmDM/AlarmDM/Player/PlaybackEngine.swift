@@ -355,7 +355,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             guard let source else { return }
             let resumeAt: TimeInterval?
             if case .podcast(let podcast) = source {
-                resumeAt = podcast.hasReachedEnd(at: currentTime, duration: duration) ? 0 : currentTime
+                resumeAt = podcast.isAtVeryEnd(at: currentTime, duration: duration) ? 0 : currentTime
             } else {
                 resumeAt = nil
             }
@@ -365,7 +365,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         activateSession()
         if case .podcast(let podcast) = source,
-           podcast.hasReachedEnd(at: currentTime, duration: duration) {
+           podcast.isAtVeryEnd(at: currentTime, duration: duration) {
             seek(to: 0) { [weak self] in
                 self?.player?.play()
                 self?.updateNowPlayingPlaybackState()

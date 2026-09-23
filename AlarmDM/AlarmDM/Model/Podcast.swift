@@ -252,6 +252,19 @@ extension Podcast {
         return position >= end || position >= length - 1
     }
 
+    /// The very last second of the file, which is the only place where
+    /// starting over is the obvious thing to offer.
+    ///
+    /// Deliberately not the same line as `hasReachedEnd`. That one asks
+    /// whether the episode counts as heard, and answers yes with the closing
+    /// credits still running - pausing there and coming back should carry on
+    /// from where it stopped, not rewind three hours.
+    func isAtVeryEnd(at position: TimeInterval, duration: TimeInterval? = nil) -> Bool {
+        let length = duration.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? durationInSeconds
+        guard position.isFinite, position > 0, length.isFinite, length > 0 else { return false }
+        return position >= length - 1
+    }
+
     /// How much of an episode has to be behind you before it counts as heard.
     /// One of the two conditions; see endOfShow for the other.
     static let playedFraction = 0.95

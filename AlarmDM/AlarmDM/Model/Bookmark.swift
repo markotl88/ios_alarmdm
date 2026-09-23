@@ -12,7 +12,7 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
     case film
     case knjiga
     case strip
-    case urnebesnoSmijesno
+    case urnebesno
     case bes
     case dasko
     case mladja
@@ -20,31 +20,13 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// Reads what is in the store, including the names it used to have.
-    ///
-    /// The categories were renamed after 3.0, and a category is kept as its
-    /// raw value - in this device's store and in iCloud, on every device. A
-    /// plain `init(rawValue:)` answers nil for the old name, so every
-    /// bookmark filed under "fora" would have quietly lost its category the
-    /// first time this version read it, everywhere at once. It is the same
-    /// category under a new name, so it is read as that one and stored under
-    /// the new name the next time that bookmark is saved.
-    init?(stored raw: String) {
-        switch raw {
-        case "fora": self = .urnebesnoSmijesno
-        default:
-            guard let category = BookmarkCategory(rawValue: raw) else { return nil }
-            self = category
-        }
-    }
-
     var title: String {
         switch self {
         case .muzika: return String(localized: "Muzika")
         case .film:   return String(localized: "Film")
         case .knjiga: return String(localized: "Knjiga")
         case .strip:  return String(localized: "Strip")
-        case .urnebesnoSmijesno:   return String(localized: "Urnebesno")
+        case .urnebesno: return String(localized: "Urnebesno")
         case .bes:    return String(localized: "Bes")
         case .dasko:  return String(localized: "Masti")
         case .mladja: return String(localized: "Dobar čovek")
@@ -66,7 +48,7 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         case .film:   return "film"
         case .knjiga: return "book"
         case .strip:  return "books.vertical"
-        case .urnebesnoSmijesno:   return "face.smiling"
+        case .urnebesno: return "face.smiling"
         case .bes, .dasko, .mladja: return "person.crop.circle"
         case .zoli:   return "guitars"
         }

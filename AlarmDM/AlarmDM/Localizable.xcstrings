@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "sr-Latn",
   "strings" : {
-    "" : {
-
-    },
     "%lld epizoda" : {
       "localizations" : {
         "en" : {
@@ -1553,17 +1550,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
-          }
-        }
-      }
-    },
-    "Završeno" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finished"
           }
         }
       }

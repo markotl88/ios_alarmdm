@@ -60,9 +60,11 @@ final class PlayerViewModel: ObservableObject {
         return engine.progress
     }
 
+    /// Only at the very end of the file. An episode paused in the closing
+    /// credits counts as heard, but it is still a pause - it carries on.
     var offersReplay: Bool {
         guard !isPlaying, !isBuffering, !isLive, let podcast else { return false }
-        return podcast.hasReachedEnd(at: currentTime, duration: duration)
+        return podcast.isAtVeryEnd(at: currentTime, duration: duration)
     }
 
     var playButtonSymbol: String {
