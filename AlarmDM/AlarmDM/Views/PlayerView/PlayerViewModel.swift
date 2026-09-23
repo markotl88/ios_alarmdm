@@ -104,7 +104,7 @@ final class PlayerViewModel: ObservableObject {
          engine: PlaybackEngineType = PlaybackEngine.shared,
          playbackState: PlaybackStateStore = .shared,
          episodes: EpisodeLookup = PodcastRepository.shared,
-         storeChanges: AnyPublisher<Void, Never> = AppDatabase.shared.didChangeRemotely.eraseToAnyPublisher()) {
+         storeChanges: AnyPublisher<Void, Never> = AppDatabase.shared.didChangeRemotely) {
         self.engine = engine
         self.playbackState = playbackState
         self.episodes = episodes

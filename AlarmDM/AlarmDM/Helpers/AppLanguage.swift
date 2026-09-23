@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import ObjectiveC
 
 /// Which language the app speaks.
 ///
@@ -53,54 +52,23 @@ enum AppLanguage {
     }
 
     /// The line above takes effect at the next launch, and this one is about
-    /// the launch happening now - the first one, where an app in Serbian for a
-    /// Serbian station would otherwise introduce itself in English and only
+    /// the launch happening now - the first one, where an app in Serbian for
+    /// a Serbian station would otherwise introduce itself in English and only
     /// get it right the second time anybody opened it.
     ///
-    /// Every string the app looks up goes through Bundle.main, so Bundle.main
-    /// is given a subclass that looks them up in the Serbian folder instead.
-    /// It is a blunt instrument and it is used exactly once, on the launch
-    /// that writes the default: from the second launch the bundle is Serbian
-    /// on its own, and anyone who later picks English in Settings is never
-    /// touched, because this never runs again.
-    ///
-    /// What it cannot move is the text iOS itself supplies - the share sheet,
-    /// system alerts - which stays in the phone's language for this one
-    /// launch. And if a future iOS stops resolving strings this way, nothing
-    /// breaks: the launch is in the phone's language, exactly as before.
+    /// All it does is raise a flag. Bundle.main was tried first, on the
+    /// theory that every lookup goes through it; a debug line either side of
+    /// the swap answered "Live radio" both times, so nothing the app draws
+    /// comes from there. What SwiftUI does use is the locale in the
+    /// environment, which is what the flag below feeds.
     private static func speakSerbianForThisLaunch() {
         guard Bundle.main.preferredLocalizations.first != serbian else { return }
-
         isForcingThisLaunch = true
-
-        AppLog.write(.library, "forcing \(serbian) for this launch - bundle has \(Bundle.main.localizations), prefers \(Bundle.main.preferredLocalizations)")
-
-        guard let path = Bundle.main.path(forResource: serbian, ofType: "lproj"),
-              let serbianBundle = Bundle(path: path) else {
-            AppLog.write(.library, "no \(serbian).lproj in the bundle")
-            return
-        }
-
-        #if DEBUG
-        // The key in the catalog is the Serbian text itself, so a lookup that
-        // resolves to English answers "Live radio" and one that stays Serbian
-        // answers "Radio uzivo". Which of the two comes back after the swap
-        // is the whole question about the class below.
-        let beforeSwap = String(localized: "Radio uživo")
-        #endif
-
-        LanguageBundle.strings = serbianBundle
-        object_setClass(Bundle.main, LanguageBundle.self)
-
-        #if DEBUG
-        AppLog.write(.library, "lookup in code: '\(beforeSwap)' before the bundle swap, '\(String(localized: "Radio uživo"))' after")
-        #endif
     }
 
     /// What the views are given. SwiftUI resolves a literal against the
-    /// locale in the environment, which is the one lever that reaches the
-    /// text on screen - the bundle above does not reach it, as one launch in
-    /// English proved.
+    /// locale in the environment, and that is the one lever that reaches the
+    /// text on screen.
     static var localeForThisLaunch: Locale {
         isForcingThisLaunch ? Locale(identifier: serbian) : .current
     }
@@ -110,17 +78,5 @@ enum AppLanguage {
         let code = Bundle.main.preferredLocalizations.first ?? serbian
         let name = Locale(identifier: code).localizedString(forIdentifier: code) ?? code
         return name.prefix(1).uppercased() + name.dropFirst()
-    }
-}
-
-/// Bundle.main wearing this class answers every lookup from one language's
-/// folder. See AppLanguage.speakSerbianForThisLaunch.
-private final class LanguageBundle: Bundle, @unchecked Sendable {
-
-    static var strings: Bundle?
-
-    override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
-        LanguageBundle.strings?.localizedString(forKey: key, value: value, table: tableName)
-            ?? super.localizedString(forKey: key, value: value, table: tableName)
     }
 }

@@ -43,7 +43,18 @@ final class AppDatabase {
     /// SwiftData is Core Data underneath, and this is Core Data's notification
     /// for exactly this. If a future version stops posting it, nothing breaks:
     /// every screen still reads again when it appears or is pulled down.
-    let didChangeRemotely = PassthroughSubject<Void, Never>()
+    /// Debounced: bringing up iCloud posts this dozens of times in a couple
+    /// of seconds - forty of them in five, on a fresh install - and every one
+    /// would send every open screen back to the store for a list it already
+    /// has. What the screens need to know is that something arrived, not how
+    /// many times it arrived.
+    var didChangeRemotely: AnyPublisher<Void, Never> {
+        storeChanged
+            .debounce(for: .milliseconds(400), scheduler: DispatchQueue.main)
+            .eraseToAnyPublisher()
+    }
+
+    private let storeChanged = PassthroughSubject<Void, Never>()
 
     /// The iCloud container these devices share. One for both bundle ids, so
     /// a debug build on the phone and a release build on the Mac are looking
@@ -211,10 +222,6 @@ final class AppDatabase {
     func adoptStoreChanges() {
         context = ModelContext(container)
         context.autosaveEnabled = false
-
-        #if DEBUG
-        AppLog.write(.sync, "store re-read")
-        #endif
     }
 
     private func observeRemoteChanges() {
@@ -225,7 +232,7 @@ final class AppDatabase {
         ) { [weak self] _ in
             guard let self else { return }
             self.adoptStoreChanges()
-            self.didChangeRemotely.send()
+            self.storeChanged.send()
         }
 
         #if DEBUG
