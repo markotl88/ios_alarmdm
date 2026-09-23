@@ -58,7 +58,7 @@ struct RadioView: View {
                 }
             } header: {
                 HStack {
-                    Text("Najnoviji podkasti")
+                    Text("Najnovije epizode")
                     if let active = viewModel.activeFilter {
                         Spacer()
                         Label(active.title, systemImage: active.systemImage)
@@ -134,7 +134,7 @@ struct RadioView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Internet radio Daško i Mlađa")
                 .font(.headline)
-            Text("Alarm od 8h do 10h, Varnju od 11h, dobra muzika non-stop!")
+            Text("Alarm od 8 do 10 h, Varnja od 11 h, dobra muzika non-stop!")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -203,7 +203,7 @@ struct RadioView: View {
             }
             .padding(.vertical, 8)
         } else {
-            Text("Nema podkasta za prikaz.")
+            Text("Nema epizoda za prikaz.")
                 .foregroundColor(.secondary)
                 .padding(.vertical, 8)
         }

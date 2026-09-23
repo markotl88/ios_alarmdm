@@ -133,7 +133,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         let bothCuts = latest.showsInBothCuts
         let podcastSection = CPListSection(
             items: latest.map { listItem(for: $0, marksCut: bothCuts.contains($0.show)) },
-            header: String(localized: "Najnoviji podkasti"),
+            header: String(localized: "Najnovije epizode"),
             sectionIndexTitle: nil
         )
 

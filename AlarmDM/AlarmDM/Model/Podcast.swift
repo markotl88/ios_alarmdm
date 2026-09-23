@@ -72,14 +72,14 @@ enum Show: String, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .alarmSaDaskomIMladjom: return String(localized: "Ponedeljak - četvrtak, od 08 do 10h.")
-        case .ljudiIzPodzemlja: return String(localized: "Specijalizovana za punk/hardcore zvuk.")
-        case .unutrasnjaEmigracija: return String(localized: "Svi mi emigranti. Svakog dana od 11h")
+        case .alarmSaDaskomIMladjom: return String(localized: "Od ponedeljka do četvrtka, od 8 do 10 h.")
+        case .ljudiIzPodzemlja: return String(localized: "Emisija posvećena panku i hardkoru.")
+        case .unutrasnjaEmigracija: return String(localized: "Svi mi emigranti. Svakog dana od 11 h.")
         case .vecernjaSkolaRokenrola: return String(localized: "Rokenrol za večernje sate.")
         case .naIviciOfsajda: return String(localized: "Romantizovani fudbalski istorijat.")
         case .nepopularnoMisljenje: return String(localized: "Teme o kojima se ćuti.")
         case .sportskiPozdrav: return String(localized: "Sportska emisija.")
-        case .jbt: return String(localized: "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05.")
+        case .jbt: return String(localized: "Jovana, Boris i Tatjana o društveno-političkim dešavanjima. Petkom u 18:05.")
         case .priceUMagli: return String(localized: "Radio-drama.")
         case .rastrojavanje: return String(localized: "Četvrtkom o važnim temama.")
         case .topleLjuckePrice: return String(localized: "Emisija sa toplim ljudskim pričama.")

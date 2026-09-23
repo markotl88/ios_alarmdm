@@ -112,7 +112,7 @@ struct BookmarksView: View {
             Text("Još nema zabeleški.")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-            Text("Dok slušaš, pritisni dugme sa oznakom na plejeru — zabeleži se trenutak pet sekundi unazad.")
+            Text("Dok slušaš, dodirni dugme za zabelešku u plejeru. Zabeleška se čuva pet sekundi pre trenutne pozicije.")
                 .font(.footnote)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)

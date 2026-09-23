@@ -93,12 +93,12 @@
         }
       }
     },
-    "Alarm od 8h do 10h, Varnju od 11h, dobra muzika non-stop!" : {
+    "Alarm od 8 do 10 h, Varnja od 11 h, dobra muzika non-stop!" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm from 8 to 10, Varnja from 11, good music non-stop!"
+            "value" : "Alarm from 8 to 10 AM, Varnja from 11 AM, and great music non-stop!"
           }
         }
       }
@@ -113,12 +113,12 @@
         }
       }
     },
-    "Aplikacija broji koliko se koja stvar koristi - na primer koliko puta je napravljena zabeleška. Ne šalje se ko si, šta si zabeležio ni šta slušaš, i ništa se ne povezuje sa tobom." : {
+    "Aplikacija beleži koliko često koristiš pojedine funkcije — na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The app counts how often things are used — how many bookmarks are made, for instance. It does not send who you are, what you bookmarked or what you listen to, and nothing is tied to you."
+            "value" : "The app counts how often features are used — for example, how many bookmarks are created. It does not send information about your identity, the contents of your bookmarks or what you listen to. These statistics are not linked to you."
           }
         }
       }
@@ -148,7 +148,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deleting failed: %@"
+            "value" : "Couldn’t delete the data: %@"
           }
         }
       }
@@ -178,17 +178,17 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add to favourites"
+            "value" : "Add to favorites"
           }
         }
       }
     },
-    "Dok slušaš, pritisni dugme sa oznakom na plejeru — zabeleži se trenutak pet sekundi unazad." : {
+    "Dok slušaš, dodirni dugme za zabelešku u plejeru. Zabeleška se čuva pet sekundi pre trenutne pozicije." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "While listening, press the bookmark button on the player — it saves the moment five seconds back."
+            "value" : "While listening, tap the bookmark button in the player. The bookmark is saved five seconds before your current position."
           }
         }
       }
@@ -208,7 +208,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Warm human stories."
+            "value" : "A show full of heartwarming human stories."
           }
         }
       }
@@ -248,7 +248,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Film"
+            "value" : "Movie"
           }
         }
       }
@@ -308,7 +308,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Turn off the restriction"
+            "value" : "Turn off restriction"
           }
         }
       }
@@ -338,7 +338,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "One-off payment"
+            "value" : "One-time payment"
           }
         }
       }
@@ -353,12 +353,12 @@
         }
       }
     },
-    "Jovana, Boris, Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
+    "Jovana, Boris i Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
+            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 6:05 PM."
           }
         }
       }
@@ -423,12 +423,12 @@
         }
       }
     },
-    "Klikni na kôd za skeniranje" : {
+    "Dodirni kôd za uvećani prikaz" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tap the code to scan it"
+            "value" : "Tap the code to enlarge it"
           }
         }
       }
@@ -463,12 +463,12 @@
         }
       }
     },
-    "Kôd nosi unapred upisan iznos od 500 RSD." : {
+    "U kôd je unapred upisan iznos od 500 RSD." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "The code carries a preset amount of 500 RSD."
+            "value" : "The code has a preset AMount of 500 RSD."
           }
         }
       }
@@ -478,7 +478,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You can support us in these ways:"
+            "value" : "Here’s how you can support us:"
           }
         }
       }
@@ -493,7 +493,7 @@
         }
       }
     },
-    "Na telefonu" : {
+    "Na ovom uređaju" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -503,12 +503,12 @@
         }
       }
     },
-    "Najnoviji podkasti" : {
+    "Najnovije epizode" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Latest podcasts"
+            "value" : "Latest episodes"
           }
         }
       }
@@ -523,7 +523,7 @@
         }
       }
     },
-    "Naš rad u potpunosti zavisi od vaših donacija." : {
+    "Naš rad u potpunosti zavisi od tvojih donacija." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -553,12 +553,12 @@
         }
       }
     },
-    "Nema podkasta za prikaz." : {
+    "Nema epizoda za prikaz." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No podcasts to show."
+            "value" : "No episodes to show."
           }
         }
       }
@@ -613,12 +613,12 @@
         }
       }
     },
-    "Nije moguće učitati podkaste. Proveri internet konekciju." : {
+    "Nije moguće učitati epizode. Proveri internet vezu." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn't load the podcasts. Check your internet connection."
+            "value" : "Couldn't load the episodes. Check your internet connection."
           }
         }
       }
@@ -713,12 +713,12 @@
         }
       }
     },
-    "Obriši sve podatke i iCloud" : {
+    "Obriši sve podatke, uključujući iCloud" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete all data and iCloud"
+            "value" : "Delete all data, including iCloud data"
           }
         }
       }
@@ -778,7 +778,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favourite"
+            "value" : "Favorite"
           }
         }
       }
@@ -893,12 +893,12 @@
         }
       }
     },
-    "Ponedeljak - četvrtak, od 08 do 10h." : {
+    "Od ponedeljka do četvrtka, od 8 do 10 h." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Monday to Thursday, 8 to 10 am."
+            "value" : "Monday through Thursday, 8 to 10 AM."
           }
         }
       }
@@ -963,7 +963,7 @@
         }
       }
     },
-    "Preuzimanje samo preko WiFi-ja" : {
+    "Preuzimanje samo preko Wi-Fi mreže" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1048,7 +1048,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Shop"
+            "value" : "Store"
           }
         }
       }
@@ -1118,7 +1118,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rock 'n' roll for the evening hours."
+            "value" : "Rock 'n' roll for your evenings."
           }
         }
       }
@@ -1128,7 +1128,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A romanticised history of football."
+            "value" : "A romanticized history of soccer."
           }
         }
       }
@@ -1143,17 +1143,17 @@
         }
       }
     },
-    "Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu." : {
+    "Ovo podešavanje važi samo za preuzimanje epizoda. Radio uživo i epizode možeš slušati i preko mobilne mreže. Ako želiš da preuzmeš epizodu preko mobilne mreže, aplikacija će tražiti potvrdu." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Live radio and streaming always work. This only applies to downloads — on mobile data, the app asks before downloading an episode."
+            "value" : "This setting only applies to downloads. You can still stream live radio and episodes over cellular data. The app will ask for confirmation before downloading an episode over cellular data."
           }
         }
       }
     },
-    "Specijalizovana za punk/hardcore zvuk." : {
+    "Emisija posvećena panku i hardkoru." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1173,12 +1173,12 @@
         }
       }
     },
-    "Stalna mesečna ili godišnja donacija" : {
+    "Redovna mesečna ili godišnja donacija" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A recurring monthly or yearly donation"
+            "value" : "Recurring monthly or annual donation"
           }
         }
       }
@@ -1213,12 +1213,12 @@
         }
       }
     },
-    "Svi mi emigranti. Svakog dana od 11h" : {
+    "Svi mi emigranti. Svakog dana od 11 h." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We're all emigrants. Every day from 11 am."
+            "value" : "We're all emigrants. Every day from 11 AM."
           }
         }
       }
@@ -1233,12 +1233,12 @@
         }
       }
     },
-    "Trenutno si na mobilnoj mreži. Možeš preuzeti samo ovu epizodu, ili ukloniti ograničenje za ubuduće - kasnije ga vraćaš u Ostalo." : {
+    "Trenutno koristiš mobilnu mrežu. Možeš preuzeti samo ovu epizodu ili isključiti ograničenje i za buduća preuzimanja. Ograničenje možeš ponovo uključiti u odeljku Ostalo." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're on mobile data. You can download just this episode, or lift the restriction from now on — you can turn it back on under More."
+            "value" : "You're using cellular data. You can download just this episode or turn off the restriction for future downloads too. You can turn it back on in More."
           }
         }
       }
@@ -1258,7 +1258,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Remove from favourites"
+            "value" : "Remove from favorites"
           }
         }
       }
@@ -1333,12 +1333,12 @@
         }
       }
     },
-    "Zabeleške, omiljeno, dokle si stigao, preuzete epizode i podešavanja - i ovde i u iCloudu, dakle i na ostalim uređajima. Očisti sve uređaje pre nego što ijedan ponovo pokreneš, inače onaj koji još ima podatke vrati sve u iCloud." : {
+    "Biće obrisane zabeleške, omiljene epizode, napredak slušanja, preuzete epizode i podešavanja, uključujući podatke u iCloudu koji se sinhronizuju sa ostalim uređajima. Obriši podatke na svim uređajima pre nego što ponovo pokreneš aplikaciju na bilo kom od njih. U suprotnom, uređaj na kom su podaci ostali može ih ponovo poslati u iCloud." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bookmarks, favourites, how far you got, downloads and settings — here and in iCloud, so on your other devices too. Clear every device before starting any of them again, or the one that still has data puts it all back in iCloud."
+            "value" : "This will delete bookmarks, favorites, listening progress, downloaded episodes and settings, including iCloud data synced with your other devices. Clear the data on every device before reopening the app on any of them. Otherwise, a device that still has data may upload it to iCloud again."
           }
         }
       }
@@ -1436,7 +1436,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Favourites"
+            "value" : "Favorites"
           }
         },
         "sr-Latn" : {
@@ -1469,7 +1469,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Important topics, on Thursdays."
+            "value" : "Important topics every Thursday."
           }
         }
       }
@@ -1479,7 +1479,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Reading at the microphone."
+            "value" : "Readings on air."
           }
         }
       }

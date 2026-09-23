@@ -102,7 +102,7 @@ struct RootView: View {
             blockedEpisode = podcast
             showsMeteredAlert = true
         }
-        .alert("Preuzimanje samo preko WiFi-ja", isPresented: $showsMeteredAlert) {
+        .alert("Preuzimanje samo preko Wi-Fi mreže", isPresented: $showsMeteredAlert) {
             Button("Preuzmi svejedno") {
                 if let blockedEpisode { EpisodeLibrary.shared.download(blockedEpisode, force: true) }
             }
@@ -112,7 +112,7 @@ struct RootView: View {
             }
             Button("Otkaži", role: .cancel) { blockedEpisode = nil }
         } message: {
-            Text("Trenutno si na mobilnoj mreži. Možeš preuzeti samo ovu epizodu, ili ukloniti ograničenje za ubuduće - kasnije ga vraćaš u Ostalo.")
+            Text("Trenutno koristiš mobilnu mrežu. Možeš preuzeti samo ovu epizodu ili isključiti ograničenje i za buduća preuzimanja. Ograničenje možeš ponovo uključiti u odeljku Ostalo.")
         }
         .onAppear { playerViewModel.restorePlaybackState() }
         .onChange(of: scenePhase) { _, phase in

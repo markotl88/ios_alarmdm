@@ -147,7 +147,7 @@ struct SettingsView: View {
             }
             Button("Odustani", role: .cancel) {}
         } message: {
-            Text("Zabeleške, omiljeno, dokle si stigao, preuzete epizode i podešavanja - i ovde i u iCloudu, dakle i na ostalim uređajima. Očisti sve uređaje pre nego što ijedan ponovo pokreneš, inače onaj koji još ima podatke vrati sve u iCloud.")
+            Text("Biće obrisane zabeleške, omiljene epizode, napredak slušanja, preuzete epizode i podešavanja, uključujući podatke u iCloudu koji se sinhronizuju sa ostalim uređajima. Obriši podatke na svim uređajima pre nego što ponovo pokreneš aplikaciju na bilo kom od njih. U suprotnom, uređaj na kom su podaci ostali može ih ponovo poslati u iCloud.")
         }
         .alert("Obrisano", isPresented: Binding(get: { eraseReport != nil },
                                                set: { if !$0 { eraseReport = nil } })) {
@@ -191,10 +191,10 @@ struct SettingsView: View {
     private var networkSection: some View {
         Section {
             Toggle(isOn: settings.downloadsOverWiFiOnlyBinding) {
-                Label("Preuzimanje samo preko WiFi-ja", systemImage: "wifi")
+                Label("Preuzimanje samo preko Wi-Fi mreže", systemImage: "wifi")
             }
         } footer: {
-            Text("Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu.")
+            Text("Ovo podešavanje važi samo za preuzimanje epizoda. Radio uživo i epizode možeš slušati i preko mobilne mreže. Ako želiš da preuzmeš epizodu preko mobilne mreže, aplikacija će tražiti potvrdu.")
         }
     }
 
@@ -204,14 +204,14 @@ struct SettingsView: View {
                 Label("Ne šalji anonimnu statistiku", systemImage: "chart.bar.xaxis")
             }
         } footer: {
-            Text("Aplikacija broji koliko se koja stvar koristi - na primer koliko puta je napravljena zabeleška. Ne šalje se ko si, šta si zabeležio ni šta slušaš, i ništa se ne povezuje sa tobom.")
+            Text("Aplikacija beleži koliko često koristiš pojedine funkcije — na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom.")
         }
     }
 
     private var downloadsSection: some View {
         Section("Preuzeto") {
             HStack {
-                Label("Na telefonu", systemImage: "arrow.down.circle")
+                Label("Na ovom uređaju", systemImage: "arrow.down.circle")
                 Spacer()
                 Text(viewModel.downloadsSummary)
                     .foregroundColor(.secondary)
@@ -332,7 +332,7 @@ struct SettingsView: View {
             Button(role: .destructive) {
                 showEraseConfirmation = true
             } label: {
-                Label("Obriši sve podatke i iCloud", systemImage: "trash.slash")
+                Label("Obriši sve podatke, uključujući iCloud", systemImage: "trash.slash")
             }
             #endif
         }

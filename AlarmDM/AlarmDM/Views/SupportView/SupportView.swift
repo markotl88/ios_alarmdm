@@ -48,7 +48,7 @@ struct SupportView: View {
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Naš rad u potpunosti zavisi od vaših donacija.")
+            Text("Naš rad u potpunosti zavisi od tvojih donacija.")
                 .font(.headline)
                 .foregroundColor(Color("primaryText"))
             Text("Možeš nas podržati na sledeće načine:")
@@ -110,7 +110,7 @@ struct SupportView: View {
         Link(destination: Donation.patreon) {
             donationCard(
                 title: "Patreon",
-                detail: String(localized: "Stalna mesečna ili godišnja donacija"),
+                detail: String(localized: "Redovna mesečna ili godišnja donacija"),
                 systemImage: "heart.circle.fill"
             )
         }
@@ -185,10 +185,10 @@ struct SupportView: View {
                     .accessibilityLabel("Prikaži kôd preko celog ekrana")
 
                     VStack(spacing: 3) {
-                        Label("Klikni na kôd za skeniranje", systemImage: "arrow.up.left.and.arrow.down.right")
+                        Label("Dodirni kôd za uvećani prikaz", systemImage: "arrow.up.left.and.arrow.down.right")
                             .font(.caption.weight(.medium))
                             .foregroundColor(Color("primaryLink"))
-                        Text("Kôd nosi unapred upisan iznos od 500 RSD.")
+                        Text("U kôd je unapred upisan iznos od 500 RSD.")
                             .font(.caption)
                             .multilineTextAlignment(.center)
                             .foregroundColor(Color("secondaryText"))
