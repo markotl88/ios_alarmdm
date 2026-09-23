@@ -93,12 +93,12 @@
         }
       }
     },
-    "Alarm od 8 do 10 h, Varnja od 11 h, dobra muzika non-stop!" : {
+    "Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm from 8 to 10 AM, Varnja from 11 AM, and great music non-stop!"
+            "value" : "Daško and Mlađa Monday through Thursday, 8 to 10 AM. Varnju Monday through Friday, 11 AM to 2 PM. Great music non-stop!"
           }
         }
       }
@@ -1213,12 +1213,12 @@
         }
       }
     },
-    "Svi mi emigranti. Svakog dana od 11 h." : {
+    "Svi mi emigranti. Radnim danima od 11 do 14 h." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "We're all emigrants. Every day from 11 AM."
+            "value" : "We're all emigrants. Monday through Friday, 11 AM to 2 PM."
           }
         }
       }

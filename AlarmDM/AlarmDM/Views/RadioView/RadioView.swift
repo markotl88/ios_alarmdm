@@ -134,7 +134,7 @@ struct RadioView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Internet radio Daško i Mlađa")
                 .font(.headline)
-            Text("Alarm od 8 do 10 h, Varnja od 11 h, dobra muzika non-stop!")
+            Text("Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
