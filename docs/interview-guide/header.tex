@@ -1,0 +1,36 @@
+% Our own chapter numbers live in the headings ("## 5. Conflict resolution..."),
+% so LaTeX must not add a second set on top of them.
+\setcounter{secnumdepth}{-1}
+% Layout and code-block styling for the guide.
+\usepackage{fancyhdr}
+\usepackage{fvextra}
+\usepackage{mdframed}
+\usepackage{xcolor}
+
+% Wrap long code lines instead of letting them run off the page.
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{%
+  commandchars=\\\{\},
+  breaklines, breakanywhere,
+  fontsize=\small}
+
+% A tinted, ruled box around every code block.
+\definecolor{codebg}{HTML}{F6F7F9}
+\definecolor{coderule}{HTML}{D8DCE2}
+\let\oldShaded\Shaded
+\let\endoldShaded\endShaded
+\renewenvironment{Shaded}{%
+  \begin{mdframed}[backgroundcolor=codebg,linecolor=coderule,linewidth=0.4pt,%
+                   innerleftmargin=6pt,innerrightmargin=6pt,%
+                   innertopmargin=5pt,innerbottommargin=5pt,%
+                   skipabove=6pt,skipbelow=6pt]%
+  \oldShaded}{\endoldShaded\end{mdframed}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape Senior iOS Interview Guide}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.2pt}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\raggedbottom
