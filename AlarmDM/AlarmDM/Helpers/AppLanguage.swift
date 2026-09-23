@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import ObjectiveC
 
 /// Which language the app speaks.
 ///
@@ -42,8 +43,34 @@ enum AppLanguage {
         guard !defaults.bool(forKey: Key.defaulted) else { return }
         defaults.set(true, forKey: Key.defaulted)
         defaults.set([serbian, "en"], forKey: Key.languages)
+        speakSerbianForThisLaunch()
 
-        AppLog.write(.library, "language set to \(serbian) for the next launch")
+        AppLog.write(.library, "language set to \(serbian)")
+    }
+
+    /// The line above takes effect at the next launch, and this one is about
+    /// the launch happening now — the first one, where an app in Serbian for a
+    /// Serbian station would otherwise introduce itself in English and only
+    /// get it right the second time anybody opened it.
+    ///
+    /// Every string the app looks up goes through Bundle.main, so Bundle.main
+    /// is given a subclass that looks them up in the Serbian folder instead.
+    /// It is a blunt instrument and it is used exactly once, on the launch
+    /// that writes the default: from the second launch the bundle is Serbian
+    /// on its own, and anyone who later picks English in Settings is never
+    /// touched, because this never runs again.
+    ///
+    /// What it cannot move is the text iOS itself supplies — the share sheet,
+    /// system alerts — which stays in the phone's language for this one
+    /// launch. And if a future iOS stops resolving strings this way, nothing
+    /// breaks: the launch is in the phone's language, exactly as before.
+    private static func speakSerbianForThisLaunch() {
+        guard Bundle.main.preferredLocalizations.first != serbian,
+              let path = Bundle.main.path(forResource: serbian, ofType: "lproj"),
+              let serbianBundle = Bundle(path: path) else { return }
+
+        LanguageBundle.strings = serbianBundle
+        object_setClass(Bundle.main, LanguageBundle.self)
     }
 
     /// What the app is speaking right now, in that language.
@@ -51,5 +78,17 @@ enum AppLanguage {
         let code = Bundle.main.preferredLocalizations.first ?? serbian
         let name = Locale(identifier: code).localizedString(forIdentifier: code) ?? code
         return name.prefix(1).uppercased() + name.dropFirst()
+    }
+}
+
+/// Bundle.main wearing this class answers every lookup from one language's
+/// folder. See AppLanguage.speakSerbianForThisLaunch.
+private final class LanguageBundle: Bundle, @unchecked Sendable {
+
+    static var strings: Bundle?
+
+    override func localizedString(forKey key: String, value: String?, table tableName: String?) -> String {
+        LanguageBundle.strings?.localizedString(forKey: key, value: value, table: tableName)
+            ?? super.localizedString(forKey: key, value: value, table: tableName)
     }
 }
