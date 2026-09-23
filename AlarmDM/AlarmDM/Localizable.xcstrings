@@ -1,6 +1,36 @@
 {
   "sourceLanguage" : "sr-Latn",
   "strings" : {
+    "Zoli" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoli"
+          }
+        }
+      }
+    },
+    "mlađa opet dobar čovek" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mlađa’s being a good guy again"
+          }
+        }
+      }
+    },
+    "daško opet masti" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daško’s exaggerating again"
+          }
+        }
+      }
+    },
     "%lld epizoda" : {
       "localizations" : {
         "en" : {
@@ -377,12 +407,12 @@
         }
       }
     },
-    "Fora" : {
+    "urnebesno smiješno" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Joke"
+            "value" : "Hilarious"
           }
         }
       }

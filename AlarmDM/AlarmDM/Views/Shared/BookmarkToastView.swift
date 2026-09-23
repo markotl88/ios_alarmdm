@@ -48,11 +48,7 @@ struct BookmarkToastView: View {
             header
             noteField
 
-            // Live radio gets no categories: what was caught is a moment on
-            // air, and sorting it can wait for the list.
-            if !bookmark.capturedLive {
-                categories
-            }
+            categories
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -116,30 +112,37 @@ struct BookmarkToastView: View {
     }
 
     private var categories: some View {
-        HStack(spacing: 6) {
-            ForEach(BookmarkCategory.allCases) { category in
-                Button {
-                    onInteract()
-                    saveNote()
-                    onCategory(category)
-                } label: {
-                    VStack(spacing: 3) {
-                        Image(systemName: category.systemImage)
-                            .font(.footnote)
-                        Text(category.title)
-                            .font(.caption2)
+        ScrollView(.horizontal) {
+            HStack(spacing: 6) {
+                ForEach(BookmarkCategory.allCases) { category in
+                    Button {
+                        onInteract()
+                        saveNote()
+                        onCategory(category)
+                    } label: {
+                        VStack(spacing: 3) {
+                            BookmarkCategoryIcon(category: category, size: 24)
+                            Text(category.title)
+                                .font(.caption2)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(width: 112)
+                        .frame(minHeight: 72)
+                        .padding(.vertical, 7)
+                        .background(
+                            RoundedRectangle(cornerRadius: 9)
+                                .fill(Color(.tertiarySystemFill))
+                        )
+                        .foregroundColor(Color("primaryText"))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 7)
-                    .background(
-                        RoundedRectangle(cornerRadius: 9)
-                            .fill(Color(.tertiarySystemFill))
-                    )
-                    .foregroundColor(Color("primaryText"))
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
         }
+        .fixedSize(horizontal: false, vertical: true)
+        .scrollIndicators(.visible)
+        .simultaneousGesture(DragGesture().onChanged { _ in onInteract() })
     }
 
     /// Whatever was typed is kept on the way out, however the toast is closed.
@@ -152,5 +155,27 @@ struct BookmarkToastView: View {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed != bookmark.note else { return }
         onNote(trimmed)
+    }
+}
+
+
+/// Uses the same template artwork in the picker, menus and bookmark rows.
+struct BookmarkCategoryIcon: View {
+    let category: BookmarkCategory
+    var size: CGFloat = 20
+
+    var body: some View {
+        image
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+
+    private var image: Image {
+        if let name = category.assetName {
+            return Image(name).renderingMode(.template)
+        }
+        return Image(systemName: category.systemImage)
     }
 }

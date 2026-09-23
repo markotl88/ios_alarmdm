@@ -73,8 +73,15 @@ struct BookmarksView: View {
                 Button {
                     viewModel.activeCategory = category
                 } label: {
-                    Label(category.title,
-                          systemImage: viewModel.activeCategory == category ? "checkmark" : category.systemImage)
+                    Label {
+                        Text(category.title)
+                    } icon: {
+                        if viewModel.activeCategory == category {
+                            Image(systemName: "checkmark")
+                        } else {
+                            BookmarkCategoryIcon(category: category)
+                        }
+                    }
                 }
             }
         } label: {
@@ -92,8 +99,15 @@ struct BookmarksView: View {
                 // both how you set a category and how you take it back.
                 viewModel.setCategory(bookmark.category == category ? nil : category, for: bookmark)
             } label: {
-                Label(category.title,
-                      systemImage: bookmark.category == category ? "checkmark" : category.systemImage)
+                Label {
+                    Text(category.title)
+                } icon: {
+                    if bookmark.category == category {
+                        Image(systemName: "checkmark")
+                    } else {
+                        BookmarkCategoryIcon(category: category)
+                    }
+                }
             }
         }
     }
@@ -133,7 +147,7 @@ struct BookmarkRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: leadingSymbol)
+            leadingIcon
                 .font(.footnote)
                 .foregroundColor(leadingColor)
                 .frame(width: 26, height: 26)
@@ -181,10 +195,15 @@ struct BookmarkRowView: View {
     /// where it does not - a note for a song, a bookmark for anything else.
     /// Every row used to carry a symbol that said nothing about which of the
     /// two it was.
-    private var leadingSymbol: String {
-        if canPlay { return "play.fill" }
-        if let category = bookmark.category { return category.systemImage }
-        return "bookmark"
+    @ViewBuilder
+    private var leadingIcon: some View {
+        if canPlay {
+            Image(systemName: "play.fill")
+        } else if let category = bookmark.category {
+            BookmarkCategoryIcon(category: category)
+        } else {
+            Image(systemName: "bookmark")
+        }
     }
 
     /// One that has not found its episode is a note and nothing more: tapping

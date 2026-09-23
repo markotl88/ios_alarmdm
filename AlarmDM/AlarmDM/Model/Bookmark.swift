@@ -12,7 +12,10 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
     case film
     case knjiga
     case strip
-    case fora
+    case urnebesnoSmijesno
+    case dasko
+    case mladja
+    case zoli
 
     var id: String { rawValue }
 
@@ -22,7 +25,18 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         case .film:   return String(localized: "Film")
         case .knjiga: return String(localized: "Knjiga")
         case .strip:  return String(localized: "Strip")
-        case .fora:   return String(localized: "Fora")
+        case .urnebesnoSmijesno:   return String(localized: "urnebesno smiješno")
+        case .dasko:  return String(localized: "daško opet masti")
+        case .mladja: return String(localized: "mlađa opet dobar čovek")
+        case .zoli:   return String(localized: "Zoli")
+        }
+    }
+
+    var assetName: String? {
+        switch self {
+        case .dasko: return "bookmark-dasko"
+        case .mladja: return "bookmark-mladja"
+        default: return nil
         }
     }
 
@@ -32,7 +46,9 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         case .film:   return "film"
         case .knjiga: return "book"
         case .strip:  return "books.vertical"
-        case .fora:   return "face.smiling"
+        case .urnebesnoSmijesno:   return "face.smiling"
+        case .dasko, .mladja: return "person.crop.circle"
+        case .zoli:   return "guitars"
         }
     }
 }
