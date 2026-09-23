@@ -18,6 +18,14 @@ struct RadioView: View {
             Section(header: Text("Radio uživo")) {
                 liveCard
                     .listRowInsets(EdgeInsets())
+                    // The whole card, not only the bar along its bottom. The
+                    // card is about one thing and the bar says what that is,
+                    // so anywhere on it means the same press.
+                    .contentShape(Rectangle())
+                    .onTapGesture { toggleLive() }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
             }
 
             // MARK: - Podkasti
@@ -107,7 +115,7 @@ struct RadioView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     liveText
                     Spacer(minLength: 0)
-                    liveButton
+                    liveBar
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 }
                 .padding(20)
@@ -125,7 +133,7 @@ struct RadioView: View {
                 liveText
                     .padding(16)
 
-                liveButton
+                liveBar
             }
         }
     }
@@ -141,23 +149,25 @@ struct RadioView: View {
         }
     }
 
-    private var liveButton: some View {
-        Button {
-            playerViewModel.mode = .radio(stream: viewModel.livestreamUrl)
-            playerViewModel.togglePlayPause()
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
-                Text(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
-                    .font(.headline)
-            }
-            .foregroundColor(.white)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 16)
-            .background(Color("primary"))
+    /// Not a button any more - the card itself is the target. It still says
+    /// what a press will do and which way the radio is currently pointing,
+    /// which is the only reason it was ever a button.
+    private var liveBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
+            Text(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
+                .font(.headline)
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
+        .foregroundColor(.white)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 16)
+        .background(Color("primary"))
+        .accessibilityHidden(true)
+    }
+
+    private func toggleLive() {
+        playerViewModel.mode = .radio(stream: viewModel.livestreamUrl)
+        playerViewModel.togglePlayPause()
     }
 
     /// The filter lives in the toolbar rather than in a bar under the title.

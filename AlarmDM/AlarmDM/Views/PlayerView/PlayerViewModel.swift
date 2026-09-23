@@ -359,16 +359,30 @@ final class PlayerViewModel: ObservableObject {
 
         guard let source = currentSource else { return }
 
-        if source.isSameContent(as: engine.source) {
-            engine.toggle()
-        } else {
-            // A restored episode has never been loaded into the engine, so the
-            // first press is what actually opens it - at the second it was
-            // left on, not at the beginning.
-            engine.play(source, startingAt: restoredPosition)
-        }
-        restoredPosition = nil
+        // Before the engine is touched. Building a player and claiming the
+        // audio session both block, and for a streamed episode that is long
+        // enough to see: the bar used to appear when the file opened rather
+        // than when it was asked for.
         isPresented = true
+
+        guard !source.isSameContent(as: engine.source) else {
+            engine.toggle()
+            restoredPosition = nil
+            return
+        }
+
+        // A restored episode has never been loaded into the engine, so the
+        // first press is what actually opens it - at the second it was left
+        // on, not at the beginning.
+        let position = restoredPosition
+        restoredPosition = nil
+
+        // A runloop later, so the bar is on screen before any of that
+        // blocking happens. Everything the screens read - the title, the
+        // artwork, the position - is already set.
+        DispatchQueue.main.async { [engine] in
+            engine.play(source, startingAt: position)
+        }
     }
 
     /// What tapping a row means. The episode that is playing takes you to the
@@ -425,8 +439,12 @@ final class PlayerViewModel: ObservableObject {
         // Shown straight away rather than after the seek lands, so the
         // scrubber never blinks through zero on the way to the bookmark.
         currentTime = max(0, position)
-        engine.play(source, startingAt: position)
         isPresented = true
+        // A runloop later, for the reason in togglePlayPause: opening a file
+        // blocks, and the bar should be there before it does.
+        DispatchQueue.main.async { [engine] in
+            engine.play(source, startingAt: position)
+        }
     }
 
     func seek(to time: TimeInterval) {

@@ -52,6 +52,7 @@ final class PlayerStateTests: XCTestCase {
 
         player.mode = .podcast(podcast: alarm)
         player.togglePlayPause()
+        flush()
         engine.advance(to: 600)
         flush()
 
@@ -73,10 +74,12 @@ final class PlayerStateTests: XCTestCase {
 
         player.mode = .podcast(podcast: alarm)
         player.togglePlayPause()
+        flush()
         engine.advance(to: 600)
         flush()
 
         player.togglePlayPause()
+        flush()
 
         // What the lists do after progress is recorded: hand the player a
         // freshly read row, which now carries the position.
@@ -87,6 +90,7 @@ final class PlayerStateTests: XCTestCase {
         player.mode = .podcast(podcast: refreshed)
 
         player.togglePlayPause()
+        flush()
 
         XCTAssertEqual(engine.playCalls.count, 1, "the episode was loaded a second time")
         XCTAssertEqual(player.currentTime, 600, accuracy: 1)
@@ -106,6 +110,7 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 597, accuracy: 0.5)
 
         player.togglePlayPause()
+        flush()
         XCTAssertEqual(engine.lastPlayPosition ?? -1, 597, accuracy: 0.5)
     }
 
@@ -120,6 +125,7 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 0)
 
         player.togglePlayPause()
+        flush()
         XCTAssertNil(engine.lastPlayPosition)
     }
 
@@ -129,6 +135,7 @@ final class PlayerStateTests: XCTestCase {
 
         let player = makePlayer()
         player.play(heard, startingAt: 120)
+        flush()
 
         XCTAssertEqual(engine.lastPlayPosition ?? -1, 120, accuracy: 0.5)
     }
@@ -148,6 +155,7 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 4_000, accuracy: 0.5)
 
         player.togglePlayPause()
+        flush()
         XCTAssertEqual(engine.lastPlayPosition ?? -1, 4_000, accuracy: 0.5)
     }
 
@@ -190,6 +198,7 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 1_797, accuracy: 0.5)
 
         player.togglePlayPause()
+        flush()
         XCTAssertEqual(engine.lastPlayPosition ?? -1, 1_797, accuracy: 0.5)
     }
 
@@ -261,6 +270,7 @@ final class PlayerStateTests: XCTestCase {
         let player = makePlayer()
         player.mode = .podcast(podcast: alarm)
         player.togglePlayPause()
+        flush()
         engine.advance(to: 3_000)
         flush()
         engine.stopPlaying()
