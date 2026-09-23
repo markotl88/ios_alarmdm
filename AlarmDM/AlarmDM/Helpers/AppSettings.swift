@@ -24,7 +24,7 @@ final class AppSettings: ObservableObject {
     }
 
     /// On by default. An hour of radio is a few megabytes; a back catalogue of
-    /// episodes on a metered plan is real money — and the person who finds out
+    /// episodes on a metered plan is real money - and the person who finds out
     /// afterwards is the one who paid for it. `object(forKey:)` rather than
     /// `bool(forKey:)`: an unset key has to read as true, not as false.
     var downloadsOverWiFiOnly: Bool {

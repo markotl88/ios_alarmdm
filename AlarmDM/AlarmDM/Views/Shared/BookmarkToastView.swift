@@ -103,7 +103,7 @@ struct BookmarkToastView: View {
             .onSubmit(finish)
             .onAppear {
                 // A live capture with nothing announced has no content of its
-                // own — no position in an episode, no song title. Whatever gets
+                // own - no position in an episode, no song title. Whatever gets
                 // typed here is the only thing that row will ever say, so the
                 // field asks for it instead of waiting to be noticed.
                 guard asksForNote, bookmark.capturedLive, bookmark.note.isEmpty else { return }

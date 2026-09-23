@@ -144,7 +144,7 @@ struct FullscreenPlayerView: View {
     }
 
     /// Wide enough to read a title across, never wider than the artwork it
-    /// stands beside — two columns of different widths read as one column and
+    /// stands beside - two columns of different widths read as one column and
     /// a leftover.
     private func columnWidth(for size: CGSize, artwork: CGFloat) -> CGFloat {
         let available = size.width - artwork - 44 - 96
@@ -195,7 +195,7 @@ struct FullscreenPlayerView: View {
     }
 
     /// The badge, and under it whatever the station says is playing. The label
-    /// only appears when the stream actually announces a track — an empty line
+    /// only appears when the stream actually announces a track - an empty line
     /// reserved "just in case" would push the layout around every time radio
     /// starts.
     ///
@@ -285,7 +285,7 @@ struct FullscreenPlayerView: View {
         .foregroundColor(Color("primaryText"))
     }
 
-    /// Icon-only, evenly sized: favourite, download, output — and the bookmark
+    /// Icon-only, evenly sized: favourite, download, output - and the bookmark
     /// button will join them. Labels under every one would crowd the screen and
     /// say what the glyphs already say. Live radio has nothing to favourite or
     /// download, so only the output picker remains.
@@ -407,7 +407,7 @@ private struct PlayerActionButton<Content: View>: View {
 // MARK: - Output picker
 
 /// AVRoutePickerView has no SwiftUI equivalent. Volume stays on the hardware
-/// buttons — a slider here would only duplicate them and steal room.
+/// buttons - a slider here would only duplicate them and steal room.
 struct RoutePickerView: UIViewRepresentable {
     let tintColor: UIColor
     let activeTintColor: UIColor
@@ -430,8 +430,8 @@ struct RoutePickerView: UIViewRepresentable {
 
 /// Plain @State bound straight to the Slider, on purpose.
 ///
-/// It used to be a computed Binding — `scrubTime ?? currentTime` to read, the
-/// dragged value into `scrubTime` to write — and after one drag the slider
+/// It used to be a computed Binding - `scrubTime ?? currentTime` to read, the
+/// dragged value into `scrubTime` to write - and after one drag the slider
 /// stopped following playback until the player was minimised, which is when
 /// that state was destroyed. So something wrote the dragged value back after
 /// the gesture handler had cleared it. With no setter of our own there is

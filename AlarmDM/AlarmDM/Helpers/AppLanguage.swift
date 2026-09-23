@@ -2,7 +2,7 @@
 //  AppLanguage.swift
 //  AlarmDM
 //
-//  Serbian unless the person says otherwise — whatever the phone is set to.
+//  Serbian unless the person says otherwise - whatever the phone is set to.
 //
 
 import Foundation
@@ -11,7 +11,7 @@ import Foundation
 ///
 /// iOS picks from the phone's preferred languages, and almost every phone
 /// lists English somewhere. So an app written in Serbian, for a Serbian radio
-/// station, opened in Serbia, came up in English — an answer nobody asked
+/// station, opened in Serbia, came up in English - an answer nobody asked
 /// for, since the episodes, the shows and the station are all Serbian anyway.
 /// English is here for the rare person who wants it, not as the default for
 /// everyone whose phone happens to be set up in US English.
@@ -19,7 +19,7 @@ import Foundation
 /// The way to say so is the one iOS uses itself: the per-app language lives in
 /// the app's own defaults under `AppleLanguages`, and the Language row in
 /// Settings reads and writes exactly that. Writing it once, on the first
-/// launch, is the same as the person having chosen Serbian there — and their
+/// launch, is the same as the person having chosen Serbian there - and their
 /// own choice afterwards is never touched again.
 enum AppLanguage {
 

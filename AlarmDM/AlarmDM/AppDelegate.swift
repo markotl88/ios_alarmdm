@@ -9,7 +9,7 @@ import AVFoundation
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // The Mac has no audio session to claim — the system mixes
+        // The Mac has no audio session to claim - the system mixes
         // applications on its own, and AVAudioSession does not exist there.
         #if !targetEnvironment(macCatalyst)
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
@@ -19,7 +19,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Here and not in a view: when the car starts the app there is no
         // phone window at all, and the listen still has to be written down.
         // Before anything is drawn, and it takes effect from the next launch
-        // — see AppLanguage.
+        // - see AppLanguage.
         AppLanguage.applyDefaultOnFirstLaunch()
 
         ListeningRecorder.shared.start()

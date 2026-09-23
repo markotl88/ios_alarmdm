@@ -2,7 +2,7 @@
 //  SupportView.swift
 //  AlarmDM
 //
-//  The Podrži tab. Donations are handled outside the app — the buttons open
+//  The Podrži tab. Donations are handled outside the app - the buttons open
 //  Patreon and PayPal in the browser, and the bank details can be copied or
 //  scanned. Nothing here unlocks anything in the app, which is what keeps it
 //  out of in-app purchase territory.

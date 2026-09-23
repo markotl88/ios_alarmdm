@@ -24,13 +24,13 @@ struct RootView: View {
     }
 
     /// The WiFi-only warning lives here rather than in each list, so the same
-    /// alert answers a blocked download wherever it was started — a row, the
+    /// alert answers a blocked download wherever it was started - a row, the
     /// player, either tab.
     @State private var blockedEpisode: Podcast?
     @State private var showsMeteredAlert = false
 
     /// The bookmark confirmation lives here too, so it shows wherever the
-    /// capture came from — the player, and later the car.
+    /// capture came from - the player, and later the car.
     @State private var capturedBookmark: Bookmark?
     @State private var capturedFromPhone = true
     /// Set the moment the toast is touched. Typing a note takes longer than
@@ -117,7 +117,7 @@ struct RootView: View {
         .onAppear { playerViewModel.restorePlaybackState() }
         .onChange(of: scenePhase) { _, phase in
             // Coming back is the moment something may have arrived from
-            // another device — the import often lands while the app was away,
+            // another device - the import often lands while the app was away,
             // and nothing else would notice until the next launch. Leaving is
             // ListeningRecorder's, which hears it whether or not this window
             // exists.
@@ -133,7 +133,7 @@ struct RootView: View {
 
     /// Two shapes for the same four screens. A phone gets the tab bar along
     /// the bottom; anything wider gets them down the side, where an iPad and a
-    /// Mac both expect to find navigation — and where the empty half of a wide
+    /// Mac both expect to find navigation - and where the empty half of a wide
     /// window turns into something useful rather than a margin.
     @ViewBuilder
     private var shell: some View {
@@ -154,8 +154,8 @@ struct RootView: View {
         }
         .navigationSplitViewStyle(.balanced)
         // Across the whole window, under the sidebar as well. What is playing
-        // does not belong to the section you happen to be looking at — it
-        // keeps playing while you move between all four — so the bar anchors
+        // does not belong to the section you happen to be looking at - it
+        // keeps playing while you move between all four - so the bar anchors
         // the window rather than one column of it. As a safe area inset rather
         // than an overlay, so the list above it scrolls to its own end instead
         // of underneath.

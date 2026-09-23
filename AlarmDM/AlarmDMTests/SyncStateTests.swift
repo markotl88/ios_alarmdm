@@ -115,7 +115,7 @@ final class SyncMergeTests: XCTestCase {
         XCTAssertEqual(row?.playedPosition, 100)
     }
 
-    /// "Carry on" is the newest listen that is not finished — a finished one
+    /// "Carry on" is the newest listen that is not finished - a finished one
     /// written afterwards does not push it out.
     func testCarryOnSkipsWhatWasFinished() {
         let other = makeEpisode(title: "Emigracija")
@@ -158,7 +158,7 @@ final class SyncMergeTests: XCTestCase {
 /// These used to claim more than they showed. The first was meant to prove
 /// that re-reading the store before a decision is what makes an arrived
 /// position visible; it passes just the same with the re-read taken out,
-/// because the repository keeps no rows between reads — it fetches every
+/// because the repository keeps no rows between reads - it fetches every
 /// time and hands out copies. So it is now a test of that: whatever the
 /// repository reads, it reads fresh. It will fail the day something starts
 /// holding on to rows, which is the day the re-read starts to matter.

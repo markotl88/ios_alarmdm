@@ -16,11 +16,11 @@ enum AppConstants {
 }
 
 extension UUID {
-    /// A UUID derived deterministically from a stable string — the episode's media URL.
+    /// A UUID derived deterministically from a stable string - the episode's media URL.
     ///
     /// The API has no UUIDs, and `Podcast` previously generated a fresh one on every
     /// decode. Since that UUID was the episode's primary key, each refresh inserted
-    /// the same episode again instead of updating it — and nothing written against one
+    /// the same episode again instead of updating it - and nothing written against one
     /// of those ids could ever be found again. Deriving the id from the feed keeps one
     /// row per episode across refreshes, across launches, and across devices.
     static func stable(from string: String) -> UUID {

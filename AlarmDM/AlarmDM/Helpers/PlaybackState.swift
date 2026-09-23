@@ -67,7 +67,7 @@ final class PlaybackStateStore {
 
     /// When the player was last closed on this device. Closing it says there
     /// is nothing to come back to, and a listen from another device that is
-    /// older than that must not bring it back — only one that happened after.
+    /// older than that must not bring it back - only one that happened after.
     var clearedAt: Date? {
         defaults.object(forKey: Key.clearedAt) as? Date
     }

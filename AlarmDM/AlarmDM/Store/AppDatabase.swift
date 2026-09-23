@@ -18,15 +18,15 @@ final class AppDatabase {
     let container: ModelContainer
 
     /// True when the store could not be opened and the app is running against
-    /// memory. Nothing is lost that matters — every episode comes back from
-    /// the API — but favourites and downloads will not survive the session,
+    /// memory. Nothing is lost that matters - every episode comes back from
+    /// the API - but favourites and downloads will not survive the session,
     /// and the repository should say so rather than pretend.
     private(set) var isEphemeral = false
 
     /// Deliberately not `container.mainContext`, which is @MainActor and would
     /// drag the annotation through the repository and everything that calls it.
     /// A context of our own is nonisolated, and this one is only ever touched
-    /// from the main thread anyway — every write reaches it from a network
+    /// from the main thread anyway - every write reaches it from a network
     /// completion that already hopped there.
     ///
     /// The trade is autosave: a hand-made context does not save on its own, so
@@ -34,7 +34,7 @@ final class AppDatabase {
     /// suits this code, which has always written in explicit transactions.
     private(set) var context: ModelContext
 
-    /// Fires when the store changed underneath us — which, now that half of
+    /// Fires when the store changed underneath us - which, now that half of
     /// it syncs, means another device wrote something. Screens hold snapshots
     /// they took when they appeared, so without this a bookmark made on the
     /// Mac sits in the database while the phone shows the old list and looks
@@ -47,7 +47,7 @@ final class AppDatabase {
 
     /// The iCloud container these devices share. One for both bundle ids, so
     /// a debug build on the phone and a release build on the Mac are looking
-    /// at the same records — which is the only way to watch syncing work.
+    /// at the same records - which is the only way to watch syncing work.
     static let cloudContainer = "iCloud.com.msorg.daskoimladja"
 
     /// What a person made: bookmarks, favourites, how far they got. Small,
@@ -56,14 +56,14 @@ final class AppDatabase {
         [BookmarkEntity.self, EpisodeStateEntity.self]
 
     /// What this device happens to hold: the feed cache and the downloaded
-    /// files. Both are reproducible — one from the API, the other from the
-    /// network — and a file path is a fact about one machine anyway.
+    /// files. Both are reproducible - one from the API, the other from the
+    /// network - and a file path is a fact about one machine anyway.
     static let localModels: [any PersistentModel.Type] =
         [PodcastEntity.self, DownloadEntity.self]
 
     /// `inMemory` is for tests, which want a store that starts empty and
     /// leaves nothing behind. `storeDirectory` is for the tests that need the
-    /// store to be a file two containers can open at once — which is what an
+    /// store to be a file two containers can open at once - which is what an
     /// import from iCloud looks like from inside the app: something else
     /// writing to the same store. Either one turns syncing off: a test has no
     /// business reaching iCloud.
@@ -78,7 +78,7 @@ final class AppDatabase {
                 configurations: AppDatabase.configurations(inMemory: inMemory, syncing: syncing, directory: storeDirectory)
             )
         } catch {
-            // Most often this is iCloud refusing the schema — a model that
+            // Most often this is iCloud refusing the schema - a model that
             // breaks one of CloudKit's rules, or an entitlement missing on a
             // build. Losing the whole database over that would be absurd when
             // the same store opens perfectly well unsynced, so try again
@@ -94,7 +94,7 @@ final class AppDatabase {
                 AppLog.write(.sync, "SwiftData store unavailable, running in memory: \(error.localizedDescription)")
                 isEphemeral = true
                 // If even an in-memory container cannot be built, the schema
-                // itself is wrong — a programmer error, not a runtime
+                // itself is wrong - a programmer error, not a runtime
                 // condition, and there is nothing sensible left to fall back
                 // to.
                 container = try! ModelContainer(
@@ -122,7 +122,7 @@ final class AppDatabase {
     /// private database, every export succeeds, and every import brings back
     /// only what that account already had. The user record id is the same
     /// string on two devices signed in to the same account, and a different
-    /// one otherwise — which makes it the one line that settles it.
+    /// one otherwise - which makes it the one line that settles it.
     private func describeAccount() {
         let container = CKContainer(identifier: AppDatabase.cloudContainer)
 
@@ -136,17 +136,17 @@ final class AppDatabase {
             case .temporarilyUnavailable: name = "temporarily unavailable"
             @unknown default: name = "unknown"
             }
-            AppLog.write(.sync, "icloud account: \(name)\(error.map { " — \($0.localizedDescription)" } ?? "")")
+            AppLog.write(.sync, "icloud account: \(name)\(error.map { " - \($0.localizedDescription)" } ?? "")")
         }
 
         container.fetchUserRecordID { id, error in
-            AppLog.write(.sync, "icloud user: \(id?.recordName ?? "none")\(error.map { " — \($0.localizedDescription)" } ?? "")")
+            AppLog.write(.sync, "icloud user: \(id?.recordName ?? "none")\(error.map { " - \($0.localizedDescription)" } ?? "")")
         }
     }
     #endif
 
     #if DEBUG
-    /// Everything this app has ever stored, gone — the rows on this device and
+    /// Everything this app has ever stored, gone - the rows on this device and
     /// the zone in iCloud that would otherwise put them back.
     ///
     /// Deleting the app is not enough and never was. The synced half lives in
@@ -189,7 +189,7 @@ final class AppDatabase {
         }
 
         adoptStoreChanges()
-        AppLog.write(.sync, "erased everything — \(report.joined(separator: "; "))")
+        AppLog.write(.sync, "erased everything - \(report.joined(separator: "; "))")
         return report
     }
     #endif
@@ -202,11 +202,11 @@ final class AppDatabase {
     /// remember only its own state. StoreChangeTests says otherwise: the
     /// repository hands out copies and fetches on every read, so nothing it
     /// read earlier is still held, and a second writer's change is seen
-    /// without this. What was actually wrong then was upstream — the other
+    /// without this. What was actually wrong then was upstream - the other
     /// device's row had not arrived at all.
     ///
-    /// It stays because it costs nothing — a context holds no data until
-    /// something is fetched through it — and because it keeps that true if
+    /// It stays because it costs nothing - a context holds no data until
+    /// something is fetched through it - and because it keeps that true if
     /// something ever does start holding on to rows.
     func adoptStoreChanges() {
         context = ModelContext(container)
@@ -294,8 +294,8 @@ final class AppDatabase {
         return [local, synced]
     }
 
-    /// The synced half exactly as the app opens it — same models, same iCloud
-    /// container — at a place of the caller's choosing. For the test that
+    /// The synced half exactly as the app opens it - same models, same iCloud
+    /// container - at a place of the caller's choosing. For the test that
     /// asks whether iCloud will accept the schema, which is a question only
     /// opening the store answers.
     static func syncedConfiguration(at url: URL) -> ModelConfiguration {

@@ -113,7 +113,11 @@
         }
       }
     },
+    "Aplikacija beleži koliko često koristiš pojedine funkcije - na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom." : {
+
+    },
     "Aplikacija beleži koliko često koristiš pojedine funkcije — na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -193,12 +197,29 @@
         }
       }
     },
-    "DIY punk radio emisija iz Novog Sada." : {
+    "carplay.bookmarked" : {
+      "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DIY punk radio podcast show from Novi Sad."
+            "value" : "Bookmarked"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zabeleženo"
+          }
+        }
+      }
+    },
+    "Četvrtkom o važnim temama." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Important topics, on Thursdays."
           }
         }
       }
@@ -229,6 +250,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Daško and his guests."
+          }
+        }
+      }
+    },
+    "DIY punk radio emisija iz Novog Sada." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DIY punk radio podcast show from Novi Sad."
           }
         }
       }
@@ -319,6 +350,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Filter"
+          }
+        }
+      }
+    },
+    "filter.favourites" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Favorites"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Omiljeno"
           }
         }
       }
@@ -423,16 +471,6 @@
         }
       }
     },
-    "Jovana, Boris i Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
-          }
-        }
-      }
-    },
     "Još %lld h" : {
       "localizations" : {
         "en" : {
@@ -479,6 +517,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "No bookmarks yet."
+          }
+        }
+      }
+    },
+    "Jovana, Boris i Tatjana o društveno-političkim dešavanjima. Petkom u 18:05." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
           }
         }
       }
@@ -563,22 +611,22 @@
         }
       }
     },
-    "Nastavi" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue"
-          }
-        }
-      }
-    },
     "Naš rad u potpunosti zavisi od tvojih donacija." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Our work depends entirely on your donations."
+          }
+        }
+      }
+    },
+    "Nastavi" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Continue"
           }
         }
       }
@@ -683,22 +731,22 @@
         }
       }
     },
-    "O nama" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About us"
-          }
-        }
-      }
-    },
     "O čemu se radi?" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "What's it about?"
+          }
+        }
+      }
+    },
+    "O nama" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "About us"
           }
         }
       }
@@ -793,22 +841,22 @@
         }
       }
     },
-    "Od Subotice do Surdulice, pregled aktuelnosti domaćeg sporta." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "From Subotica to Surdulica, a round-up of sport at home."
-          }
-        }
-      }
-    },
     "Od ponedeljka do četvrtka, od 8 do 10 h." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Monday to Thursday, 8 to 10 am."
+          }
+        }
+      }
+    },
+    "Od Subotice do Surdulice, pregled aktuelnosti domaćeg sporta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From Subotica to Surdulica, a round-up of sport at home."
           }
         }
       }
@@ -973,22 +1021,22 @@
         }
       }
     },
-    "Pošalji SMS" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Send a text"
-          }
-        }
-      }
-    },
     "Pošalji log na mejl" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Email the log"
+          }
+        }
+      }
+    },
+    "Pošalji SMS" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Send a text"
           }
         }
       }
@@ -1223,6 +1271,23 @@
         }
       }
     },
+    "show.other" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Other"
+          }
+        },
+        "sr-Latn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostalo"
+          }
+        }
+      }
+    },
     "Strip" : {
       "localizations" : {
         "en" : {
@@ -1273,6 +1338,26 @@
         }
       }
     },
+    "Učitavanje epizoda…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading episodes…"
+          }
+        }
+      }
+    },
+    "Učitavanje…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Loading…"
+          }
+        }
+      }
+    },
     "Ukloni" : {
       "localizations" : {
         "en" : {
@@ -1303,22 +1388,12 @@
         }
       }
     },
-    "Učitavanje epizoda…" : {
+    "Uživo" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Loading episodes…"
-          }
-        }
-      }
-    },
-    "Učitavanje…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Loading…"
+            "value" : "Live"
           }
         }
       }
@@ -1339,16 +1414,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "LIVE · %@"
-          }
-        }
-      }
-    },
-    "Uživo" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Live"
           }
         }
       }
@@ -1429,67 +1494,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
-          }
-        }
-      }
-    },
-    "carplay.bookmarked" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bookmarked"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zabeleženo"
-          }
-        }
-      }
-    },
-    "filter.favourites" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Favorites"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Omiljeno"
-          }
-        }
-      }
-    },
-    "show.other" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Other"
-          }
-        },
-        "sr-Latn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ostalo"
-          }
-        }
-      }
-    },
-    "Četvrtkom o važnim temama." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Important topics, on Thursdays."
           }
         }
       }

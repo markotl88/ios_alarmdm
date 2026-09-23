@@ -26,12 +26,12 @@ final class EpisodeLibrary: ProgressRecording {
     /// Fires whenever an episode's local state changes. Lists hold snapshots
     /// taken from the store when they appeared, so without this a download made
     /// from the player leaves every visible row still claiming it is not
-    /// downloaded — and the Preuzeto filter cannot see it.
+    /// downloaded - and the Preuzeto filter cannot see it.
     let didChange = PassthroughSubject<Void, Never>()
 
     /// Fires when the WiFi-only rule stopped a download, so the UI can offer to
     /// go ahead anyway or to drop the rule. The library refuses rather than
-    /// deciding for the person — it has no way to ask.
+    /// deciding for the person - it has no way to ask.
     let downloadBlocked = PassthroughSubject<Podcast, Never>()
 
     private let repository = PodcastRepository.shared
@@ -76,7 +76,7 @@ final class EpisodeLibrary: ProgressRecording {
     }
 
     /// Downloads an episode and records the local file. `didChange` fires when
-    /// the download starts and when it ends — never per tick, so a list is not
+    /// the download starts and when it ends - never per tick, so a list is not
     /// rebuilt sixty times a minute; progress goes out on `progressPublisher`
     /// instead. On a metered connection this refuses and emits `downloadBlocked`
     /// unless `force` says the person has already chosen.
@@ -131,7 +131,7 @@ final class EpisodeLibrary: ProgressRecording {
         return true
     }
 
-    /// Called by whoever wrote to the store outside this type — the player,
+    /// Called by whoever wrote to the store outside this type - the player,
     /// after a download finishes.
     func episodeDidChange() {
         didChange.send()

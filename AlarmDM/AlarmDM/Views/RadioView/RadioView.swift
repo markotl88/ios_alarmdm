@@ -162,7 +162,7 @@ struct RadioView: View {
 
     /// The filter lives in the toolbar rather than in a bar under the title.
     /// Chips here would sit directly below the navigation bar once the card
-    /// scrolls away — two stacked bars saying the same thing.
+    /// scrolls away - two stacked bars saying the same thing.
     private var filterMenu: some View {
         Menu {
             Picker("Filter", selection: filterBinding) {

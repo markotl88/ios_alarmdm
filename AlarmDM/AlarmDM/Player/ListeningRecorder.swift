@@ -16,22 +16,22 @@ import UIKit
 ///
 /// This used to be the player screen's job, and the player screen does not
 /// always exist. When the car starts the app, iOS brings up the CarPlay scene
-/// and nothing else — no phone window, no view model — and every listen in
+/// and nothing else - no phone window, no view model - and every listen in
 /// the car went unrecorded. Pulling the cable paused the audio correctly and
 /// nobody wrote the pause down, so the next start went back to wherever the
 /// phone had last been paused by hand. The engine exists whichever way the
 /// app was started, and so does this.
 ///
 /// Only what the engine has actually played is ever written. An episode
-/// merely shown in the player — restored at launch, or followed from another
-/// device — has not been listened to here, and writing it down would date it
+/// merely shown in the player - restored at launch, or followed from another
+/// device - has not been listened to here, and writing it down would date it
 /// now and send the other device chasing it.
 final class ListeningRecorder {
 
     static let shared = ListeningRecorder()
 
     /// While playing, a write at least this often. Pausing and leaving are
-    /// caught as they happen; this is for what is not — the app ended by the
+    /// caught as they happen; this is for what is not - the app ended by the
     /// system mid-listen, or a crash, which otherwise lose the whole listen.
     static let interval: TimeInterval = 60
 
@@ -66,7 +66,7 @@ final class ListeningRecorder {
     ///
     /// Subscribed without hopping queues on purpose. The engine publishes on
     /// the main thread already, and a write has to land before whatever the
-    /// caller does next — closing the player writes down the stop and then
+    /// caller does next - closing the player writes down the stop and then
     /// clears what to reopen, and a write delivered a runloop later would
     /// undo the clearing.
     func start() {
@@ -102,8 +102,8 @@ final class ListeningRecorder {
         let next: Podcast?
         if case .podcast(let podcast) = source { next = podcast } else { next = nil }
 
-        // The same episode handed over again — rebuilt after an interruption,
-        // or a refreshed copy — is not a change of episode.
+        // The same episode handed over again - rebuilt after an interruption,
+        // or a refreshed copy - is not a change of episode.
         if let next, next.id == episode?.id {
             episode = next
             return
@@ -134,7 +134,7 @@ final class ListeningRecorder {
     private func write(_ reason: String) {
         guard let episode, let position, position > 0 else { return }
 
-        // Nothing moved since the last write — paused, and then the app went
+        // Nothing moved since the last write - paused, and then the app went
         // to the background, or the player was closed. Writing again would
         // only change the date, and the date is what decides which device
         // listened last: a phone paused at 58 minutes and put away an hour
@@ -152,7 +152,7 @@ final class ListeningRecorder {
         minuteMark = position
 
         #if DEBUG
-        AppLog.write(.player, "recorded \(Int(position))s (\(reason)) — \(episode.title)")
+        AppLog.write(.player, "recorded \(Int(position))s (\(reason)) - \(episode.title)")
         #endif
     }
 }

@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-/// The episode list filters. Only ever shown inside a single show — the Radio
+/// The episode list filters. Only ever shown inside a single show - the Radio
 /// tab is a short "what is new" list where filtering would be noise.
 enum EpisodeFilter: String, CaseIterable, Identifiable {
     case withMusic

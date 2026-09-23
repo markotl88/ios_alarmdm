@@ -64,7 +64,7 @@ final class RadioViewModel: ObservableObject {
         showsWithBothVariants.contains(podcast.show)
     }
 
-    /// Across shows, "with music" says little — each show does its own thing.
+    /// Across shows, "with music" says little - each show does its own thing.
     /// Only the two that mean the same everywhere are offered here.
     let availableFilters: [EpisodeFilter] = [.downloaded, .favourites]
 

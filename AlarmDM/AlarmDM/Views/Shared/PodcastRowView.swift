@@ -16,7 +16,7 @@ struct PodcastRowView: View {
     var showsMusicVariant: Bool = false
     var isDownloading: Bool = false
     /// The episode the player is holding, and whether it is running. Only for
-    /// drawing the glyph below — the row does not decide anything about
+    /// drawing the glyph below - the row does not decide anything about
     /// playback.
     var isCurrent: Bool = false
     var isPlaying: Bool = false
@@ -106,7 +106,7 @@ struct PodcastRowView: View {
         }
         .padding(.vertical, 6)
         // Translucent rather than a colour of its own, so it tints whatever
-        // the list is drawing underneath — the Radio tab's grouped cards and
+        // the list is drawing underneath - the Radio tab's grouped cards and
         // the episode list's plain rows both come out right without either
         // screen having to say anything.
         .background(
@@ -161,7 +161,7 @@ struct ListeningProgressLine: View {
 
 /// A ring that fills as the episode downloads. It subscribes to the library's
 /// progress stream and filters for one episode, so a download redraws its own
-/// row and nothing else — the list itself only hears about start and finish.
+/// row and nothing else - the list itself only hears about start and finish.
 struct DownloadProgressRing: View {
     let podcastId: UUID
 

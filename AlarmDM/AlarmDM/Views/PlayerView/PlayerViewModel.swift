@@ -66,7 +66,7 @@ final class PlayerViewModel: ObservableObject {
     /// happened without a dialog interrupting playback.
     @Published private(set) var justBookmarked = false
     @Published var isDownloading: Bool = false
-    /// Download progress, 0...1 — not the playback position, which is `playbackProgress`.
+    /// Download progress, 0...1 - not the playback position, which is `playbackProgress`.
     @Published var progress: Double = 0.0
     @Published var showDeleteButton: Bool = false
     @Published var showCheckmark: Bool = false
@@ -86,7 +86,7 @@ final class PlayerViewModel: ObservableObject {
     /// Read for what to reopen, and cleared when the player is closed.
     /// Written only by ListeningRecorder.
     private let playbackState: PlaybackStateStore
-    /// Where the stored copy of an episode comes from — the one that knows
+    /// Where the stored copy of an episode comes from - the one that knows
     /// about favourites, downloads and how far it has been listened to.
     private let episodes: EpisodeLookup
     /// Where a restored episode should start. Cleared the moment it is used,
@@ -121,7 +121,7 @@ final class PlayerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// Keeps the view model in step with whatever the engine is doing — including
+    /// Keeps the view model in step with whatever the engine is doing - including
     /// playback started from CarPlay or the lock screen.
     private func bindEngine() {
         engine.isPlayingPublisher
@@ -140,7 +140,7 @@ final class PlayerViewModel: ObservableObject {
         // Rounded and de-duplicated: the engine ticks twice a second, and every
         // distinct value re-renders each view observing this object.
         // Both of these ignore the engine while it holds nothing. Subscribing
-        // hands over the current value at once — zero, at launch — and
+        // hands over the current value at once - zero, at launch - and
         // receive(on:) delivers it a runloop later, which lands after the
         // restore has already put the saved time and duration here. Without
         // the guard, coming back to a half finished episode showed 00:00.
@@ -194,7 +194,7 @@ final class PlayerViewModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // The lists can change the episode that is loaded here — favouriting
+        // The lists can change the episode that is loaded here - favouriting
         // from a row should move the heart on the player too, and deleting a
         // download should drop the delete button.
         EpisodeLibrary.shared.didChange
@@ -250,7 +250,7 @@ final class PlayerViewModel: ObservableObject {
 
         if !carriesOn {
             // The episode being left is written down by ListeningRecorder,
-            // when the engine actually moves on — not here, where it may only
+            // when the engine actually moves on - not here, where it may only
             // have been on screen.
             currentTime = 0
         }
@@ -320,8 +320,8 @@ final class PlayerViewModel: ObservableObject {
 
     /// Whether the engine is already playing what this mode points at. By
     /// episode id and by kind, so everything about a row that can change
-    /// without the audio changing — a favourite, a download, how far it has
-    /// been listened to — is ignored.
+    /// without the audio changing - a favourite, a download, how far it has
+    /// been listened to - is ignored.
     private func engineIsAlreadyOn(_ mode: PlayerMode?) -> Bool {
         guard let mode, let loaded = engine.source else { return false }
 
@@ -353,7 +353,7 @@ final class PlayerViewModel: ObservableObject {
     func togglePlayPause() {
         // The freshest thing known about this episode, asked for at the last
         // possible moment. An import from another device can land seconds
-        // after launch — well after the player restored — and this is the
+        // after launch - well after the player restored - and this is the
         // press that decides where the audio actually starts.
         refreshFromStoreIfIdle()
 
@@ -363,7 +363,7 @@ final class PlayerViewModel: ObservableObject {
             engine.toggle()
         } else {
             // A restored episode has never been loaded into the engine, so the
-            // first press is what actually opens it — at the second it was
+            // first press is what actually opens it - at the second it was
             // left on, not at the beginning.
             engine.play(source, startingAt: restoredPosition)
         }
@@ -372,7 +372,7 @@ final class PlayerViewModel: ObservableObject {
     }
 
     /// What tapping a row means. The episode that is playing takes you to the
-    /// player; anything else starts. A row is not a pause button — the same
+    /// player; anything else starts. A row is not a pause button - the same
     /// rule the car list follows, for the same reason: tapping the thing that
     /// is already playing has never meant "stop it".
     func open(_ podcast: Podcast) {
@@ -415,7 +415,7 @@ final class PlayerViewModel: ObservableObject {
         return false
     }
 
-    /// Opens an episode at a given second — what tapping a bookmark does.
+    /// Opens an episode at a given second - what tapping a bookmark does.
     func play(_ podcast: Podcast, startingAt position: TimeInterval) {
         mode = .podcast(podcast: podcast)
         guard let source = currentSource else { return }
@@ -460,7 +460,7 @@ final class PlayerViewModel: ObservableObject {
     /// Puts the player back the way it was found, without making a sound and
     /// without touching the network. Nothing is loaded into the engine: the
     /// mini player reads from here, and the first press is what opens the
-    /// audio — at the right second, because of `restoredPosition`.
+    /// audio - at the right second, because of `restoredPosition`.
     func restorePlaybackState() {
         guard mode == nil, engine.source == nil else { return }
 
@@ -481,8 +481,8 @@ final class PlayerViewModel: ObservableObject {
 
         // Heard through to the end somewhere else since this device last
         // touched it. There is nothing to come back to, and reopening at this
-        // device's old position — minutes before the end of something already
-        // finished — is the wrong answer twice over.
+        // device's old position - minutes before the end of something already
+        // finished - is the wrong answer twice over.
         if finishedElsewhere(podcast) {
             playbackState.clear()
             return
@@ -495,7 +495,7 @@ final class PlayerViewModel: ObservableObject {
         // taking it blindly was correct. Now an episode carried on elsewhere
         // comes back with a later date, and the phone that stopped at
         // fifty-two minutes has to yield to the Mac that got to an hour and
-        // a half — otherwise it reopens at its own position and the sync
+        // a half - otherwise it reopens at its own position and the sync
         // looks broken when it worked.
         let position: TimeInterval
         if let syncedAt = podcast.playedAt, syncedAt > saved.savedAt,
@@ -506,7 +506,7 @@ final class PlayerViewModel: ObservableObject {
         }
 
         #if DEBUG
-        AppLog.write(.player, "restoring \(Int(position))s for \(saved.podcastId) — slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
+        AppLog.write(.player, "restoring \(Int(position))s for \(saved.podcastId) - slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
         #endif
 
         showIdle(podcast, at: position)
@@ -547,7 +547,7 @@ final class PlayerViewModel: ObservableObject {
     /// minutes while the Mac played them.
     private var isIdle: Bool { !isPlaying && !isBuffering }
 
-    /// Whether the engine holds this episode — loaded, playing or paused.
+    /// Whether the engine holds this episode - loaded, playing or paused.
     private func engineHolds(_ id: UUID?) -> Bool {
         guard let id, case .podcast(let loaded) = engine.source else { return false }
         return loaded.id == id
@@ -592,7 +592,7 @@ final class PlayerViewModel: ObservableObject {
 
     /// The episode on screen was finished on another device, and there is
     /// nothing newer to show instead: the player goes away, as it would have
-    /// here. Not on a press of play — see togglePlayPause.
+    /// here. Not on a press of play - see togglePlayPause.
     private func putAwayIfFinishedElsewhere() {
         guard isIdle, !isLive, let podcast, finishedElsewhere(podcast) else { return }
 
@@ -629,7 +629,7 @@ final class PlayerViewModel: ObservableObject {
     /// A position that arrived from another device while this one was already
     /// open. The import can land seconds after launch, well after the player
     /// has restored, and without this the bar sits at the old position until
-    /// the next launch — by which time the same thing happens again.
+    /// the next launch - by which time the same thing happens again.
     ///
     /// Only while nothing plays here; a playing device's own clock is the
     /// truth. Paused is fine: if the episode is loaded, the engine is moved
@@ -678,11 +678,11 @@ final class PlayerViewModel: ObservableObject {
         // `isDownloading` is not set here: the library decides whether the
         // download actually starts, and says so through `didChange`. Setting it
         // optimistically left the ring spinning forever whenever the WiFi-only
-        // rule refused — the one case where nothing ever completes.
+        // rule refused - the one case where nothing ever completes.
         showCheckmark = false
         progress = 0
 
-        // One download path for the whole app — the row's Preuzmi and this
+        // One download path for the whole app - the row's Preuzmi and this
         // button run the same code, so they cannot drift apart or fight over
         // the same episode. The library refreshes `isDownloaded` and the
         // delete button through `didChange`.

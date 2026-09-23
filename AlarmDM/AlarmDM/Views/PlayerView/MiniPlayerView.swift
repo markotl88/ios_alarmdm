@@ -25,7 +25,7 @@ struct MiniPlayerView: View {
 
     // The bar is sized for a thumb on a phone. On a Mac or an iPad it is read
     // from further away and clicked rather than tapped, and it now runs the
-    // whole width of the window — a phone-sized strip across a metre of glass
+    // whole width of the window - a phone-sized strip across a metre of glass
     // looks like something left behind. Everything in it grows together;
     // scaling the bar and not its contents is what makes a control look lost.
 
@@ -88,7 +88,7 @@ struct MiniPlayerView: View {
                 Spacer(minLength: 0)
 
                 // Where it is and how long it runs. Only on a wide window,
-                // where the space is there anyway — on a phone the same two
+                // where the space is there anyway - on a phone the same two
                 // numbers would push the title out of its own bar.
                 if isWide, !playerViewModel.isLive, playerViewModel.duration > 0 {
                     Text(verbatim: "\(ScrubberView.format(playerViewModel.currentTime)) / \(ScrubberView.format(playerViewModel.duration))")

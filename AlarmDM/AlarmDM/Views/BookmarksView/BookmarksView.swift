@@ -175,7 +175,7 @@ struct BookmarkRowView: View {
     }
 
     /// A triangle where a tap plays something, and the category's own symbol
-    /// where it does not — a note for a song, a bookmark for anything else.
+    /// where it does not - a note for a song, a bookmark for anything else.
     /// Every row used to carry a symbol that said nothing about which of the
     /// two it was.
     private var leadingSymbol: String {
@@ -186,7 +186,7 @@ struct BookmarkRowView: View {
 
     /// One that has not found its episode is a note and nothing more: tapping
     /// it plays nothing. It used to be dimmed as a whole, which read as
-    /// disabled — as if the row were broken rather than waiting. A colour of
+    /// disabled - as if the row were broken rather than waiting. A colour of
     /// its own says the same thing without taking the text away, and the
     /// category symbol gives way to the broadcast one so the reason is legible
     /// at a glance.

@@ -35,7 +35,7 @@ final class SettingsViewModel: ObservableObject {
 
     var downloadsSummary: String {
         guard hasDownloads else { return String(localized: "Nema preuzetih epizoda") }
-        // The plural rules live in the string catalog — Serbian has three
+        // The plural rules live in the string catalog - Serbian has three
         // forms, English two, and neither belongs in a switch here.
         let episodes = String(localized: "\(downloadedCount) epizoda")
         return "\(episodes) · \(formattedSize)"
@@ -204,7 +204,7 @@ struct SettingsView: View {
                 Label("Ne šalji anonimnu statistiku", systemImage: "chart.bar.xaxis")
             }
         } footer: {
-            Text("Aplikacija beleži koliko često koristiš pojedine funkcije — na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom.")
+            Text("Aplikacija beleži koliko često koristiš pojedine funkcije - na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom.")
         }
     }
 
@@ -303,7 +303,7 @@ struct SettingsView: View {
             #if DEBUG
             // The whole point of writing the log to a file: getting it off the
             // phone from wherever the thing went wrong, without a cable and
-            // without a Mac. Debug builds only — a shipped app has no business
+            // without a Mac. Debug builds only - a shipped app has no business
             // offering this.
             ShareLink(item: AppLog.fileURL) {
                 externalRow("Izvezi log", systemImage: "square.and.arrow.up")
@@ -347,7 +347,7 @@ struct SettingsView: View {
         return "\(version) (\(build))"
     }
 
-    /// The version and the OS, plus how much log is attached — an empty file
+    /// The version and the OS, plus how much log is attached - an empty file
     /// is worth noticing before reading it rather than after.
     private static var diagnosticsBody: String {
         let sizes = AppLog.exportURLs.map { url -> String in
@@ -419,7 +419,7 @@ struct MailComposeView: UIViewControllerRepresentable {
 
         init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
 
-        /// Sent, saved or cancelled — the sheet closes either way, and a
+        /// Sent, saved or cancelled - the sheet closes either way, and a
         /// failure is the mail app's to report.
         func mailComposeController(_ controller: MFMailComposeViewController,
                                    didFinishWith result: MFMailComposeResult,
@@ -453,7 +453,7 @@ struct WebPageView: View {
 }
 
 /// Locked to one host. The About page carries the site's own navigation and
-/// links out to Facebook, Instagram and YouTube — following those inside the
+/// links out to Facebook, Instagram and YouTube - following those inside the
 /// app would make this a web browser, which is a different app to review and a
 /// higher age rating. Anything off-host opens in Safari instead.
 private struct WebView: UIViewRepresentable {

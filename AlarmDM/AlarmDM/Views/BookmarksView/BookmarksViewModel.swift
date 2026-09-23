@@ -39,7 +39,7 @@ final class BookmarksViewModel: ObservableObject {
         return bookmarks.filter { $0.category == activeCategory }
     }
 
-    /// Only offer the categories that are actually in use — a filter that can
+    /// Only offer the categories that are actually in use - a filter that can
     /// only ever return nothing is a dead end.
     var availableCategories: [BookmarkCategory] {
         let used = Set(bookmarks.compactMap(\.category))

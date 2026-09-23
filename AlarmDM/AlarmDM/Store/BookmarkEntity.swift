@@ -33,7 +33,7 @@ final class BookmarkEntity {
     /// The episode it belongs to, nil for a live capture that has not found
     /// one yet. An id rather than a relationship: bookmarks sync and the
     /// episode cache does not, and a relationship cannot reach across two
-    /// stores. Nothing is lost by it — the title and show are copied here
+    /// stores. Nothing is lost by it - the title and show are copied here
     /// anyway, precisely so a bookmark survives an episode row it cannot see.
     var podcastId: UUID?
 

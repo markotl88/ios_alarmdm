@@ -16,7 +16,7 @@ import Aptabase
 ///
 /// What a person bookmarks lives in their own iCloud database, which is not
 /// readable from here and should not be. So the one question worth asking —
-/// does anyone use the bookmarks at all — can only be answered by the app
+/// does anyone use the bookmarks at all - can only be answered by the app
 /// saying so, and it says so without saying anything about the person: no
 /// identifier, no note, no episode, no position. An event name and, at most,
 /// which button it came from.

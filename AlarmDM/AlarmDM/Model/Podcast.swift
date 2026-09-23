@@ -23,13 +23,13 @@ enum Show: String, CaseIterable, Identifiable {
     case citanjac
     case falis
     /// Bucket for episodes the backend could not classify. Never listed in the
-    /// Shows tab — it exists so an unknown title stops masquerading as Alarm.
+    /// Shows tab - it exists so an unknown title stops masquerading as Alarm.
     case ostalo
 
     var id: String { self.rawValue }
 
     /// The order the Shows tab lists them in, set by hand rather than by
-    /// episode count or recency — it is an editorial decision, not a metric.
+    /// episode count or recency - it is an editorial decision, not a metric.
     static let featured: [Show] = [
         .alarmSaDaskomIMladjom,
         .unutrasnjaEmigracija,
@@ -114,7 +114,7 @@ enum Show: String, CaseIterable, Identifiable {
     /// unreachable, falls back on.
     ///
     /// Zero means unmeasured rather than absent, and an episode then ends at
-    /// its last second — which is how it behaved before any of this.
+    /// its last second - which is how it behaved before any of this.
     var outroSeconds: TimeInterval {
         switch self {
         case .alarmSaDaskomIMladjom, .unutrasnjaEmigracija: return 20
@@ -185,7 +185,7 @@ extension Podcast {
         return show.outroSeconds
     }
 
-    /// Below this, a saved position is not worth returning to — the first
+    /// Below this, a saved position is not worth returning to - the first
     /// seconds of an episode are quicker to hear again than to think about.
     static let resumeFloor: TimeInterval = 20
 
@@ -201,7 +201,7 @@ extension Podcast {
         return max(0, playedPosition - 3)
     }
 
-    /// How far through the show a listen got, as a fraction — for the line
+    /// How far through the show a listen got, as a fraction - for the line
     /// under an episode in a list.
     ///
     /// Nil for an episode that has not been started and for one that is
@@ -216,7 +216,7 @@ extension Podcast {
         return min(max(playedPosition / end, 0.02), 1)
     }
 
-    /// How much show is still in front of you, in words — the text beside the
+    /// How much show is still in front of you, in words - the text beside the
     /// bar in a list. Measured to the end of the show rather than to the end
     /// of the file, so it does not promise twenty seconds of credits.
     ///
@@ -282,7 +282,7 @@ extension Podcast {
 
 extension Podcast {
     init(from response: PodcastResponse) {
-        // Identity comes from the media URL, never from a fresh UUID — see UUID.stable.
+        // Identity comes from the media URL, never from a fresh UUID - see UUID.stable.
         let identitySource = response.id.isEmpty ? response.podcastUrl : response.id
         self.id = .stable(from: identitySource)
         self.title = response.title
@@ -312,7 +312,7 @@ extension Podcast {
     /// Only the cut without music is marked. With music is how the show goes
     /// out, so it is the default everywhere and needs no sign; the cut that
     /// differs from it is the one that has to say so. Two different marks
-    /// never looked like a pair anyway — one was a glyph from the font, the
+    /// never looked like a pair anyway - one was a glyph from the font, the
     /// other a symbol.
     static let withoutMusicSymbol = "music.note.slash"
 }

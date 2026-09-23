@@ -49,7 +49,7 @@ private struct MarqueeWidthKey: PreferenceKey {
     }
 }
 
-/// Scrolls its text only when the text does not fit — a short title stays
+/// Scrolls its text only when the text does not fit - a short title stays
 /// still, which is what most of them do.
 ///
 /// It travels like a chyron rather than a conveyor: out to the end of the
@@ -72,7 +72,7 @@ struct MarqueeText: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// How far past the edge the text runs. Only this much has to move — the
+    /// How far past the edge the text runs. Only this much has to move - the
     /// rest is already on screen.
     private var overflow: CGFloat { max(0, textWidth - containerWidth) }
 
@@ -84,7 +84,7 @@ struct MarqueeText: View {
         // A blank line of the right font is what the layout is built on, and
         // the text rides in an overlay. Overlay content never widens its
         // parent: a long title with .fixedSize() proposes a width far past the
-        // screen, and `clipped()` only hides the drawing — by then the bar, and
+        // screen, and `clipped()` only hides the drawing - by then the bar, and
         // everything around it, has already been stretched.
         Text(verbatim: " ")
             .font(font)

@@ -22,7 +22,7 @@ final class BookmarkRepository {
 
     // MARK: - Reads
 
-    /// Newest first — a bookmark is something you come back to soon after
+    /// Newest first - a bookmark is something you come back to soon after
     /// making it, far more often than months later.
     func all() -> [Bookmark] {
         fetch().map(Bookmark.init(from:))
@@ -40,7 +40,7 @@ final class BookmarkRepository {
     // MARK: - Writes
 
     func add(_ bookmark: Bookmark) {
-        // The episode is named by id, and the title is copied either way — so
+        // The episode is named by id, and the title is copied either way - so
         // a bookmark reads correctly on a device whose cache has never seen
         // the episode, which is now a normal state rather than an edge case.
         context.insert(BookmarkEntity(from: bookmark, podcastId: bookmark.podcastId))
@@ -48,7 +48,7 @@ final class BookmarkRepository {
     }
 
     /// Moves a live capture into the episode it fell inside. The title and
-    /// show are rewritten too — until now they said "Radio uživo", which was
+    /// show are rewritten too - until now they said "Radio uživo", which was
     /// true and is no longer.
     func link(_ id: UUID, to episode: Podcast, position: TimeInterval) {
         guard let entity = entity(with: id) else { return }

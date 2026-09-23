@@ -3,8 +3,8 @@
 //  AlarmDMTests
 //
 //  What the player does when what it is playing changes: which position is
-//  picked up, which one wins when two of them disagree, and — in
-//  ListeningRecorderTests — when a listen is written down at all. Driven by
+//  picked up, which one wins when two of them disagree, and - in
+//  ListeningRecorderTests - when a listen is written down at all. Driven by
 //  a fake engine, so none of it needs AVFoundation, a file, or the network.
 //
 
@@ -45,8 +45,8 @@ final class PlayerStateTests: XCTestCase {
 
     // MARK: - Leaving one episode for another
 
-    /// The same episode arriving again as a refreshed row — a favourite
-    /// toggled, a download finished — is not a swap.
+    /// The same episode arriving again as a refreshed row - a favourite
+    /// toggled, a download finished - is not a swap.
     func testReselectingTheSameEpisodeLeavesPlaybackAlone() {
         let player = makePlayer()
 
@@ -63,8 +63,8 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
-    /// The episode row is rewritten the moment playback pauses — that is when
-    /// progress is written down — so by the time play is pressed again, the
+    /// The episode row is rewritten the moment playback pauses - that is when
+    /// progress is written down - so by the time play is pressed again, the
     /// value the player holds no longer equals the one the engine was given.
     /// Deciding "is this already loaded" by comparing those values answers no,
     /// and the file starts again from the beginning.
@@ -134,7 +134,7 @@ final class PlayerStateTests: XCTestCase {
     }
 
     /// Both are written at the same moments, and the player's own slot is
-    /// written a few seconds later — so it is the one to trust on launch.
+    /// written a few seconds later - so it is the one to trust on launch.
     func testThePlayersOwnSlotBeatsTheEpisodeRecordOnLaunch() {
         var heard = alarm!
         heard.playedPosition = 600
@@ -444,8 +444,8 @@ final class ListeningRecorderTests: XCTestCase {
         XCTAssertTrue(progress.calls.isEmpty)
     }
 
-    /// The same episode handed to the engine again — rebuilt after another
-    /// app took the audio — is not a change of episode, and the reset to
+    /// The same episode handed to the engine again - rebuilt after another
+    /// app took the audio - is not a change of episode, and the reset to
     /// zero while it reopens is not a position.
     func testTheSameEpisodeAgainIsNotASwitch() {
         engine.play(.podcast(alarm), startingAt: nil)
@@ -481,7 +481,7 @@ final class ListeningRecorderTests: XCTestCase {
     }
 
     /// Closing the player stops the engine, and the stop is written before
-    /// the player clears what to reopen — not a runloop later, after it.
+    /// the player clears what to reopen - not a runloop later, after it.
     func testStoppingWritesDownBeforeAnythingIsCleared() {
         engine.play(.podcast(alarm), startingAt: nil)
         engine.advance(to: 700)

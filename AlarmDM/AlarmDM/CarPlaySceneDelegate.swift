@@ -7,7 +7,7 @@
 //  own AVPlayer, so audio never doubles up when the user gets in the car.
 //
 
-// CarPlay does not exist on the Mac, and neither does the framework — the
+// CarPlay does not exist on the Mac, and neither does the framework - the
 // whole file is compiled out there rather than guarded piece by piece.
 #if !targetEnvironment(macCatalyst)
 
@@ -82,7 +82,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     /// A blank CarPlay screen with the audio still playing means the root
-    /// template never landed — the scene is connected and nothing was ever
+    /// template never landed - the scene is connected and nothing was ever
     /// handed to it. It is the one failure here with no visible cause, since
     /// CarPlay says nothing and the app carries on, so the result is asked for
     /// and a failure is tried again rather than left as an empty screen.
@@ -91,7 +91,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         interfaceController.setRootTemplate(template, animated: true) { [weak self] done, error in
             #if DEBUG
-            AppLog.write(.carplay, "carplay root template: \(done ? "shown" : "refused")\(error.map { " — \($0.localizedDescription)" } ?? "")")
+            AppLog.write(.carplay, "carplay root template: \(done ? "shown" : "refused")\(error.map { " - \($0.localizedDescription)" } ?? "")")
             #endif
 
             guard !done, retriesLeft > 0 else { return }
@@ -207,7 +207,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         interfaceController?.pushTemplate(template, animated: true, completion: nil)
     }
 
-    /// One tap plays the episode — no intermediate menu. CarPlay guidelines want
+    /// One tap plays the episode - no intermediate menu. CarPlay guidelines want
     /// the shortest possible path to audio while driving.
     private func listItem(for podcast: Podcast, detail: String? = nil, marksCut: Bool = false) -> CPListItem {
         let detail = detail ?? (podcast.isDownloaded ? String(localized: "Preuzeto · \(podcast.subtitle)") : podcast.subtitle)
@@ -239,7 +239,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
             if case .podcast(let playing) = self.engine.source, playing.id == podcast.id {
                 // Already loaded: carry on rather than open it again, and
-                // never stop it — see openRadio.
+                // never stop it - see openRadio.
                 if !self.engine.isPlaying { self.engine.resume() }
             } else {
                 // Where the app would have started it. The rule lives in the
@@ -266,7 +266,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     // MARK: - Transport
 
     /// A row in a list is not a play/pause button. Tapping the thing that is
-    /// already playing should take you to it — pausing from a list, with a
+    /// already playing should take you to it - pausing from a list, with a
     /// glance and a moving car, is the last thing anyone means by that tap.
     /// Pause is on the Now Playing screen and on the wheel.
     private func openRadio() {
@@ -290,8 +290,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     // MARK: - Bookmarks
 
-    /// It saves on the press. Anything that asks a follow-up question — a
-    /// category, a confirmation — is a menu to read while driving, which is the
+    /// It saves on the press. Anything that asks a follow-up question - a
+    /// category, a confirmation - is a menu to read while driving, which is the
     /// one thing this cannot be.
     ///
     /// Two ways into the same action, because CarPlay only offers one of each.
@@ -370,7 +370,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         }
     }
 
-    /// What the row says it will do, which is no longer "Zaustavi" — it
+    /// What the row says it will do, which is no longer "Zaustavi" - it
     /// stopped being able to stop anything.
     private var radioDetailText: String {
         if case .radio = engine.source {
@@ -394,7 +394,7 @@ extension CarPlaySceneDelegate: CPNowPlayingTemplateObserver {
 private extension UIImage {
 
     /// A bookmark is taller than it is wide, and CarPlay fits button images
-    /// into a square — so the glyph came out stretched. Drawing it centred on
+    /// into a square - so the glyph came out stretched. Drawing it centred on
     /// a square canvas keeps its own proportions and lets the empty space do
     /// the fitting instead.
     static func carPlayButtonSymbol(_ name: String) -> UIImage? {

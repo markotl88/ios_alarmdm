@@ -39,7 +39,7 @@ enum AppLog {
 
     /// The file the phone can hand over. Kept in Documents rather than Caches
     /// because the system is free to delete Caches exactly when it is most
-    /// needed — after a long session with the screen off.
+    /// needed - after a long session with the screen off.
     static var fileURL: URL {
         let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return documents.appendingPathComponent("alarmdm.log")
@@ -63,7 +63,7 @@ enum AppLog {
     private static let queue = DispatchQueue(label: "AppLog", qos: .utility)
 
     /// Half a megabyte is a few hours of everything, and one rotation keeps
-    /// the session before this one — which is often the one that matters.
+    /// the session before this one - which is often the one that matters.
     private static let sizeLimit = 512 * 1024
 
     static func write(_ category: Category, _ message: String) {
