@@ -51,6 +51,11 @@ final class ListeningRecorder {
     /// Where the last write for this episode was.
     private var lastWritten: TimeInterval?
     private var isPlaying = false
+    /// Raised when the position was moved by another device and nobody here
+    /// has listened since. While it is up, nothing is written: what would be
+    /// written is somebody else's listening with this device's name and this
+    /// moment's date on it.
+    private var isAdopted = false
 
     init(engine: PlaybackEngineType = PlaybackEngine.shared,
          progressStore: ProgressRecording = EpisodeLibrary.shared,
@@ -87,6 +92,9 @@ final class ListeningRecorder {
                 guard let self else { return }
                 let wasPlaying = self.isPlaying
                 self.isPlaying = playing
+                // Playing here is what makes the position this device's own
+                // again, whoever set it.
+                if playing { self.isAdopted = false }
                 if wasPlaying && !playing { self.write("paused") }
             }
             .store(in: &cancellables)
@@ -114,6 +122,7 @@ final class ListeningRecorder {
         position = nil
         minuteMark = nil
         lastWritten = nil
+        isAdopted = false
     }
 
     /// A position that arrived from another device, not from anybody here.
@@ -132,6 +141,17 @@ final class ListeningRecorder {
         self.position = position
         lastWritten = position
         minuteMark = position
+        isAdopted = true
+    }
+
+    /// Somebody here dragged the scrubber. That is this device listening -
+    /// or at least deciding - so whatever was adopted is now this device's
+    /// own position, and writing resumes.
+    func noteMovedByHand(to position: TimeInterval) {
+        guard position > 0 else { return }
+        self.position = position
+        minuteMark = position
+        isAdopted = false
     }
 
     private func timeChanged(to time: TimeInterval) {
@@ -151,6 +171,12 @@ final class ListeningRecorder {
 
     private func write(_ reason: String) {
         guard let episode, let position, position > 0 else { return }
+
+        // Moved by another device and not listened to here since. The seek
+        // lands within a second of what was asked for, or does not land at
+        // all, and either way the number that comes back is not a listen -
+        // which is why this is a flag and not a comparison of seconds.
+        guard !isAdopted else { return }
 
         // Nothing moved since the last write - paused, and then the app went
         // to the background, or the player was closed. Writing again would

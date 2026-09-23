@@ -508,6 +508,65 @@ final class ListeningRecorderTests: XCTestCase {
         XCTAssertTrue(progress.calls.isEmpty)
     }
 
+    /// The seek lands within a second of what was asked for, so the position
+    /// that comes back is not the number that was adopted - and it is still
+    /// not a listen.
+    func testAPositionAdoptedIsNotAListenEvenWhenTheSeekLandsNearby() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        XCTAssertEqual(progress.calls.count, 1)
+
+        recorder.noteAdopted(position: 5_397)
+        engine.advance(to: 5_398)
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.count, 1)
+    }
+
+    /// And when the seek does not land at all, so the old position comes back.
+    func testAFailedSeekAfterAdoptingWritesNothingEither() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+
+        recorder.noteAdopted(position: 5_397)
+        engine.advance(to: 600)
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.count, 1)
+    }
+
+    /// Listening here is what makes the position this device's own again.
+    func testListeningAfterAdoptingIsWrittenDown() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+
+        recorder.noteAdopted(position: 5_397)
+        engine.play(.podcast(alarm), startingAt: 5_397)
+        engine.advance(to: 5_460)
+        engine.stopPlaying()
+
+        XCTAssertEqual(progress.calls.count, 2)
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 5_460, accuracy: 1)
+    }
+
+    /// Dragging the scrubber is somebody here, and is written down.
+    func testAMoveByHandIsWrittenDown() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+
+        recorder.noteAdopted(position: 5_397)
+        recorder.noteMovedByHand(to: 4_000)
+        engine.advance(to: 4_000)
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.count, 2)
+        XCTAssertEqual(progress.calls.last?.position ?? 0, 4_000, accuracy: 1)
+    }
+
     /// For what is not caught as it happens: the system ending the app
     /// mid-listen, or a crash.
     func testAMinuteOfListeningIsWrittenWithoutAPause() {

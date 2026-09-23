@@ -85,6 +85,17 @@ final class PodcastRepository: EpisodeLookup {
         return Podcast(from: entity, state: EpisodeStateEntity.effective(rows), download: download(for: id))
     }
 
+    /// Which of these episodes this device is actually holding.
+    ///
+    /// One fetch for a whole list, and only the question being asked: not the
+    /// listening, not the download, not the episode itself. A screen that
+    /// wants to know whether a row leads anywhere asks this once when it
+    /// loads, rather than asking for the whole episode while drawing each row.
+    func existingEpisodeIds(among ids: Set<UUID>) -> Set<UUID> {
+        guard !ids.isEmpty else { return [] }
+        return Set(fetch(matching: #Predicate { ids.contains($0.id) }).map(\.id))
+    }
+
     /// The episode to offer as "carry on", or nil when there is nothing to
     /// carry on with: the most recent listen that has not finished.
     ///

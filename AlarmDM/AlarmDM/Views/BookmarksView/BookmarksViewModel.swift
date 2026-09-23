@@ -9,6 +9,9 @@ import Combine
 final class BookmarksViewModel: ObservableObject {
 
     @Published private(set) var bookmarks: [Bookmark] = []
+    /// The episodes behind these bookmarks that this device is holding,
+    /// worked out once per load - see canOpen.
+    @Published private(set) var playableEpisodeIds: Set<UUID> = []
     /// nil means every category, including the ones with none set.
     @Published var activeCategory: BookmarkCategory?
 
@@ -32,6 +35,7 @@ final class BookmarksViewModel: ObservableObject {
         // that was caught live. Does nothing unless one is waiting.
         library.reconcileLiveCaptures()
         bookmarks = library.all()
+        playableEpisodeIds = podcasts.existingEpisodeIds(among: Set(bookmarks.compactMap(\.podcastId)))
     }
 
     var visibleBookmarks: [Bookmark] {
@@ -73,7 +77,12 @@ final class BookmarksViewModel: ObservableObject {
     /// finds nothing. The row used to promise a play triangle and then do
     /// nothing at all when pressed; it now says what it is - a note - until
     /// the episode turns up in this device's own list.
+    ///
+    /// A lookup in a set worked out when the list loaded. Asking the store
+    /// here would mean three fetches for every row, every time the list is
+    /// drawn - and it is drawn again on every tick of the player.
     func canOpen(_ bookmark: Bookmark) -> Bool {
-        episode(for: bookmark) != nil
+        guard let id = bookmark.podcastId else { return false }
+        return playableEpisodeIds.contains(id)
     }
 }
