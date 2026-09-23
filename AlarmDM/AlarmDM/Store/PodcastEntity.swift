@@ -74,7 +74,7 @@ extension Podcast {
     /// what the person has done with it, and whether it is on this device.
     /// The last two are optional because most episodes have neither.
     init(from entity: PodcastEntity,
-         state: EpisodeStateEntity? = nil,
+         state: EpisodeState? = nil,
          download: DownloadEntity? = nil) {
         self.id = entity.id
         self.title = entity.title

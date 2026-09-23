@@ -116,6 +116,24 @@ final class ListeningRecorder {
         lastWritten = nil
     }
 
+    /// A position that arrived from another device, not from anybody here.
+    ///
+    /// The player moves the engine to it while paused, so that pressing play
+    /// carries on from where the other device got to. Without this the move
+    /// looks exactly like listening: the next write - going to the background,
+    /// say - would stamp that position with this moment and hand this device
+    /// the account's newest listen, over the device that actually listened.
+    ///
+    /// Recorded as already written, so nothing is written until somebody here
+    /// listens past it. A move made by hand, by dragging the scrubber, is not
+    /// this and still counts.
+    func noteAdopted(position: TimeInterval) {
+        guard position > 0 else { return }
+        self.position = position
+        lastWritten = position
+        minuteMark = position
+    }
+
     private func timeChanged(to time: TimeInterval) {
         guard episode != nil, time.isFinite, time > 0 else { return }
         position = time

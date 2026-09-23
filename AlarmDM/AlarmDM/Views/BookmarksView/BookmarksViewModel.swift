@@ -65,4 +65,15 @@ final class BookmarksViewModel: ObservableObject {
         guard let podcastId = bookmark.podcastId else { return nil }
         return podcasts.podcast(with: podcastId)
     }
+
+    /// Whether a tap on this one will play anything.
+    ///
+    /// Bookmarks sync and the episodes do not: a bookmark made on the phone
+    /// arrives on a Mac that has never fetched that episode, and the lookup
+    /// finds nothing. The row used to promise a play triangle and then do
+    /// nothing at all when pressed; it now says what it is - a note - until
+    /// the episode turns up in this device's own list.
+    func canOpen(_ bookmark: Bookmark) -> Bool {
+        episode(for: bookmark) != nil
+    }
 }

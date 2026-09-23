@@ -77,9 +77,12 @@ final class PodcastRepository: EpisodeLookup {
         compose(fetch(limit: limit, matching: #Predicate { $0.airedAt != nil && $0.isWithMusic }))
     }
 
+    /// Reading only. Duplicate rows are folded into one answer here and left
+    /// where they are; deleting them belongs to the next write - see merged.
     func podcast(with id: UUID) -> Podcast? {
         guard let entity = entity(with: id) else { return nil }
-        return Podcast(from: entity, state: state(for: id), download: download(for: id))
+        let rows = fetchStates(matching: #Predicate { $0.podcastId == id })
+        return Podcast(from: entity, state: EpisodeStateEntity.effective(rows), download: download(for: id))
     }
 
     /// The episode to offer as "carry on", or nil when there is nothing to
@@ -92,10 +95,18 @@ final class PodcastRepository: EpisodeLookup {
     func lastListened() -> Podcast? {
         refreshFromStore()
 
-        let recent = fetchStates()
-            .filter { $0.playedAt != nil && !$0.isPlayed }
-            .sorted { EpisodeStateEntity.isNewer($0, than: $1) }
-            .prefix(5)
+        // Asked of the store rather than of every row this device has ever
+        // held: the predicate, the order and the limit all go down with the
+        // fetch. Ten rather than five because two devices can leave two rows
+        // for the same episode, and duplicates would otherwise crowd out the
+        // episodes behind them.
+        var descriptor = FetchDescriptor<EpisodeStateEntity>(
+            predicate: #Predicate { $0.playedAt != nil && !$0.isPlayed },
+            sortBy: [SortDescriptor(\.playedAt, order: .reverse)]
+        )
+        descriptor.fetchLimit = 10
+
+        let recent = (try? context.fetch(descriptor)) ?? []
 
         for state in recent {
             if let episode = podcast(with: state.podcastId), episode.resumePosition != nil {
@@ -132,14 +143,13 @@ final class PodcastRepository: EpisodeLookup {
         guard !entities.isEmpty else { return [] }
 
         let ids = Set(entities.map(\.id))
-        // Newest wins when an episode has more than one row; see merged(_:).
-        // Reading is not the place to delete anything, so the duplicate is
-        // simply passed over here and folded away the next time that episode
-        // is written to.
-        let states = Dictionary(
-            fetchStates(matching: #Predicate { ids.contains($0.podcastId) }).map { ($0.podcastId, $0) },
-            uniquingKeysWith: { EpisodeStateEntity.isNewer($0, than: $1) ? $0 : $1 }
-        )
+        // The same rule a single episode is read by - see
+        // EpisodeStateEntity.effective. Reading is not the place to delete
+        // anything, so duplicates are folded here and cleared away the next
+        // time that episode is written to.
+        let states = Dictionary(grouping: fetchStates(matching: #Predicate { ids.contains($0.podcastId) }),
+                                by: { $0.podcastId })
+            .compactMapValues { EpisodeStateEntity.effective($0) }
         let downloads = Dictionary(
             fetchDownloads(matching: #Predicate { ids.contains($0.podcastId) }).map { ($0.podcastId, $0) },
             uniquingKeysWith: { first, _ in first }

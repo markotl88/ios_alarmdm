@@ -38,7 +38,7 @@ struct BookmarksView: View {
     private var list: some View {
         List {
             ForEach(viewModel.visibleBookmarks) { bookmark in
-                BookmarkRowView(bookmark: bookmark)
+                BookmarkRowView(bookmark: bookmark, canPlay: viewModel.canOpen(bookmark))
                     .contentShape(Rectangle())
                     .onTapGesture { open(bookmark) }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -127,6 +127,9 @@ struct BookmarksView: View {
 struct BookmarkRowView: View {
 
     let bookmark: Bookmark
+    /// Whether the episode behind it is on this device. See
+    /// BookmarksViewModel.canOpen.
+    var canPlay: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
@@ -156,7 +159,7 @@ struct BookmarkRowView: View {
 
             Spacer(minLength: 0)
 
-            if bookmark.isAwaitingEpisode {
+            if !canPlay {
                 // "UŽIVO" said where it came from, next to a broadcast symbol,
                 // which together read as something to press. It came from the
                 // radio, which the subtitle already says; what this has to say
@@ -179,7 +182,7 @@ struct BookmarkRowView: View {
     /// Every row used to carry a symbol that said nothing about which of the
     /// two it was.
     private var leadingSymbol: String {
-        if !bookmark.isAwaitingEpisode { return "play.fill" }
+        if canPlay { return "play.fill" }
         if let category = bookmark.category { return category.systemImage }
         return "bookmark"
     }
@@ -191,12 +194,12 @@ struct BookmarkRowView: View {
     /// category symbol gives way to the broadcast one so the reason is legible
     /// at a glance.
     private var leadingColor: Color {
-        bookmark.isAwaitingEpisode ? Color("noteAccent") : Color("primaryLink")
+        canPlay ? Color("primaryLink") : Color("noteAccent")
     }
 
     private var badgeFill: Color {
-        bookmark.isAwaitingEpisode
-            ? Color("noteAccent").opacity(0.14)
-            : Color(.tertiarySystemFill)
+        canPlay
+            ? Color(.tertiarySystemFill)
+            : Color("noteAccent").opacity(0.14)
     }
 }

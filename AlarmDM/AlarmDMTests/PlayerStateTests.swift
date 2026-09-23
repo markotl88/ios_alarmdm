@@ -20,6 +20,8 @@ final class PlayerStateTests: XCTestCase {
     private var defaults: UserDefaults!
     /// Stands in for "something arrived from another device".
     private var storeChanges: PassthroughSubject<Void, Never>!
+    private var progress: ProgressSpy!
+    private var notifications: NotificationCenter!
 
     /// Three hours, so the credits settle where it ends: 3:00:00 minus twenty
     /// seconds is 10 780, comfortably past ninety-five percent.
@@ -31,6 +33,8 @@ final class PlayerStateTests: XCTestCase {
         engine = FakePlaybackEngine()
         episodes = EpisodeStore()
         storeChanges = PassthroughSubject()
+        progress = ProgressSpy()
+        notifications = NotificationCenter()
 
         defaults = UserDefaults(suiteName: "PlayerStateTests")
         defaults.removePersistentDomain(forName: "PlayerStateTests")
@@ -81,12 +85,15 @@ final class PlayerStateTests: XCTestCase {
         player.togglePlayPause()
         flush()
 
-        // What the lists do after progress is recorded: hand the player a
-        // freshly read row, which now carries the position.
+        // What happens for real when playback pauses: the recorder writes
+        // the episode's row and the player's own slot, within a moment of
+        // each other. Both, or the row looks like a listen from somewhere
+        // else and the player moves to it.
         var refreshed = alarm!
         refreshed.playedPosition = 600
         refreshed.playedAt = Date()
         episodes.rows[refreshed.id] = refreshed
+        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: refreshed.id, position: 600))
         player.mode = .podcast(podcast: refreshed)
 
         player.togglePlayPause()
@@ -247,6 +254,37 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertTrue(engine.playCalls.isEmpty, "following must not start anything")
     }
 
+    /// A position adopted from another device is not a listen here, and must
+    /// not be written down as one: the write would carry this moment's date
+    /// and hand this device the account's newest listen over the device that
+    /// actually listened.
+    func testAPositionAdoptedFromElsewhereIsNotWrittenDownAsAListen() {
+        let recorder = ListeningRecorder(engine: engine,
+                                         progressStore: progress,
+                                         playbackState: PlaybackStateStore(defaults: defaults),
+                                         notifications: notifications)
+        recorder.start()
+
+        let player = makePlayer(recorder: recorder)
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 600)
+        flush()
+        engine.stopPlaying()
+        flush()
+        XCTAssertEqual(progress.calls.count, 1, "the pause is written down")
+
+        listened(alarm, at: 5_400, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+        XCTAssertEqual(engine.seekCalls.last ?? -1, 5_397, accuracy: 0.5)
+
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.count, 1, "nothing was listened to here")
+    }
+
     /// What is playing here is the truth; another device does not take it
     /// over mid-listen.
     func testAPlayingPlayerDoesNotFollow() {
@@ -336,11 +374,15 @@ final class PlayerStateTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makePlayer() -> PlayerViewModel {
+    private func makePlayer(recorder: ListeningRecorder? = nil) -> PlayerViewModel {
         PlayerViewModel(
             engine: engine,
             playbackState: PlaybackStateStore(defaults: defaults),
             episodes: episodes,
+            recorder: recorder ?? ListeningRecorder(engine: engine,
+                                                    progressStore: ProgressSpy(),
+                                                    playbackState: PlaybackStateStore(defaults: defaults),
+                                                    notifications: NotificationCenter()),
             storeChanges: storeChanges.eraseToAnyPublisher()
         )
     }

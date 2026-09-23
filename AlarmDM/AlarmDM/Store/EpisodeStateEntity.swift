@@ -53,9 +53,43 @@ final class EpisodeStateEntity {
         (lhs.playedAt ?? .distantPast) > (rhs.playedAt ?? .distantPast)
     }
 
+    /// What several rows for one episode add up to: the later listen's
+    /// position, and flags from all of them.
+    ///
+    /// Both halves matter, and they used to disagree. A list took the newest
+    /// row whole, an episode opened on its own OR-ed the flags, so an episode
+    /// favourited on one device and listened to later on another was missing
+    /// from the favourites list until the player had been opened on it. One
+    /// rule now, read from both.
+    ///
+    /// A position is a moment and the later moment is the true one. A flag is
+    /// a decision, and a decision made on either device stands - which is
+    /// also why unfavouriting cannot yet travel: see the note on that in
+    /// PodcastRepository.merged.
+    static func effective(_ rows: [EpisodeStateEntity]) -> EpisodeState? {
+        let sorted = rows.sorted { isNewer($0, than: $1) }
+        guard let newest = sorted.first else { return nil }
+
+        return EpisodeState(
+            playedPosition: newest.playedPosition,
+            playedAt: newest.playedAt,
+            isPlayed: sorted.contains { $0.isPlayed },
+            isFavorite: sorted.contains { $0.isFavorite }
+        )
+    }
+
     init(podcastId: UUID, title: String = "", show: String? = nil) {
         self.podcastId = podcastId
         self.episodeTitle = title
         self.show = show
     }
+}
+
+/// What the app reads: the rows folded into one answer, as values rather
+/// than as stored objects, so reading never has to touch the store.
+struct EpisodeState: Equatable {
+    var playedPosition: Double = 0
+    var playedAt: Date?
+    var isPlayed = false
+    var isFavorite = false
 }

@@ -68,6 +68,38 @@ final class SyncMergeTests: XCTestCase {
         XCTAssertFalse(EpisodeStateEntity.isNewer(undated, than: dated))
     }
 
+    /// A list and a single episode read the same rows, so they have to give
+    /// the same answer. They did not: the list took the newest row whole and
+    /// an episode opened on its own OR-ed the flags, so an episode favourited
+    /// on one device and listened to later on another was missing from the
+    /// favourites list until its player had been opened.
+    func testAListAndAnEpisodeAgreeOnAFavourite() {
+        insertRow(position: 600, at: earlier, favourite: true)
+        insertRow(position: 1_800, at: later, favourite: false)
+
+        XCTAssertEqual(repository.latestPodcasts().first?.isFavorite, true)
+        XCTAssertEqual(repository.podcast(with: episode.id)?.isFavorite, true)
+    }
+
+    func testAListAndAnEpisodeAgreeOnHavingBeenHeard() {
+        insertRow(position: 10_790, at: earlier, played: true)
+        insertRow(position: 60, at: later, played: false)
+
+        XCTAssertEqual(repository.latestPodcasts().first?.isPlayed, true)
+        XCTAssertEqual(repository.podcast(with: episode.id)?.isPlayed, true)
+    }
+
+    /// Reading is not writing: opening an episode used to fold its duplicates
+    /// away and delete them, which is a store change in the middle of a read.
+    func testReadingAnEpisodeLeavesTheRowsAlone() {
+        insertRow(position: 600, at: earlier)
+        insertRow(position: 1_800, at: later)
+
+        _ = repository.podcast(with: episode.id)
+
+        XCTAssertEqual(stateRows().count, 2)
+    }
+
     /// The next write folds the two rows into one, so the duplicate does not
     /// travel back through iCloud forever.
     func testTheNextWriteLeavesOneRow() {
@@ -101,7 +133,9 @@ final class SyncMergeTests: XCTestCase {
 
         XCTAssertEqual(merged?.isPlayed, true)
         XCTAssertEqual(merged?.playedPosition, 60)
-        XCTAssertEqual(stateRows().count, 1)
+        // Both rows are still there: folding them away is a write, and this
+        // was a read. See testTheNextWriteLeavesOneRow.
+        XCTAssertEqual(stateRows().count, 2)
     }
 
     /// The same rule on one device: starting a finished episode again does

@@ -252,9 +252,19 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     // MARK: - Public API
 
-    /// Starts playback of `source`. Re-selecting what is already loaded just resumes.
+    /// Starts playback of `source`. Re-selecting what is already loaded just
+    /// resumes - unless what is loaded has failed, in which case there is
+    /// nothing to resume and it is built again.
+    ///
+    /// A failed item used to take the shortcut too: resume() saw the failure
+    /// and called play(), play() saw the same source with a player still
+    /// attached and called resume(), and the two called each other until the
+    /// stack ran out. A press on play after another app had taken the audio
+    /// session was a crash rather than a recovery.
     func play(_ source: PlaybackSource, startingAt position: TimeInterval? = nil) {
-        if source.isSameContent(as: self.source), player != nil {
+        let isLoadedAndWell = player != nil && player?.currentItem?.status != .failed
+
+        if source.isSameContent(as: self.source), isLoadedAndWell {
             if let position { seek(to: position) }
             resume()
             return

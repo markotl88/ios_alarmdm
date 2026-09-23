@@ -89,6 +89,8 @@ final class PlayerViewModel: ObservableObject {
     /// Where the stored copy of an episode comes from - the one that knows
     /// about favourites, downloads and how far it has been listened to.
     private let episodes: EpisodeLookup
+    /// Told when a move was not somebody listening - see noteAdopted.
+    private let recorder: ListeningRecorder
     /// Where a restored episode should start. Cleared the moment it is used,
     /// so it can never send a later press back in time.
     private var restoredPosition: TimeInterval?
@@ -104,10 +106,12 @@ final class PlayerViewModel: ObservableObject {
          engine: PlaybackEngineType = PlaybackEngine.shared,
          playbackState: PlaybackStateStore = .shared,
          episodes: EpisodeLookup = PodcastRepository.shared,
+         recorder: ListeningRecorder = .shared,
          storeChanges: AnyPublisher<Void, Never> = AppDatabase.shared.didChangeRemotely) {
         self.engine = engine
         self.playbackState = playbackState
         self.episodes = episodes
+        self.recorder = recorder
         self.mode = mode
 
         bindEngine()
@@ -155,6 +159,7 @@ final class PlayerViewModel: ObservableObject {
             .store(in: &cancellables)
 
         engine.durationPublisher
+            .removeDuplicates()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] duration in
                 guard let self, self.engine.hasContent else { return }
@@ -661,6 +666,10 @@ final class PlayerViewModel: ObservableObject {
 
         if engineHolds(podcast.id) {
             engine.seek(to: synced)
+            // Not a listen. Without this the move is written down at the next
+            // opportunity with this moment's date, and this device claims a
+            // listen that happened on another one.
+            recorder.noteAdopted(position: synced)
             restoredPosition = nil
         } else {
             restoredPosition = synced

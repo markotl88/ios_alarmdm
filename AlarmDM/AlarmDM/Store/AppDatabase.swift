@@ -55,6 +55,10 @@ final class AppDatabase {
     }
 
     private let storeChanged = PassthroughSubject<Void, Never>()
+    /// Block observers are not removed by their object going away, so they
+    /// are kept and handed back. One database lives as long as the app, but
+    /// a test makes several and each one used to leave its blocks behind.
+    private var observers: [NSObjectProtocol] = []
 
     /// The iCloud container these devices share. One for both bundle ids, so
     /// a debug build on the phone and a release build on the Mac are looking
@@ -224,8 +228,12 @@ final class AppDatabase {
         context.autosaveEnabled = false
     }
 
+    deinit {
+        observers.forEach(NotificationCenter.default.removeObserver)
+    }
+
     private func observeRemoteChanges() {
-        NotificationCenter.default.addObserver(
+        observers.append(NotificationCenter.default.addObserver(
             forName: .NSPersistentStoreRemoteChange,
             object: nil,
             queue: .main
@@ -233,14 +241,14 @@ final class AppDatabase {
             guard let self else { return }
             self.adoptStoreChanges()
             self.storeChanged.send()
-        }
+        })
 
         #if DEBUG
         // Syncing is otherwise completely silent, which makes "it did not
         // arrive" impossible to tell apart from "it has not arrived yet" and
         // from "it was refused". Every import and export announces itself
         // here, with whatever went wrong when something did.
-        NotificationCenter.default.addObserver(
+        observers.append(NotificationCenter.default.addObserver(
             forName: NSPersistentCloudKitContainer.eventChangedNotification,
             object: nil,
             queue: .main
