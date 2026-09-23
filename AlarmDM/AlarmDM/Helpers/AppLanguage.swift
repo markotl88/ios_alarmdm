@@ -81,8 +81,20 @@ enum AppLanguage {
             return
         }
 
+        #if DEBUG
+        // The key in the catalog is the Serbian text itself, so a lookup that
+        // resolves to English answers "Live radio" and one that stays Serbian
+        // answers "Radio uzivo". Which of the two comes back after the swap
+        // is the whole question about the class below.
+        let beforeSwap = String(localized: "Radio uživo")
+        #endif
+
         LanguageBundle.strings = serbianBundle
         object_setClass(Bundle.main, LanguageBundle.self)
+
+        #if DEBUG
+        AppLog.write(.library, "lookup in code: '\(beforeSwap)' before the bundle swap, '\(String(localized: "Radio uživo"))' after")
+        #endif
     }
 
     /// What the views are given. SwiftUI resolves a literal against the
