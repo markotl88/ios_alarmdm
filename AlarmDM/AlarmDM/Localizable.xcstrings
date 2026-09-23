@@ -93,16 +93,6 @@
         }
       }
     },
-    "Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daško and Mlađa Monday through Thursday, 8 to 10 AM. Varnju Monday through Friday, 11 AM to 2 PM. Great music non-stop!"
-          }
-        }
-      }
-    },
     "Aplikacija" : {
       "localizations" : {
         "en" : {
@@ -133,12 +123,32 @@
         }
       }
     },
+    "BELEŠKA" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOTE"
+          }
+        }
+      }
+    },
     "Bez muzike" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Without music"
+          }
+        }
+      }
+    },
+    "Biće obrisane zabeleške, omiljene epizode, napredak slušanja, preuzete epizode i podešavanja, uključujući podatke u iCloudu koji se sinhronizuju sa ostalim uređajima. Obriši podatke na svim uređajima pre nego što ponovo pokreneš aplikaciju na bilo kom od njih. U suprotnom, uređaj na kom su podaci ostali može ih ponovo poslati u iCloud." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This will delete bookmarks, favorites, listening progress, downloaded episodes and settings, including iCloud data synced with your other devices. Clear the data on every device before reopening the app on any of them. Otherwise, a device that still has data may upload it to iCloud again."
           }
         }
       }
@@ -173,6 +183,16 @@
         }
       }
     },
+    "Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daško and Mlađa Monday through Thursday, 8 to 10 AM. Varnju Monday through Friday, 11 AM to 2 PM. Great music non-stop!"
+          }
+        }
+      }
+    },
     "Dodaj u omiljene" : {
       "localizations" : {
         "en" : {
@@ -183,12 +203,32 @@
         }
       }
     },
+    "Dodirni kôd za uvećani prikaz" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap the code to enlarge it"
+          }
+        }
+      }
+    },
     "Dok slušaš, dodirni dugme za zabelešku u plejeru. Zabeleška se čuva pet sekundi pre trenutne pozicije." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "While listening, tap the bookmark button in the player. The bookmark is saved five seconds before your current position."
+          }
+        }
+      }
+    },
+    "Emisija posvećena panku i hardkoru." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dedicated to punk and hardcore."
           }
         }
       }
@@ -423,16 +463,6 @@
         }
       }
     },
-    "Dodirni kôd za uvećani prikaz" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap the code to enlarge it"
-          }
-        }
-      }
-    },
     "Knjiga" : {
       "localizations" : {
         "en" : {
@@ -459,16 +489,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Copy account number"
-          }
-        }
-      }
-    },
-    "U kôd je unapred upisan iznos od 500 RSD." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The code has a preset AMount of 500 RSD."
           }
         }
       }
@@ -743,6 +763,16 @@
         }
       }
     },
+    "Od ponedeljka do četvrtka, od 8 do 10 h." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Monday through Thursday, 8 to 10 AM."
+          }
+        }
+      }
+    },
     "Odslušano" : {
       "localizations" : {
         "en" : {
@@ -809,6 +839,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Open the app on your phone to refresh the list."
+          }
+        }
+      }
+    },
+    "Ovo podešavanje važi samo za preuzimanje epizoda. Radio uživo i epizode možeš slušati i preko mobilne mreže. Ako želiš da preuzmeš epizodu preko mobilne mreže, aplikacija će tražiti potvrdu." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This setting only applies to downloads. You can still stream live radio and episodes over cellular data. The app will ask for confirmation before downloading an episode over cellular data."
           }
         }
       }
@@ -889,16 +929,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Try again"
-          }
-        }
-      }
-    },
-    "Od ponedeljka do četvrtka, od 8 do 10 h." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Monday through Thursday, 8 to 10 AM."
           }
         }
       }
@@ -1103,6 +1133,16 @@
         }
       }
     },
+    "Redovna mesečna ili godišnja donacija" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recurring monthly or annual donation"
+          }
+        }
+      }
+    },
     "Reprodukcija nije uspela." : {
       "localizations" : {
         "en" : {
@@ -1143,42 +1183,12 @@
         }
       }
     },
-    "Ovo podešavanje važi samo za preuzimanje epizoda. Radio uživo i epizode možeš slušati i preko mobilne mreže. Ako želiš da preuzmeš epizodu preko mobilne mreže, aplikacija će tražiti potvrdu." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This setting only applies to downloads. You can still stream live radio and episodes over cellular data. The app will ask for confirmation before downloading an episode over cellular data."
-          }
-        }
-      }
-    },
-    "Emisija posvećena panku i hardkoru." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dedicated to punk and hardcore."
-          }
-        }
-      }
-    },
     "Sportska emisija." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "A sports show."
-          }
-        }
-      }
-    },
-    "Redovna mesečna ili godišnja donacija" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recurring monthly or annual donation"
           }
         }
       }
@@ -1239,6 +1249,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "You're using cellular data. You can download just this episode or turn off the restriction for future downloads too. You can turn it back on in More."
+          }
+        }
+      }
+    },
+    "U kôd je unapred upisan iznos od 500 RSD." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The code has a preset AMount of 500 RSD."
           }
         }
       }
@@ -1329,16 +1349,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version"
-          }
-        }
-      }
-    },
-    "Biće obrisane zabeleške, omiljene epizode, napredak slušanja, preuzete epizode i podešavanja, uključujući podatke u iCloudu koji se sinhronizuju sa ostalim uređajima. Obriši podatke na svim uređajima pre nego što ponovo pokreneš aplikaciju na bilo kom od njih. U suprotnom, uređaj na kom su podaci ostali može ih ponovo poslati u iCloud." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This will delete bookmarks, favorites, listening progress, downloaded episodes and settings, including iCloud data synced with your other devices. Clear the data on every device before reopening the app on any of them. Otherwise, a device that still has data may upload it to iCloud again."
           }
         }
       }

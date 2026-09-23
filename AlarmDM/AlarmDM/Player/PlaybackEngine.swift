@@ -227,6 +227,15 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// the older one cannot declare the newer one over.
     private var seekGeneration = 0
     private var metadataOutput: AVPlayerItemMetadataOutput?
+    /// How long a song announced by the station stands on its own.
+    ///
+    /// The station names a song when it starts and says nothing when the
+    /// programme begins. With no end to it, the last song before eight stayed
+    /// on the screen through the whole show — and went into every bookmark
+    /// made during it as if that were what was playing. Ten minutes is longer
+    /// than nearly every song and far shorter than a programme.
+    static let liveTrackLifetime: TimeInterval = 10 * 60
+    private var liveTrackExpiry: DispatchWorkItem?
     #if DEBUG
     private var lastBufferLog: Date = .distantPast
     #endif
@@ -270,7 +279,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         self.currentTime = 0
         self.duration = 0
         self.lastErrorMessage = nil
-        self.liveTrack = nil
+        setLiveTrack(nil)
 
         attachObservers(to: player, item: item)
         activateSession()
@@ -324,7 +333,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         isBuffering = false
         currentTime = 0
         duration = 0
-        liveTrack = nil
+        setLiveTrack(nil)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         deactivateSession()
     }
@@ -755,8 +764,27 @@ extension PlaybackEngine: AVPlayerItemMetadataOutputPushDelegate {
         guard announced != nil || sawAnyItem else { return }
         guard announced != liveTrack else { return }
 
-        liveTrack = announced
+        setLiveTrack(announced)
         updateNowPlayingInfo()
+    }
+
+    /// One announcement, and an end to it — see liveTrackLifetime.
+    private func setLiveTrack(_ track: LiveTrack?) {
+        liveTrackExpiry?.cancel()
+        liveTrackExpiry = nil
+        liveTrack = track
+        guard track != nil else { return }
+
+        let expiry = DispatchWorkItem { [weak self] in
+            guard let self, self.isLive else { return }
+            #if DEBUG
+            AppLog.write(.player, "the station has announced nothing for \(Int(PlaybackEngine.liveTrackLifetime / 60)) minutes — clearing the track")
+            #endif
+            self.liveTrack = nil
+            self.updateNowPlayingInfo()
+        }
+        liveTrackExpiry = expiry
+        DispatchQueue.main.asyncAfter(deadline: .now() + PlaybackEngine.liveTrackLifetime, execute: expiry)
     }
 
     private func isTitleMetadata(_ item: AVMetadataItem) -> Bool {
