@@ -288,7 +288,7 @@ final class AppDatabase {
             } else {
                 AppLog.write(.sync, "cloud \(kind) failed: \(event.error?.localizedDescription ?? "-")")
             }
-        }
+        })
         #endif
     }
 
