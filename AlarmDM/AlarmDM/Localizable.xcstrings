@@ -93,6 +93,16 @@
         }
       }
     },
+    "180 minuta muzike i subverzivnog delovanja." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "180 minutes of music and subversion."
+          }
+        }
+      }
+    },
     "Aplikacija" : {
       "localizations" : {
         "en" : {
@@ -173,6 +183,26 @@
         }
       }
     },
+    "Bulevar Books za decu." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bulevar Books, for children."
+          }
+        }
+      }
+    },
+    "DIY punk radio podcast show from Novi Sad." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DIY punk radio podcast show from Novi Sad."
+          }
+        }
+      }
+    },
     "Daško i Mlađa" : {
       "localizations" : {
         "en" : {
@@ -189,6 +219,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Daško and Mlađa Monday through Thursday, 8 to 10 AM. Varnju Monday through Friday, 11 AM to 2 PM. Great music non-stop!"
+          }
+        }
+      }
+    },
+    "Daško sa gostima." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daško and his guests."
           }
         }
       }
@@ -223,32 +263,12 @@
         }
       }
     },
-    "Emisija posvećena panku i hardkoru." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dedicated to punk and hardcore."
-          }
-        }
-      }
-    },
     "Emisija posvećena poeziji." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "A show devoted to poetry."
-          }
-        }
-      }
-    },
-    "Emisija sa toplim ljudskim pričama." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A show full of heartwarming human stories."
           }
         }
       }
@@ -319,6 +339,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Joke"
+          }
+        }
+      }
+    },
+    "Gosti podkasta govore o društveno-političkim temama, aktivizmu i kulturi." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guests talking about social and political topics, activism and culture."
           }
         }
       }
@@ -398,7 +428,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 6:05 PM."
+            "value" : "Jovana, Boris and Tatjana on social and political affairs. Fridays at 18:05."
           }
         }
       }
@@ -763,12 +793,22 @@
         }
       }
     },
+    "Od Subotice do Surdulice, pregled aktuelnosti domaćeg sporta." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "From Subotica to Surdulica, a round-up of sport at home."
+          }
+        }
+      }
+    },
     "Od ponedeljka do četvrtka, od 8 do 10 h." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Monday through Thursday, 8 to 10 AM."
+            "value" : "Monday to Thursday, 8 to 10 am."
           }
         }
       }
@@ -1103,6 +1143,16 @@
         }
       }
     },
+    "Radijska emisija koja romansira istorijat fudbala." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A radio show that romanticises the history of football."
+          }
+        }
+      }
+    },
     "Radio" : {
       "localizations" : {
         "en" : {
@@ -1158,17 +1208,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rock 'n' roll for your evenings."
-          }
-        }
-      }
-    },
-    "Romantizovani fudbalski istorijat." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A romanticized history of soccer."
+            "value" : "Rock 'n' roll for the evening hours."
           }
         }
       }
@@ -1179,16 +1219,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "With music"
-          }
-        }
-      }
-    },
-    "Sportska emisija." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A sports show."
           }
         }
       }
@@ -1219,26 +1249,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "All episodes"
-          }
-        }
-      }
-    },
-    "Svi mi emigranti. Radnim danima od 11 do 14 h." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We're all emigrants. Monday through Friday, 11 AM to 2 PM."
-          }
-        }
-      }
-    },
-    "Teme o kojima se ćuti." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The topics nobody talks about."
           }
         }
       }
@@ -1479,17 +1489,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Important topics every Thursday."
-          }
-        }
-      }
-    },
-    "Čitanje uz mikrofon." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Readings on air."
+            "value" : "Important topics, on Thursdays."
           }
         }
       }
