@@ -11,6 +11,17 @@ import Foundation
 struct PlaybackState: Equatable {
     let podcastId: UUID
     let position: TimeInterval
+    /// When it was written. Needed since the episode's own record started
+    /// syncing: this slot is only ever the more recent of the two on the
+    /// device that wrote it, and a position listened to on another device
+    /// afterwards is newer than anything this one has to say.
+    let savedAt: Date
+
+    init(podcastId: UUID, position: TimeInterval, savedAt: Date = Date()) {
+        self.podcastId = podcastId
+        self.position = position
+        self.savedAt = savedAt
+    }
 }
 
 final class PlaybackStateStore {
@@ -20,6 +31,8 @@ final class PlaybackStateStore {
     private enum Key {
         static let podcastId = "lastPlayedPodcastId"
         static let position = "lastPlayedPosition"
+        static let savedAt = "lastPlayedSavedAt"
+        static let clearedAt = "lastPlayerClosedAt"
     }
 
     private let defaults: UserDefaults
@@ -31,7 +44,16 @@ final class PlaybackStateStore {
     var saved: PlaybackState? {
         guard let raw = defaults.string(forKey: Key.podcastId),
               let id = UUID(uuidString: raw) else { return nil }
-        return PlaybackState(podcastId: id, position: defaults.double(forKey: Key.position))
+
+        // A slot written before this app knew about dates is treated as very
+        // old, so anything that has since synced wins over it.
+        let savedAt = defaults.object(forKey: Key.savedAt) as? Date ?? .distantPast
+
+        return PlaybackState(
+            podcastId: id,
+            position: defaults.double(forKey: Key.position),
+            savedAt: savedAt
+        )
     }
 
     /// Live radio is deliberately not saved. A position in a stream means
@@ -40,10 +62,20 @@ final class PlaybackStateStore {
     func save(_ state: PlaybackState) {
         defaults.set(state.podcastId.uuidString, forKey: Key.podcastId)
         defaults.set(state.position, forKey: Key.position)
+        defaults.set(state.savedAt, forKey: Key.savedAt)
+    }
+
+    /// When the player was last closed on this device. Closing it says there
+    /// is nothing to come back to, and a listen from another device that is
+    /// older than that must not bring it back - only one that happened after.
+    var clearedAt: Date? {
+        defaults.object(forKey: Key.clearedAt) as? Date
     }
 
     func clear() {
         defaults.removeObject(forKey: Key.podcastId)
         defaults.removeObject(forKey: Key.position)
+        defaults.removeObject(forKey: Key.savedAt)
+        defaults.set(Date(), forKey: Key.clearedAt)
     }
 }

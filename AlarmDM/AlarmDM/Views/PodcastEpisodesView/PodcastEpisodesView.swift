@@ -11,6 +11,7 @@ struct PodcastEpisodesView: View {
 
     @StateObject private var viewModel: PodcastEpisodesViewModel
     @EnvironmentObject private var playerViewModel: PlayerViewModel
+    @Environment(\.horizontalSizeClass) private var widthClass
 
     /// Owns its view model. It used to be created inline in ShowListView's body and
     /// held with @ObservedObject, so every re-render threw away the fetched episodes.
@@ -40,12 +41,13 @@ struct PodcastEpisodesView: View {
                     PodcastRowView(
                         podcast: podcast,
                         showsMusicVariant: viewModel.hasBothMusicVariants,
-                        isDownloading: viewModel.isDownloading(podcast)
+                        isDownloading: viewModel.isDownloading(podcast),
+                        isCurrent: playerViewModel.isCurrent(podcast),
+                        isPlaying: playerViewModel.isPlaying
                     )
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            playerViewModel.mode = .podcast(podcast: podcast)
-                            playerViewModel.togglePlayPause()
+                            playerViewModel.activate(podcast, expandingPlayer: widthClass != .regular)
                         }
                         .onAppear {
                             if podcast == viewModel.podcasts.last {
@@ -55,10 +57,7 @@ struct PodcastEpisodesView: View {
                         .episodeRowActions(
                             podcast: podcast,
                             isDownloading: viewModel.isDownloading(podcast),
-                            play: {
-                                playerViewModel.mode = .podcast(podcast: podcast)
-                                playerViewModel.togglePlayPause()
-                            },
+                            play: { playerViewModel.toggle(podcast) },
                             toggleFavourite: { viewModel.toggleFavourite(podcast) },
                             download: { viewModel.download(podcast) },
                             deleteDownload: { viewModel.deleteDownload(podcast) }
@@ -144,7 +143,7 @@ struct PodcastEpisodesView: View {
                 Image(systemName: "waveform.slash")
                     .font(.largeTitle)
                     .foregroundColor(.secondary)
-                Text(viewModel.errorMessage ?? "Nema epizoda za ovu emisiju.")
+                Text(viewModel.errorMessage ?? String(localized: "Nema epizoda za ovu emisiju."))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)

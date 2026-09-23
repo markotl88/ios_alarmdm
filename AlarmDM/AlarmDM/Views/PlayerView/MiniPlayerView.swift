@@ -12,6 +12,29 @@ import SwiftUI
 
 struct MiniPlayerView: View {
     @EnvironmentObject var playerViewModel: PlayerViewModel
+    @Environment(\.horizontalSizeClass) private var widthClass
+
+    private var isWide: Bool { widthClass == .regular }
+
+    /// Including the two point strip along the top. The root view reserves
+    /// exactly this much space above the tab bar, so the number lives here
+    /// rather than being written down twice and drifting apart.
+    static func height(for widthClass: UserInterfaceSizeClass?) -> CGFloat {
+        (widthClass == .regular ? 84 : 58) + 2
+    }
+
+    // The bar is sized for a thumb on a phone. On a Mac or an iPad it is read
+    // from further away and clicked rather than tapped, and it now runs the
+    // whole width of the window - a phone-sized strip across a metre of glass
+    // looks like something left behind. Everything in it grows together;
+    // scaling the bar and not its contents is what makes a control look lost.
+
+    private var barHeight: CGFloat { isWide ? 84 : 58 }
+    private var artworkSide: CGFloat { isWide ? 64 : 44 }
+    private var controlSide: CGFloat { isWide ? 46 : 34 }
+    private var titleFont: Font { isWide ? .title3.weight(.semibold) : .subheadline.weight(.semibold) }
+    private var subtitleFont: Font { isWide ? .subheadline : .caption }
+    private var sideControlFont: Font { isWide ? .title3.weight(.semibold) : .subheadline.weight(.semibold) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -28,20 +51,24 @@ struct MiniPlayerView: View {
                     .progressViewStyle(.linear)
                     .tint(Color("primaryLink"))
                     .frame(height: 2)
+                    .scaleEffect(x: 1, y: isWide ? 1.5 : 1, anchor: .top)
             }
 
-            HStack(spacing: 12) {
+            HStack(spacing: isWide ? 16 : 12) {
                 Image(playerViewModel.artworkName)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(width: 44, height: 44)
+                    .frame(width: artworkSide, height: artworkSide)
                     .clipShape(RoundedRectangle(cornerRadius: 6))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(playerViewModel.title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundColor(Color("primaryText"))
-                        .lineLimit(1)
+                    // One line that moves, like a chyron, rather than two that
+                    // change the bar's height depending on the episode.
+                    MarqueeText(
+                        text: playerViewModel.title,
+                        font: titleFont
+                    )
+                    .foregroundColor(Color("primaryText"))
 
                     // Live gets the pulsing dot and a label that scrolls when
                     // the announced track is too long for the bar.
@@ -52,13 +79,35 @@ struct MiniPlayerView: View {
                         )
                     } else {
                         Text(playerViewModel.subtitle)
-                            .font(.caption)
+                            .font(subtitleFont)
                             .foregroundColor(Color("secondaryText"))
                             .lineLimit(1)
                     }
                 }
 
                 Spacer(minLength: 0)
+
+                // Where it is and how long it runs. Only on a wide window,
+                // where the space is there anyway - on a phone the same two
+                // numbers would push the title out of its own bar.
+                if isWide, !playerViewModel.isLive, playerViewModel.duration > 0 {
+                    Text(verbatim: "\(ScrubberView.format(playerViewModel.currentTime)) / \(ScrubberView.format(playerViewModel.duration))")
+                        .font(.footnote.monospacedDigit())
+                        .foregroundColor(Color("secondaryText"))
+                        .padding(.trailing, 4)
+                }
+
+                Button {
+                    playerViewModel.addBookmark()
+                } label: {
+                    Image(systemName: playerViewModel.justBookmarked ? "bookmark.fill" : "bookmark")
+                        .font(sideControlFont)
+                        .frame(width: controlSide - 4, height: controlSide)
+                        .foregroundColor(playerViewModel.justBookmarked
+                                         ? Color("primaryLink")
+                                         : Color("secondaryText"))
+                }
+                .accessibilityLabel("Zabeleži")
 
                 Button {
                     playerViewModel.togglePlayPause()
@@ -68,10 +117,10 @@ struct MiniPlayerView: View {
                             ProgressView()
                         } else {
                             Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
-                                .font(.title3)
+                                .font(isWide ? .title : .title3)
                         }
                     }
-                    .frame(width: 34, height: 34)
+                    .frame(width: controlSide, height: controlSide)
                     .foregroundColor(Color("primaryText"))
                 }
                 .accessibilityLabel(playerViewModel.isPlaying ? "Pauziraj" : "Pusti")
@@ -80,14 +129,14 @@ struct MiniPlayerView: View {
                     playerViewModel.stop()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.subheadline.weight(.semibold))
-                        .frame(width: 30, height: 34)
+                        .font(sideControlFont)
+                        .frame(width: controlSide - 4, height: controlSide)
                         .foregroundColor(Color("secondaryText"))
                 }
                 .accessibilityLabel("Zaustavi")
             }
-            .padding(.horizontal, 12)
-            .frame(height: 58)
+            .padding(.horizontal, isWide ? 24 : 12)
+            .frame(height: barHeight)
         }
         .background(.regularMaterial)
         .contentShape(Rectangle())

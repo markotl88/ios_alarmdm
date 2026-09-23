@@ -19,7 +19,7 @@ final class NetworkMonitor {
     private var metered: Bool
 
     /// True on cellular and on a personal hotspot (`isExpensive`), and when the
-    /// system is in Low Data Mode (`isConstrained`) — both mean "do not pull
+    /// system is in Low Data Mode (`isConstrained`) - both mean "do not pull
     /// down a hundred megabytes without asking".
     var isMetered: Bool {
         lock.lock()

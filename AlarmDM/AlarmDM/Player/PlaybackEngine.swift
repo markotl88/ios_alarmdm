@@ -22,9 +22,30 @@ enum PlaybackSource: Equatable {
     case radio(url: URL)
     case podcast(Podcast)
 
+    /// What is playing, rather than what is known about it.
+    ///
+    /// Two of these can hold the same audio and still be unequal: a Podcast
+    /// carries a favourite flag, a downloaded file and how far it has been
+    /// listened to, and every one of those changes while the episode plays.
+    /// Comparing the whole value to decide whether something is already
+    /// loaded answers "no" the moment any of it is written down - and the
+    /// answer to that question decides between carrying on and starting the
+    /// file again from the beginning.
+    var contentId: String {
+        switch self {
+        case .radio(let url): return url.absoluteString
+        case .podcast(let podcast): return podcast.id.uuidString
+        }
+    }
+
+    func isSameContent(as other: PlaybackSource?) -> Bool {
+        guard let other else { return false }
+        return contentId == other.contentId
+    }
+
     var title: String {
         switch self {
-        case .radio: return "Radio uživo"
+        case .radio: return String(localized: "Radio uživo")
         case .podcast(let podcast): return podcast.title
         }
     }
@@ -59,7 +80,7 @@ enum PlaybackSource: Equatable {
 
 /// A track announced by the stream itself. Shoutcast/Icecast send one string,
 /// almost always "Artist - Title", and HLS streams send the same thing as timed
-/// metadata — so one parser covers both.
+/// metadata - so one parser covers both.
 struct LiveTrack: Equatable {
     let artist: String?
     let title: String
@@ -69,9 +90,19 @@ struct LiveTrack: Equatable {
         return "\(artist) – \(title)"
     }
 
+    /// The words an encoder sends when nobody filled the tags in: the name of
+    /// the field instead of its value. "14 - artist" is a file number and a
+    /// placeholder, not a song, and putting it on the screen as one is worse
+    /// than showing nothing - the screen already says what is playing.
+    private static let placeholders: Set<String> = [
+        "artist", "title", "artist - title", "unknown", "unknown artist",
+        "nepoznato", "n/a", "na", "-", "--",
+    ]
+
     /// Returns nil for anything that is not worth showing: empty strings, a URL
-    /// (some encoders send the stream address), or the station name on its own,
-    /// which says nothing the screen is not already saying.
+    /// (some encoders send the stream address), the station name on its own,
+    /// which says nothing the screen is not already saying, or an untagged
+    /// track announced with the field names still in it.
     init?(raw: String) {
         let cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleaned.isEmpty, cleaned.count < 200 else { return nil }
@@ -79,10 +110,18 @@ struct LiveTrack: Equatable {
 
         let stationNames = ["daskoimladja", "dasko i mladja", "daško i mlađa", "radio"]
         if stationNames.contains(cleaned.lowercased()) { return nil }
+        if LiveTrack.placeholders.contains(cleaned.lowercased()) { return nil }
 
         if let separator = cleaned.range(of: " - ") ?? cleaned.range(of: " – ") {
             let artist = String(cleaned[..<separator.lowerBound]).trimmingCharacters(in: .whitespaces)
             let title = String(cleaned[separator.upperBound...]).trimmingCharacters(in: .whitespaces)
+
+            // Either half being a placeholder condemns the whole announcement:
+            // whichever side the real value was meant to be on, it is not
+            // there, and the half that is left is a number or a station name.
+            if LiveTrack.placeholders.contains(artist.lowercased()) { return nil }
+            if LiveTrack.placeholders.contains(title.lowercased()) { return nil }
+
             if !artist.isEmpty && !title.isEmpty {
                 self.artist = artist
                 self.title = title
@@ -97,7 +136,52 @@ struct LiveTrack: Equatable {
 
 // MARK: - Engine
 
-final class PlaybackEngine: NSObject, ObservableObject {
+/// What the player screens actually need from the engine. It exists so the
+/// view model can be driven by something that is not an AVPlayer: every rule
+/// about swapping episodes, keeping positions and restoring state is decided
+/// in the view model, and testing it against the real engine would mean
+/// testing AVFoundation as well.
+///
+/// The engine itself is unchanged by this - it is the only thing that
+/// implements it, and it implements it by already having these members.
+protocol PlaybackEngineType: AnyObject {
+    var source: PlaybackSource? { get }
+    var hasContent: Bool { get }
+    var isLive: Bool { get }
+    var progress: Double { get }
+
+    var sourcePublisher: AnyPublisher<PlaybackSource?, Never> { get }
+    var isPlayingPublisher: AnyPublisher<Bool, Never> { get }
+    var isBufferingPublisher: AnyPublisher<Bool, Never> { get }
+    var currentTimePublisher: AnyPublisher<TimeInterval, Never> { get }
+    var durationPublisher: AnyPublisher<TimeInterval, Never> { get }
+    var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { get }
+    /// Every move made by a person, wherever the press came from: the
+    /// scrubber, the skip buttons, the lock screen, the car. The engine is
+    /// the one place all of them pass through, so it is the one place that
+    /// can say so - see ListeningRecorder.noteMovedByHand.
+    var movedByHandPublisher: AnyPublisher<TimeInterval, Never> { get }
+
+    func play(_ source: PlaybackSource, startingAt position: TimeInterval?)
+    func toggle()
+    func stop()
+    func seek(to time: TimeInterval, completion: (() -> Void)?)
+    /// A seek somebody here asked for, as opposed to one adopted from
+    /// another device.
+    func moveByHand(to time: TimeInterval)
+    func skip(by seconds: TimeInterval)
+    func switchToLocalFile(_ fileURL: URL)
+}
+
+extension PlaybackEngineType {
+    /// Most callers only want to move; a protocol requirement cannot carry a
+    /// default argument, so the short form lives here.
+    func seek(to time: TimeInterval) {
+        seek(to: time, completion: nil)
+    }
+}
+
+final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     static let shared = PlaybackEngine()
 
@@ -120,6 +204,9 @@ final class PlaybackEngine: NSObject, ObservableObject {
     var currentTimePublisher: AnyPublisher<TimeInterval, Never> { $currentTime.eraseToAnyPublisher() }
     var durationPublisher: AnyPublisher<TimeInterval, Never> { $duration.eraseToAnyPublisher() }
     var liveTrackPublisher: AnyPublisher<LiveTrack?, Never> { $liveTrack.eraseToAnyPublisher() }
+    var movedByHandPublisher: AnyPublisher<TimeInterval, Never> { movedByHand.eraseToAnyPublisher() }
+
+    private let movedByHand = PassthroughSubject<TimeInterval, Never>()
 
     var hasContent: Bool { source != nil }
     var isLive: Bool { source?.isLive ?? false }
@@ -139,6 +226,10 @@ final class PlaybackEngine: NSObject, ObservableObject {
     /// Where to jump once the new item is ready. Seeking a stream that has not
     /// finished loading is quietly dropped, so the request waits here instead.
     private var pendingSeek: TimeInterval?
+    /// Whether to start playing once that jump has landed. An episode opened
+    /// at a position must not be heard from the beginning first, even for the
+    /// half second it takes the seek to arrive.
+    private var playAfterPendingSeek = false
     /// Raised while a seek is in flight. The periodic observer keeps reporting
     /// the old position until the seek lands, and letting that through drags
     /// the slider back to where it was before the gesture.
@@ -147,6 +238,18 @@ final class PlaybackEngine: NSObject, ObservableObject {
     /// the older one cannot declare the newer one over.
     private var seekGeneration = 0
     private var metadataOutput: AVPlayerItemMetadataOutput?
+    /// How long a song announced by the station stands on its own.
+    ///
+    /// The station names a song when it starts and says nothing when the
+    /// programme begins. With no end to it, the last song before eight stayed
+    /// on the screen through the whole show - and went into every bookmark
+    /// made during it as if that were what was playing. Ten minutes is longer
+    /// than nearly every song and far shorter than a programme.
+    static let liveTrackLifetime: TimeInterval = 10 * 60
+    private var liveTrackExpiry: DispatchWorkItem?
+    #if DEBUG
+    private var lastBufferLog: Date = .distantPast
+    #endif
     private var commandsConfigured = false
     private let fileService: FileServiceProtocol
 
@@ -160,18 +263,29 @@ final class PlaybackEngine: NSObject, ObservableObject {
 
     // MARK: - Public API
 
-    /// Starts playback of `source`. Re-selecting what is already loaded just resumes.
+    /// Starts playback of `source`. Re-selecting what is already loaded just
+    /// resumes - unless what is loaded has failed, in which case there is
+    /// nothing to resume and it is built again.
+    ///
+    /// A failed item used to take the shortcut too: resume() saw the failure
+    /// and called play(), play() saw the same source with a player still
+    /// attached and called resume(), and the two called each other until the
+    /// stack ran out. A press on play after another app had taken the audio
+    /// session was a crash rather than a recovery.
     func play(_ source: PlaybackSource, startingAt position: TimeInterval? = nil) {
-        if self.source == source, player != nil {
+        let isLoadedAndWell = player != nil && player?.currentItem?.status != .failed
+
+        if source.isSameContent(as: self.source), isLoadedAndWell {
             if let position { seek(to: position) }
             resume()
             return
         }
 
         pendingSeek = position
+        playAfterPendingSeek = position != nil
 
         guard let url = resolveURL(for: source) else {
-            lastErrorMessage = "Nije moguće pronaći audio za \(source.title)."
+            lastErrorMessage = String(localized: "Nije moguće pronaći audio za \(source.title).")
             return
         }
 
@@ -186,11 +300,18 @@ final class PlaybackEngine: NSObject, ObservableObject {
         self.currentTime = 0
         self.duration = 0
         self.lastErrorMessage = nil
-        self.liveTrack = nil
+        setLiveTrack(nil)
 
         attachObservers(to: player, item: item)
         activateSession()
-        player.play()
+        // Not when there is a position to go to first. The status observer
+        // plays once the seek has landed; playing here as well let the
+        // opening second of the file out of the speaker before the seek
+        // arrived - the blip from the beginning that the observer's own
+        // comment says is fixed, and was not.
+        if pendingSeek == nil {
+            player.play()
+        }
         updateNowPlayingInfo()
     }
 
@@ -208,10 +329,18 @@ final class PlaybackEngine: NSObject, ObservableObject {
     }
 
     func resume() {
-        guard player != nil else {
-            if let source { play(source) }
+        // Another app taking the audio session can leave the item failed, and a
+        // failed item cannot be told to carry on - there is nothing to carry on
+        // with. It has to be built again, at the second it stopped on.
+        let isBroken = player == nil || player?.currentItem?.status == .failed
+
+        guard !isBroken else {
+            guard let source else { return }
+            let resumeAt = source.isLive ? nil : currentTime
+            play(source, startingAt: resumeAt)
             return
         }
+
         activateSession()
         player?.play()
         updateNowPlayingPlaybackState()
@@ -225,18 +354,24 @@ final class PlaybackEngine: NSObject, ObservableObject {
         isBuffering = false
         currentTime = 0
         duration = 0
-        liveTrack = nil
+        setLiveTrack(nil)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        deactivateSession()
     }
 
-    func seek(to time: TimeInterval) {
-        guard !isLive, let player else { return }
+    /// `completion` runs once this seek is over and no newer one has replaced
+    /// it - which is how an episode opened at a position starts playing only
+    /// after it has arrived there.
+    func seek(to time: TimeInterval, completion: (() -> Void)? = nil) {
+        guard !isLive, let player else {
+            completion?()
+            return
+        }
 
         let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
         // A second either way rather than an exact frame. Zero tolerance makes
         // AVPlayer land precisely, which over a stream means waiting for data
-        // that has not arrived — going back is instant because it is already
+        // that has not arrived - going back is instant because it is already
         // buffered, going forward stalls or is dropped. A second is nothing in
         // a three hour show, and it is the difference between a scrubber that
         // works and one that works sometimes.
@@ -253,14 +388,27 @@ final class PlaybackEngine: NSObject, ObservableObject {
         player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
             guard let self, generation == self.seekGeneration else { return }
             self.isSeeking = false
-            guard finished else { return }
-            self.updateNowPlayingInfo()
+            if finished {
+                self.updateNowPlayingInfo()
+            }
+            // Even an unfinished seek has to hand back control, or an episode
+            // that was told to start here would sit silent forever.
+            completion?()
         }
     }
 
     func skip(by seconds: TimeInterval) {
         guard !isLive else { return }
-        seek(to: currentTime + seconds)
+        moveByHand(to: currentTime + seconds)
+    }
+
+    /// Fifteen seconds from a button, a drag of the scrubber, the same from
+    /// the lock screen or the car: all of them somebody here deciding where
+    /// to be, and all of them announced as such.
+    func moveByHand(to time: TimeInterval) {
+        guard !isLive else { return }
+        seek(to: time)
+        movedByHand.send(max(0, time))
     }
 
     /// Swaps a streaming podcast for its freshly downloaded file without losing position.
@@ -318,7 +466,10 @@ final class PlaybackEngine: NSObject, ObservableObject {
             DispatchQueue.main.async {
                 guard let self else { return }
                 if item.status == .failed {
-                    self.lastErrorMessage = item.error?.localizedDescription ?? "Reprodukcija nije uspela."
+                    self.lastErrorMessage = item.error?.localizedDescription ?? String(localized: "Reprodukcija nije uspela.")
+                    #if DEBUG
+                    AppLog.write(.player, "item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
+                    #endif
                 }
                 if let itemDuration = self.player?.currentItem?.duration,
                    itemDuration.isNumeric, !itemDuration.isIndefinite {
@@ -327,7 +478,17 @@ final class PlaybackEngine: NSObject, ObservableObject {
                 }
                 if item.status == .readyToPlay, let target = self.pendingSeek {
                     self.pendingSeek = nil
-                    self.seek(to: target)
+                    let resumeAfterwards = self.playAfterPendingSeek
+                    self.playAfterPendingSeek = false
+
+                    self.seek(to: target) {
+                        // Only now. Playing first and seeking afterwards is
+                        // what let the opening seconds of an episode out of
+                        // the speaker before it jumped to where it was left.
+                        guard resumeAfterwards else { return }
+                        self.player?.play()
+                        self.updateNowPlayingPlaybackState()
+                    }
                 }
             }
         }
@@ -336,9 +497,17 @@ final class PlaybackEngine: NSObject, ObservableObject {
         timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
             guard let self else { return }
             // Duration still updates: only the position is stale mid-seek.
-            if !self.isSeeking {
-                self.currentTime = time.seconds.isFinite ? time.seconds : 0
+            //
+            // A non-finite time is not a position of zero, it is no position at
+            // all - what a player reports once its item has failed or been torn
+            // down. Writing it as zero threw away the one number needed to carry
+            // on from where the interruption happened.
+            if !self.isSeeking, time.seconds.isFinite {
+                self.currentTime = time.seconds
             }
+            #if DEBUG
+            self.logBuffer()
+            #endif
             if let itemDuration = self.player?.currentItem?.duration,
                itemDuration.isNumeric, !itemDuration.isIndefinite {
                 self.duration = itemDuration.seconds
@@ -346,7 +515,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
         }
 
         // What the station announces about the current track. Costs nothing when
-        // the stream carries no metadata — the delegate simply never fires.
+        // the stream carries no metadata - the delegate simply never fires.
         let metadataOutput = AVPlayerItemMetadataOutput(identifiers: nil)
         metadataOutput.setDelegate(self, queue: .main)
         item.add(metadataOutput)
@@ -363,6 +532,41 @@ final class PlaybackEngine: NSObject, ObservableObject {
             self.updateNowPlayingPlaybackState()
         }
     }
+
+    #if DEBUG
+    /// How much of the current item the player is actually holding. On live
+    /// radio it answers whether rewinding is possible at all and how large a
+    /// recording window would have to be; on an episode it answers how far
+    /// ahead the file has been fetched, which is how long playback can carry
+    /// on with the network gone.
+    ///
+    /// Reads only - no player, no session, nothing that could collide with a
+    /// source change.
+    private func logBuffer() {
+        guard let item = player?.currentItem else { return }
+        guard Date().timeIntervalSince(lastBufferLog) > 5 else { return }
+        lastBufferLog = Date()
+
+        let seekable = item.seekableTimeRanges
+            .map(\.timeRangeValue)
+            .filter { $0.duration.seconds.isFinite }
+
+        let seekableText = seekable
+            .map { String(format: "%.0f…%.0f (%.0fs)", $0.start.seconds, $0.end.seconds, $0.duration.seconds) }
+            .joined(separator: ", ")
+
+        let loadedSeconds = item.loadedTimeRanges
+            .map(\.timeRangeValue.duration.seconds)
+            .filter { $0.isFinite }
+            .reduce(0, +)
+
+        AppLog.write(.player, String(format: "%@ buffer - seekable: [%@] loaded: %.1fs at %.1f",
+                          isLive ? "live" : "file",
+                          seekableText.isEmpty ? "none" : seekableText,
+                          loadedSeconds,
+                          currentTime))
+    }
+    #endif
 
     private func teardownPlayer() {
         if let token = timeObserverToken {
@@ -388,35 +592,58 @@ final class PlaybackEngine: NSObject, ObservableObject {
 
     // MARK: - Audio session
 
+    // AVAudioSession is an iOS idea. On the Mac there is no single session to
+    // claim, no category to declare and nothing to be interrupted by - the
+    // system mixes applications itself. So the three calls that matter are
+    // wrapped here rather than guarded at each of their call sites, and on the
+    // Mac they simply do nothing.
+
     private func configureAudioSession() {
+        #if !targetEnvironment(macCatalyst)
         do {
             try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [])
         } catch {
-            debugPrint("Audio session category failed: \(error.localizedDescription)")
+            AppLog.write(.player, "Audio session category failed: \(error.localizedDescription)")
         }
+        #endif
     }
 
     private func activateSession() {
+        #if !targetEnvironment(macCatalyst)
         do {
             try AVAudioSession.sharedInstance().setActive(true)
         } catch {
-            debugPrint("Audio session activation failed: \(error.localizedDescription)")
+            AppLog.write(.player, "Audio session activation failed: \(error.localizedDescription)")
         }
+        #endif
+    }
+
+    private func deactivateSession() {
+        #if !targetEnvironment(macCatalyst)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     private func observeInterruptions() {
+        #if !targetEnvironment(macCatalyst)
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(handleInterruption(_:)),
             name: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance()
         )
+        #endif
     }
 
+    #if !targetEnvironment(macCatalyst)
     @objc private func handleInterruption(_ notification: Notification) {
         guard let info = notification.userInfo,
               let rawType = info[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
+
+        #if DEBUG
+        AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(currentTime), item: \(String(describing: player?.currentItem?.status.rawValue))")
+        #endif
 
         switch type {
         case .began:
@@ -430,6 +657,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
             break
         }
     }
+    #endif
 
     // MARK: - Now Playing / remote commands
 
@@ -469,7 +697,7 @@ final class PlaybackEngine: NSObject, ObservableObject {
         centre.changePlaybackPositionCommand.addTarget { [weak self] event in
             guard let self, !self.isLive,
                   let event = event as? MPChangePlaybackPositionCommandEvent else { return .commandFailed }
-            self.seek(to: event.positionTime)
+            self.moveByHand(to: event.positionTime)
             return .success
         }
     }
@@ -544,7 +772,7 @@ extension PlaybackEngine: AVPlayerItemMetadataOutputPushDelegate {
 
         // Written as a plain loop on purpose. The same thing as a chain of
         // flatMap/filter/compactMap made the type checker give up on this
-        // expression — AVMetadataItem's overloads leave it too much to infer.
+        // expression - AVMetadataItem's overloads leave it too much to infer.
         var announced: LiveTrack?
         var sawAnyItem = false
 
@@ -552,6 +780,9 @@ extension PlaybackEngine: AVPlayerItemMetadataOutputPushDelegate {
             for item in group.items {
                 sawAnyItem = true
                 guard isTitleMetadata(item), let raw = item.stringValue else { continue }
+                #if DEBUG
+                AppLog.write(.player, "stream announced: \(raw)")
+                #endif
                 if let track = LiveTrack(raw: raw) {
                     announced = track
                 }
@@ -563,8 +794,27 @@ extension PlaybackEngine: AVPlayerItemMetadataOutputPushDelegate {
         guard announced != nil || sawAnyItem else { return }
         guard announced != liveTrack else { return }
 
-        liveTrack = announced
+        setLiveTrack(announced)
         updateNowPlayingInfo()
+    }
+
+    /// One announcement, and an end to it - see liveTrackLifetime.
+    private func setLiveTrack(_ track: LiveTrack?) {
+        liveTrackExpiry?.cancel()
+        liveTrackExpiry = nil
+        liveTrack = track
+        guard track != nil else { return }
+
+        let expiry = DispatchWorkItem { [weak self] in
+            guard let self, self.isLive else { return }
+            #if DEBUG
+            AppLog.write(.player, "the station has announced nothing for \(Int(PlaybackEngine.liveTrackLifetime / 60)) minutes - clearing the track")
+            #endif
+            self.liveTrack = nil
+            self.updateNowPlayingInfo()
+        }
+        liveTrackExpiry = expiry
+        DispatchQueue.main.asyncAfter(deadline: .now() + PlaybackEngine.liveTrackLifetime, execute: expiry)
     }
 
     private func isTitleMetadata(_ item: AVMetadataItem) -> Bool {

@@ -14,6 +14,7 @@ import WebKit
 
 final class SettingsViewModel: ObservableObject {
 
+    @Published private(set) var bookmarkCount = 0
     @Published private(set) var downloadedCount = 0
     @Published private(set) var downloadedBytes: Int64 = 0
     @Published var deleteFailureMessage: String?
@@ -33,20 +34,48 @@ final class SettingsViewModel: ObservableObject {
     }
 
     var downloadsSummary: String {
-        guard hasDownloads else { return "Nema preuzetih epizoda" }
-        let noun: String
-        switch downloadedCount % 10 {
-        case 1 where downloadedCount % 100 != 11: noun = "epizoda"
-        case 2...4 where !(12...14).contains(downloadedCount % 100): noun = "epizode"
-        default: noun = "epizoda"
-        }
-        return "\(downloadedCount) \(noun) · \(formattedSize)"
+        guard hasDownloads else { return String(localized: "Nema preuzetih epizoda") }
+        // The plural rules live in the string catalog - Serbian has three
+        // forms, English two, and neither belongs in a switch here.
+        let episodes = String(localized: "\(downloadedCount) epizoda")
+        return "\(episodes) · \(formattedSize)"
+    }
+
+    var bookmarksSummary: String {
+        guard bookmarkCount > 0 else { return String(localized: "Nema zabeleški") }
+        return String(localized: "\(bookmarkCount) zabeleška")
     }
 
     func refresh() {
         downloadedCount = fileService.downloadedFiles().count
         downloadedBytes = fileService.downloadedBytes()
+        bookmarkCount = BookmarkLibrary.shared.all().count
     }
+
+    #if DEBUG
+    /// A first install, without the install: files, both stores, the iCloud
+    /// zone and the defaults. What is left is what a phone that has never seen
+    /// this app has.
+    @MainActor
+    func eraseEverything() async -> String {
+        var report: [String] = []
+
+        switch fileService.deleteAllDownloads() {
+        case .success: report.append("fajlovi: preuzeto obrisano")
+        case .failure(let error): report.append("fajlovi: \(error.localizedDescription)")
+        }
+
+        report.append(contentsOf: await AppDatabase.shared.eraseEverything())
+
+        if let bundleId = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleId)
+            report.append("podešavanja: vraćena")
+        }
+
+        refresh()
+        return report.joined(separator: "\n")
+    }
+    #endif
 
     func deleteAllDownloads() {
         switch fileService.deleteAllDownloads() {
@@ -54,7 +83,7 @@ final class SettingsViewModel: ObservableObject {
             repository.clearAllDownloadReferences()
             deleteFailureMessage = nil
         case .failure(let error):
-            deleteFailureMessage = "Brisanje nije uspelo: \(error.localizedDescription)"
+            deleteFailureMessage = String(localized: "Brisanje nije uspelo: \(error.localizedDescription)")
         }
         refresh()
     }
@@ -67,6 +96,13 @@ struct SettingsView: View {
     @StateObject private var viewModel = SettingsViewModel()
     @ObservedObject private var settings = AppSettings.shared
     @State private var showDeleteConfirmation = false
+    #if DEBUG
+    @State private var showEraseConfirmation = false
+    @State private var eraseReport: String?
+    #endif
+    #if DEBUG && !targetEnvironment(macCatalyst)
+    @State private var isComposingLogMail = false
+    #endif
     @Environment(\.openURL) private var openURL
 
     private enum Links {
@@ -80,7 +116,9 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            bookmarksSection
             networkSection
+            statisticsSection
             downloadsSection
             showSection
             appSection
@@ -98,24 +136,82 @@ struct SettingsView: View {
         } message: {
             Text("Epizode ostaju dostupne za slušanje preko interneta i možeš ih ponovo preuzeti.")
         }
+        #if DEBUG
+        .confirmationDialog(
+            "Obrisati baš sve?",
+            isPresented: $showEraseConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Obriši sve", role: .destructive) {
+                Task { eraseReport = await viewModel.eraseEverything() }
+            }
+            Button("Odustani", role: .cancel) {}
+        } message: {
+            Text("Biće obrisane zabeleške, omiljene epizode, napredak slušanja, preuzete epizode i podešavanja, uključujući podatke u iCloudu koji se sinhronizuju sa ostalim uređajima. Obriši podatke na svim uređajima pre nego što ponovo pokreneš aplikaciju na bilo kom od njih. U suprotnom, uređaj na kom su podaci ostali može ih ponovo poslati u iCloud.")
+        }
+        .alert("Obrisano", isPresented: Binding(get: { eraseReport != nil },
+                                               set: { if !$0 { eraseReport = nil } })) {
+            // The container in memory still points at stores that were just
+            // emptied under it. A restart is the honest way to see the state
+            // that the next launch will actually find.
+            Button("Zatvori aplikaciju") { exit(0) }
+            Button("Kasnije", role: .cancel) { eraseReport = nil }
+        } message: {
+            Text(eraseReport ?? "")
+        }
+        #endif
+        #if DEBUG && !targetEnvironment(macCatalyst)
+        .sheet(isPresented: $isComposingLogMail) {
+            MailComposeView(recipient: Links.authorEmail,
+                            subject: "AlarmDM log \(Self.appVersion)",
+                            body: Self.diagnosticsBody,
+                            attachments: AppLog.exportURLs)
+                .ignoresSafeArea()
+        }
+        #endif
     }
 
     // MARK: Sections
 
+    private var bookmarksSection: some View {
+        Section {
+            NavigationLink {
+                BookmarksView()
+            } label: {
+                HStack {
+                    Label("Zabeleženo", systemImage: "bookmark")
+                    Spacer()
+                    Text(viewModel.bookmarksSummary)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+    }
+
     private var networkSection: some View {
         Section {
             Toggle(isOn: settings.downloadsOverWiFiOnlyBinding) {
-                Label("Preuzimanje samo preko WiFi-ja", systemImage: "wifi")
+                Label("Preuzimanje samo preko Wi-Fi mreže", systemImage: "wifi")
             }
         } footer: {
-            Text("Slušanje uživo i strimovanje epizoda rade uvek. Ovo se odnosi samo na preuzimanje - kad si na mobilnoj mreži, aplikacija će pitati pre nego što skine epizodu.")
+            Text("Ovo podešavanje važi samo za preuzimanje epizoda. Radio uživo i epizode možeš slušati i preko mobilne mreže. Ako želiš da preuzmeš epizodu preko mobilne mreže, aplikacija će tražiti potvrdu.")
+        }
+    }
+
+    private var statisticsSection: some View {
+        Section {
+            Toggle(isOn: settings.suppressesUsageStatisticsBinding) {
+                Label("Ne šalji anonimnu statistiku", systemImage: "chart.bar.xaxis")
+            }
+        } footer: {
+            Text("Aplikacija beleži koliko često koristiš pojedine funkcije - na primer, koliko puta napraviš zabelešku. Ne šalje podatke o tvom identitetu, sadržaju zabeleški ni onome što slušaš. Statistika se ne povezuje sa tobom.")
         }
     }
 
     private var downloadsSection: some View {
         Section("Preuzeto") {
             HStack {
-                Label("Na telefonu", systemImage: "arrow.down.circle")
+                Label("Na ovom uređaju", systemImage: "arrow.down.circle")
                 Spacer()
                 Text(viewModel.downloadsSummary)
                     .foregroundColor(.secondary)
@@ -161,7 +257,7 @@ struct SettingsView: View {
     }
 
     /// A row that leaves the app, marked as such.
-    private func externalRow(_ title: String, detail: String? = nil, systemImage: String) -> some View {
+    private func externalRow(_ title: LocalizedStringKey, detail: String? = nil, systemImage: String) -> some View {
         HStack {
             Label(title, systemImage: systemImage)
             Spacer()
@@ -183,12 +279,62 @@ struct SettingsView: View {
                 externalRow("Kontaktiraj autora", systemImage: "envelope")
             }
 
+            #if !targetEnvironment(macCatalyst)
+            // iOS keeps a language per app, apart from the phone's, and offers
+            // the choice on the app's own page in Settings once there is more
+            // than one language to choose from. A picker of our own would
+            // change the app and leave CarPlay, the share sheet and every
+            // system dialog behind in the other language. The Mac has the same
+            // setting in System Settings, under Language & Region.
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+            } label: {
+                externalRow("Jezik", detail: AppLanguage.currentName, systemImage: "globe")
+            }
+            #endif
+
             HStack {
                 Text("Verzija")
                 Spacer()
                 Text(Self.appVersion)
                     .foregroundColor(.secondary)
             }
+
+            #if DEBUG
+            // The whole point of writing the log to a file: getting it off the
+            // phone from wherever the thing went wrong, without a cable and
+            // without a Mac. Debug builds only - a shipped app has no business
+            // offering this.
+            ShareLink(item: AppLog.fileURL) {
+                externalRow("Izvezi log", systemImage: "square.and.arrow.up")
+            }
+            #endif
+
+            #if DEBUG && !targetEnvironment(macCatalyst)
+            // The same file, one step shorter: a draft addressed to me with
+            // this session and the one before it already attached, so nothing
+            // has to be found in Files first.
+            Button {
+                if MailComposeView.canSend {
+                    isComposingLogMail = true
+                } else {
+                    // No mail account on the device. The draft would open with
+                    // nowhere to go, so this falls back to the plain contact
+                    // mail and leaves the log to the share sheet above.
+                    openURL(supportMailURL())
+                }
+            } label: {
+                externalRow("Pošalji log na mejl", systemImage: "envelope.badge")
+            }
+            #endif
+
+            #if DEBUG
+            Button(role: .destructive) {
+                showEraseConfirmation = true
+            } label: {
+                Label("Obriši sve podatke, uključujući iCloud", systemImage: "trash.slash")
+            }
+            #endif
         }
     }
 
@@ -196,9 +342,21 @@ struct SettingsView: View {
 
     private static var appVersion: String {
         let info = Bundle.main.infoDictionary
-        let version = info?["CFBundleShortVersionString"] as? String ?? "—"
-        let build = info?["CFBundleVersion"] as? String ?? "—"
+        let version = info?["CFBundleShortVersionString"] as? String ?? "-"
+        let build = info?["CFBundleVersion"] as? String ?? "-"
         return "\(version) (\(build))"
+    }
+
+    /// The version and the OS, plus how much log is attached - an empty file
+    /// is worth noticing before reading it rather than after.
+    private static var diagnosticsBody: String {
+        let sizes = AppLog.exportURLs.map { url -> String in
+            let bytes = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            let size = ByteCountFormatter.string(fromByteCount: Int64(bytes), countStyle: .file)
+            return "\(url.lastPathComponent): \(size)"
+        }
+        let attached = sizes.isEmpty ? "nema zapisa" : sizes.joined(separator: "\n")
+        return "\n\n---\nAplikacija: \(appVersion)\niOS: \(UIDevice.current.systemVersion)\nLog:\n\(attached)"
     }
 
     /// Pre-fills the version and OS, so a bug report arrives with the two facts
@@ -216,6 +374,61 @@ struct SettingsView: View {
         return components.url ?? URL(string: "mailto:\(Links.authorEmail)")!
     }
 }
+
+// MARK: - Log by mail
+
+#if DEBUG && !targetEnvironment(macCatalyst)
+import MessageUI
+
+/// A mail draft with the log files attached. Debug builds only, and not on
+/// Catalyst, where MFMailComposeViewController does not exist.
+struct MailComposeView: UIViewControllerRepresentable {
+    let recipient: String
+    let subject: String
+    let body: String
+    let attachments: [URL]
+
+    /// False when the device has no mail account set up, in which case the
+    /// composer would appear and send nothing.
+    static var canSend: Bool { MFMailComposeViewController.canSendMail() }
+
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator { dismiss() }
+    }
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let controller = MFMailComposeViewController()
+        controller.mailComposeDelegate = context.coordinator
+        controller.setToRecipients([recipient])
+        controller.setSubject(subject)
+        controller.setMessageBody(body, isHTML: false)
+
+        for url in attachments {
+            guard let data = try? Data(contentsOf: url) else { continue }
+            controller.addAttachmentData(data, mimeType: "text/plain", fileName: url.lastPathComponent)
+        }
+        return controller
+    }
+
+    func updateUIViewController(_ controller: MFMailComposeViewController, context: Context) {}
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        private let onFinish: () -> Void
+
+        init(onFinish: @escaping () -> Void) { self.onFinish = onFinish }
+
+        /// Sent, saved or cancelled - the sheet closes either way, and a
+        /// failure is the mail app's to report.
+        func mailComposeController(_ controller: MFMailComposeViewController,
+                                   didFinishWith result: MFMailComposeResult,
+                                   error: Error?) {
+            onFinish()
+        }
+    }
+}
+#endif
 
 // MARK: - Web page
 
@@ -240,7 +453,7 @@ struct WebPageView: View {
 }
 
 /// Locked to one host. The About page carries the site's own navigation and
-/// links out to Facebook, Instagram and YouTube — following those inside the
+/// links out to Facebook, Instagram and YouTube - following those inside the
 /// app would make this a web browser, which is a different app to review and a
 /// higher age rating. Anything off-host opens in Safari instead.
 private struct WebView: UIViewRepresentable {

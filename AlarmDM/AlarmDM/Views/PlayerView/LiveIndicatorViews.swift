@@ -49,50 +49,48 @@ private struct MarqueeWidthKey: PreferenceKey {
     }
 }
 
-/// Scrolls its text only when the text is wider than the space it was given —
-/// a short title stays still, which is what most of them do. Two copies with a
-/// gap between them make the loop seamless: by the time the first has left, the
-/// second is already in place.
+/// Scrolls its text only when the text does not fit - a short title stays
+/// still, which is what most of them do.
+///
+/// It travels like a chyron rather than a conveyor: out to the end of the
+/// text, pause, back to the start, pause. A looping belt of two copies reads
+/// faster than it moves and never lets you finish a long title, because the
+/// beginning has already gone by the time you reach the end.
 struct MarqueeText: View {
 
     let text: String
     var font: Font = .caption
-    /// Slow enough to read at a glance on a bar 44 points tall.
-    var pointsPerSecond: Double = 26
-    var gap: CGFloat = 40
+    /// Slow on purpose. The eye is following words, not watching a marquee.
+    var pointsPerSecond: Double = 16
+    /// Long enough to read the end before it starts back.
+    var pause: Double = 1.5
 
     @State private var textWidth: CGFloat = 0
     @State private var containerWidth: CGFloat = 0
     @State private var offset: CGFloat = 0
+    @State private var travel: Task<Void, Never>?
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// How far past the edge the text runs. Only this much has to move - the
+    /// rest is already on screen.
+    private var overflow: CGFloat { max(0, textWidth - containerWidth) }
+
     private var scrolls: Bool {
-        !reduceMotion && textWidth > containerWidth + 1 && containerWidth > 0
+        !reduceMotion && containerWidth > 0 && overflow > 1
     }
 
     var body: some View {
         // A blank line of the right font is what the layout is built on, and
         // the text rides in an overlay. Overlay content never widens its
-        // parent, which is the whole problem: two copies of a long title with
-        // .fixedSize() propose a width far past the screen, and `clipped()`
-        // only hides the drawing — the bar, and everything around it, had
-        // already been stretched by then.
+        // parent: a long title with .fixedSize() proposes a width far past the
+        // screen, and `clipped()` only hides the drawing - by then the bar, and
+        // everything around it, has already been stretched.
         Text(verbatim: " ")
             .font(font)
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .leading) {
-                if scrolls {
-                    HStack(spacing: gap) {
-                        label
-                        label
-                    }
-                    .offset(x: offset)
-                } else {
-                    label
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                }
+                label.offset(x: offset)
             }
             .clipped()
             .background(
@@ -108,8 +106,9 @@ struct MarqueeText: View {
             .onChange(of: text) { _, _ in restart() }
             // The two measurements arrive in no fixed order. Without this, a
             // width that lands after the container's would leave `scrolls`
-            // reading false forever and the loop would never start.
+            // reading false forever and the text would never move.
             .onChange(of: textWidth) { _, _ in restart() }
+            .onDisappear { travel?.cancel() }
             .accessibilityElement()
             .accessibilityLabel(text)
     }
@@ -127,19 +126,36 @@ struct MarqueeText: View {
             )
     }
 
-    /// Jumps back to the start without animating, then begins the loop. Without
-    /// the transaction the reset itself would animate, and the text would slide
-    /// backwards across the bar every time the song changed.
+    /// Back to the start without animating, then out and back for as long as
+    /// the view is on screen. Without the transaction the reset itself would
+    /// animate, and the text would slide backwards across the bar every time
+    /// the song changed.
     private func restart() {
+        travel?.cancel()
+
         var reset = Transaction()
         reset.disablesAnimations = true
         withTransaction(reset) { offset = 0 }
 
         guard scrolls else { return }
 
-        let distance = textWidth + gap
-        withAnimation(.linear(duration: distance / pointsPerSecond).repeatForever(autoreverses: false)) {
-            offset = -distance
+        let distance = overflow
+        // A floor on the duration, so a title that only just overflows does
+        // not twitch instead of travelling.
+        let duration = max(1.2, Double(distance) / pointsPerSecond)
+
+        travel = Task { @MainActor in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(pause))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: duration)) { offset = -distance }
+
+                try? await Task.sleep(for: .seconds(duration + pause))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: duration)) { offset = 0 }
+
+                try? await Task.sleep(for: .seconds(duration))
+            }
         }
     }
 }
@@ -156,8 +172,8 @@ struct LiveLabel: View {
     var textColor: Color = Color("secondaryText")
 
     private var text: String {
-        guard let track else { return "UŽIVO" }
-        return "UŽIVO · \(track.display)"
+        guard let track else { return String(localized: "UŽIVO") }
+        return String(localized: "UŽIVO · \(track.display)")
     }
 
     var body: some View {

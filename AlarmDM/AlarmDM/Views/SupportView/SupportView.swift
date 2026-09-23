@@ -2,7 +2,7 @@
 //  SupportView.swift
 //  AlarmDM
 //
-//  The Podrži tab. Donations are handled outside the app — the buttons open
+//  The Podrži tab. Donations are handled outside the app - the buttons open
 //  Patreon and PayPal in the browser, and the bank details can be copied or
 //  scanned. Nothing here unlocks anything in the app, which is what keeps it
 //  out of in-app purchase territory.
@@ -28,13 +28,13 @@ struct SupportView: View {
             VStack(alignment: .leading, spacing: 24) {
                 intro
 
-                sectionHeader("Daško i Mlađa")
+                sectionHeader(String(localized: "Daško i Mlađa"))
                 patreonRow
                 payPalRow
                 bankSection
 
                 if !Show.withOwnPatreon.isEmpty {
-                    sectionHeader("Emisije")
+                    sectionHeader(String(localized: "Emisije"))
                     showPatreonSection
                 }
             }
@@ -48,7 +48,7 @@ struct SupportView: View {
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Naš rad u potpunosti zavisi od vaših donacija.")
+            Text("Naš rad u potpunosti zavisi od tvojih donacija.")
                 .font(.headline)
                 .foregroundColor(Color("primaryText"))
             Text("Možeš nas podržati na sledeće načine:")
@@ -110,7 +110,7 @@ struct SupportView: View {
         Link(destination: Donation.patreon) {
             donationCard(
                 title: "Patreon",
-                detail: "Stalna mesečna ili godišnja donacija",
+                detail: String(localized: "Redovna mesečna ili godišnja donacija"),
                 systemImage: "heart.circle.fill"
             )
         }
@@ -121,7 +121,7 @@ struct SupportView: View {
         Link(destination: Donation.payPal) {
             donationCard(
                 title: "PayPal",
-                detail: "Jednokratna uplata",
+                detail: String(localized: "Jednokratna uplata"),
                 systemImage: "creditcard.circle.fill"
             )
         }
@@ -185,10 +185,10 @@ struct SupportView: View {
                     .accessibilityLabel("Prikaži kôd preko celog ekrana")
 
                     VStack(spacing: 3) {
-                        Label("Klikni na kôd za skeniranje", systemImage: "arrow.up.left.and.arrow.down.right")
+                        Label("Dodirni kôd za uvećani prikaz", systemImage: "arrow.up.left.and.arrow.down.right")
                             .font(.caption.weight(.medium))
                             .foregroundColor(Color("primaryLink"))
-                        Text("Kôd nosi unapred upisan iznos od 500 RSD.")
+                        Text("U kôd je unapred upisan iznos od 500 RSD.")
                             .font(.caption)
                             .multilineTextAlignment(.center)
                             .foregroundColor(Color("secondaryText"))
@@ -250,13 +250,21 @@ private struct FullscreenQRView: View {
     let image: UIImage
 
     @Environment(\.dismiss) private var dismiss
-    @State private var previousBrightness = UIScreen.main.brightness
+    @State private var previousBrightness = FullscreenQRView.screenBrightness
+    @State private var dragOffset: CGFloat = 0
 
     var body: some View {
         ZStack {
             Color.white.ignoresSafeArea()
 
             VStack(spacing: 24) {
+                // The same handle every sheet has, so the pull down below is
+                // something the screen offers rather than something to guess.
+                Capsule()
+                    .fill(Color.black.opacity(0.18))
+                    .frame(width: 36, height: 5)
+                    .padding(.top, 10)
+
                 Spacer()
 
                 Image(uiImage: image)
@@ -266,9 +274,9 @@ private struct FullscreenQRView: View {
                     .padding(.horizontal, 32)
 
                 VStack(spacing: 4) {
-                    Text("325-9300600398707-66")
+                    Text(verbatim: "325-9300600398707-66")
                         .font(.callout.monospacedDigit())
-                    Text("OTP banka · 500 RSD")
+                    Text(verbatim: "OTP banka · 500 RSD")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -280,13 +288,48 @@ private struct FullscreenQRView: View {
                     .padding(.bottom, 24)
             }
             .foregroundColor(.black)
+            .offset(y: dragOffset)
+            // Held up to somebody else's phone across a table, this is the
+            // screen most likely to be put away in a hurry, and a hand coming
+            // back down the screen is the quickest way to do it. The white
+            // stays put underneath so nothing dark shows through at the top.
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.height > 0 { dragOffset = value.translation.height }
+                    }
+                    .onEnded { value in
+                        if value.translation.height > 120 {
+                            dismiss()
+                        }
+                        withAnimation { dragOffset = 0 }
+                    }
+            )
         }
         .onAppear {
-            previousBrightness = UIScreen.main.brightness
-            UIScreen.main.brightness = 1.0
+            previousBrightness = FullscreenQRView.screenBrightness
+            FullscreenQRView.setScreenBrightness(1.0)
         }
         .onDisappear {
-            UIScreen.main.brightness = previousBrightness
+            FullscreenQRView.setScreenBrightness(previousBrightness)
         }
+    }
+
+    // Turning the screen up is how a QR code gets scanned across a table. The
+    // Mac neither allows it nor needs it: its display is not being held up to
+    // someone else's camera.
+
+    private static var screenBrightness: CGFloat {
+        #if targetEnvironment(macCatalyst)
+        return 1
+        #else
+        return UIScreen.main.brightness
+        #endif
+    }
+
+    private static func setScreenBrightness(_ value: CGFloat) {
+        #if !targetEnvironment(macCatalyst)
+        UIScreen.main.brightness = value
+        #endif
     }
 }

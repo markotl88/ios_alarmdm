@@ -10,22 +10,28 @@
 import Foundation
 import Combine
 
-/// Favouriting and deleting a download touch both the file system and Realm,
+/// Writing down how far an episode has been listened to. One method, so the
+/// player can be tested without a database behind it.
+protocol ProgressRecording: AnyObject {
+    func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID)
+}
+
+/// Favouriting and deleting a download touch both the file system and the store,
 /// and both the Radio tab and a show's list offer them. Kept in one place so
 /// the two screens cannot drift apart.
-final class EpisodeLibrary {
+final class EpisodeLibrary: ProgressRecording {
 
     static let shared = EpisodeLibrary()
 
     /// Fires whenever an episode's local state changes. Lists hold snapshots
-    /// taken from Realm when they appeared, so without this a download made
+    /// taken from the store when they appeared, so without this a download made
     /// from the player leaves every visible row still claiming it is not
-    /// downloaded — and the Preuzeto filter cannot see it.
+    /// downloaded - and the Preuzeto filter cannot see it.
     let didChange = PassthroughSubject<Void, Never>()
 
     /// Fires when the WiFi-only rule stopped a download, so the UI can offer to
     /// go ahead anyway or to drop the rule. The library refuses rather than
-    /// deciding for the person — it has no way to ask.
+    /// deciding for the person - it has no way to ask.
     let downloadBlocked = PassthroughSubject<Podcast, Never>()
 
     private let repository = PodcastRepository.shared
@@ -50,10 +56,19 @@ final class EpisodeLibrary {
 
     func progress(for id: UUID) -> Double { downloadProgress[id] ?? 0 }
 
+    private var cancellables = Set<AnyCancellable>()
+
     init(fileService: FileServiceProtocol = FileService(),
-         podcastService: PodcastServiceProtocol = PodcastService()) {
+         podcastService: PodcastServiceProtocol = PodcastService(),
+         database: AppDatabase = .shared) {
         self.fileService = fileService
         self.podcastService = podcastService
+
+        // A favourite marked on another device is a change to this list like
+        // any other, and the screens already know what to do with didChange.
+        database.didChangeRemotely
+            .sink { [weak self] in self?.didChange.send() }
+            .store(in: &cancellables)
     }
 
     func isDownloading(_ podcast: Podcast) -> Bool {
@@ -61,7 +76,7 @@ final class EpisodeLibrary {
     }
 
     /// Downloads an episode and records the local file. `didChange` fires when
-    /// the download starts and when it ends — never per tick, so a list is not
+    /// the download starts and when it ends - never per tick, so a list is not
     /// rebuilt sixty times a minute; progress goes out on `progressPublisher`
     /// instead. On a metered connection this refuses and emits `downloadBlocked`
     /// unless `force` says the person has already chosen.
@@ -75,7 +90,7 @@ final class EpisodeLibrary {
         guard !podcast.isDownloaded else { return false }
         guard !downloadsInFlight.contains(podcast.id) else { return false }
         guard let url = URL(string: podcast.podcastUrl) else {
-            debugPrint("Episode \(podcast.id) has no usable media URL")
+            AppLog.write(.library, "Episode \(podcast.id) has no usable media URL")
             return false
         }
 
@@ -96,7 +111,7 @@ final class EpisodeLibrary {
             if case .success(let location) = result {
                 self.repository.setDownloadedFile(location.lastPathComponent, for: podcast.id)
             } else if case .failure(let error) = result {
-                debugPrint("Error downloading episode: \(error.localizedDescription)")
+                AppLog.write(.library, "Error downloading episode: \(error.localizedDescription)")
             }
 
             self.didChange.send()
@@ -116,9 +131,18 @@ final class EpisodeLibrary {
         return true
     }
 
-    /// Called by whoever wrote to Realm outside this type — the player, after
-    /// a download finishes.
+    /// Called by whoever wrote to the store outside this type - the player,
+    /// after a download finishes.
     func episodeDidChange() {
+        didChange.send()
+    }
+
+    /// Where a listen got to, written down and announced. Through here rather
+    /// than straight into the repository so the lists hear about it: an
+    /// episode that has just been finished should carry its tick the moment
+    /// the player is put down, not the next time the screen happens to fetch.
+    func recordProgress(position: TimeInterval, hasFinished: Bool, for id: UUID) {
+        repository.recordProgress(position: position, hasFinished: hasFinished, for: id)
         didChange.send()
     }
 
@@ -139,7 +163,7 @@ final class EpisodeLibrary {
             didChange.send()
             return true
         case .failure(let error):
-            debugPrint("Error deleting download: \(error.localizedDescription)")
+            AppLog.write(.library, "Error deleting download: \(error.localizedDescription)")
             return false
         }
     }

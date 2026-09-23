@@ -2,47 +2,103 @@
 //  Bookmark.swift
 //  AlarmDM
 //
-//  Created by Marko Stajic on 22.10.2024.
+//  A moment worth coming back to. Made with one tap, sorted out later.
 //
 
 import Foundation
 
-enum BookmarkCategory: String {
-    case film
+enum BookmarkCategory: String, CaseIterable, Identifiable {
     case muzika
-    case serija
+    case film
     case knjiga
-    case zoli
-    case krvarenjeIzUsiju
-    case daskoMasti
-    case daskoRant
-    case mladjaDobarCovek
-    case custom
+    case strip
+    case fora
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .muzika: return String(localized: "Muzika")
+        case .film:   return String(localized: "Film")
+        case .knjiga: return String(localized: "Knjiga")
+        case .strip:  return String(localized: "Strip")
+        case .fora:   return String(localized: "Fora")
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .muzika: return "music.note"
+        case .film:   return "film"
+        case .knjiga: return "book"
+        case .strip:  return "books.vertical"
+        case .fora:   return "face.smiling"
+        }
+    }
 }
 
 struct Bookmark: Identifiable, Equatable {
-    var id: Int
-    var title: String
-    var note: String
-    var createdAt: Date
-    /// Where in the episode the bookmark points, in seconds.
-    var position: Double
-    var category: BookmarkCategory
-    var podcast: Podcast?
-}
 
-extension Bookmark {
-    init(from bookmarkRealm: BookmarkRealm) {
-        self.id = bookmarkRealm.id
-        self.title = bookmarkRealm.title
-        self.note = bookmarkRealm.note
-        self.createdAt = bookmarkRealm.createdAt
-        self.position = bookmarkRealm.position
-        self.category = BookmarkCategory(rawValue: bookmarkRealm.category ?? "") ?? .custom
-        if let podcastRealm = bookmarkRealm.parentPodcast.first {
-            self.podcast = Podcast(from: podcastRealm)
-        } else {
-            self.podcast = nil
-        }
+    var id: UUID
+    var createdAt: Date
+
+    /// Seconds into the episode. Zero for something caught on live radio,
+    /// which has no position to point at.
+    var position: Double
+
+    /// Nil until someone says what it was. The whole point of the button is
+    /// that it does not ask at the moment you press it.
+    var category: BookmarkCategory?
+    var note: String
+
+    /// A copy of what was playing, not a lookup. The episode row can be
+    /// evicted from the cache, and a bookmark that cannot say what it belongs
+    /// to is worthless.
+    var episodeTitle: String
+    var show: Show?
+
+    /// Nil until a live capture finds the episode it fell inside.
+    var podcastId: UUID?
+
+    /// Caught on live radio rather than inside an episode. Stays true after
+    /// the episode turns up, because `createdAt` plus this is what lets the
+    /// position be worked out again if the broadcast time is ever corrected.
+    var capturedLive: Bool
+
+    /// Caught live and still without an episode: nothing to open, nowhere to
+    /// jump. Not the same as having been caught live, which never changes.
+    var isAwaitingEpisode: Bool { capturedLive && podcastId == nil }
+
+    /// What you wrote beats what the feed called the episode. Four bookmarks
+    /// inside the same episode are four identical rows otherwise.
+    var displayTitle: String {
+        note.isEmpty ? episodeTitle : note
     }
+
+    /// The episode steps down to the second line once the note has taken the
+    /// first, so a row never stops saying where it came from.
+    var displaySubtitle: String? {
+        note.isEmpty ? show?.displayName : episodeTitle
+    }
+
+    /// mm:ss into the episode, or the moment it was caught for live radio.
+    var positionText: String {
+        guard !isAwaitingEpisode else {
+            return Bookmark.liveFormatter.string(from: createdAt)
+        }
+        let total = Int(position)
+        let hours = total / 3600
+        let minutes = (total % 3600) / 60
+        let seconds = total % 60
+        return hours > 0
+            ? String(format: "%d:%02d:%02d", hours, minutes, seconds)
+            : String(format: "%02d:%02d", minutes, seconds)
+    }
+
+    private static let liveFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "sr_RS")
+        formatter.dateFormat = "d.M. 'u' HH:mm"
+        return formatter
+    }()
 }
