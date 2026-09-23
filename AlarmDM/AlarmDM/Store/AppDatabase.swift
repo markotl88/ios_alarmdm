@@ -60,6 +60,20 @@ final class AppDatabase {
     /// a test makes several and each one used to leave its blocks behind.
     private var observers: [NSObjectProtocol] = []
 
+    /// Nothing is carried over from Realm, which this app used until 3.0, and
+    /// that is a decision rather than an oversight.
+    ///
+    /// An import was written once and thrown away: the old rows were keyed by
+    /// identifiers that mean nothing here, so every episode had to be matched
+    /// by its media URL, and a mismatch wrote a listening position onto the
+    /// wrong episode - worse than the empty start it was meant to avoid. What
+    /// is lost is favourites, bookmarks and the record of which files were
+    /// downloaded; the catalogue comes back from the feed on the first
+    /// refresh, and the downloaded files are still on disk and are found
+    /// again when their episodes are downloaded once more.
+    ///
+    /// It belongs in the release notes for the version that ships this.
+    ///
     /// The iCloud container these devices share. One for both bundle ids, so
     /// a debug build on the phone and a release build on the Mac are looking
     /// at the same records - which is the only way to watch syncing work.
