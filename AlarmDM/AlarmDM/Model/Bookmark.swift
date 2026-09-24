@@ -13,9 +13,11 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
     case knjiga
     case strip
     case urnebesno
+    // Declaration order is the order the picker offers them in - allCases
+    // follows it. The raw values are the stored ids and do not move.
     case bes
-    case dasko
     case mladja
+    case dasko
     case zoli
 
     var id: String { rawValue }
@@ -27,7 +29,9 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         case .knjiga: return String(localized: "Knjiga")
         case .strip:  return String(localized: "Strip")
         case .urnebesno: return String(localized: "Urnebesno")
-        case .bes:    return String(localized: "Bes")
+        // The case keeps its raw value: that string is the stored id, and
+        // renaming it would orphan every bookmark already filed under it.
+        case .bes:    return String(localized: "Rejdž")
         case .dasko:  return String(localized: "Masti")
         case .mladja: return String(localized: "Dobar čovek")
         case .zoli:   return String(localized: "Zoli")

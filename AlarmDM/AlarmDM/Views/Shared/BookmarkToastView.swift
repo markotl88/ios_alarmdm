@@ -159,23 +159,49 @@ struct BookmarkToastView: View {
 }
 
 
-/// Uses the same template artwork in the picker, menus and bookmark rows.
+/// The same artwork in the picker, menus and bookmark rows.
+///
+/// The host portraits are ink on paper: the alpha channel holds the lines and
+/// the face is the part that is not there, so the skin is whatever shows
+/// through from behind. Tinting that to the label colour is right in light
+/// mode and turns the drawing into its own negative in dark - a white beard
+/// and a white outline around a face the colour of the background, which
+/// reads as a skull rather than as Daško.
+///
+/// So they keep their own paper, in both appearances. That is not a new idea
+/// here: the episode artwork above the player sits on a light square in dark
+/// mode for the same reason, and it is the same set of drawings.
+///
+/// The SF Symbols beside them are drawn as one colour on purpose and go on
+/// following the label, which is what they are for.
 struct BookmarkCategoryIcon: View {
     let category: BookmarkCategory
     var size: CGFloat = 20
 
-    var body: some View {
-        image
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .accessibilityHidden(true)
-    }
+    /// Deliberately not dynamic colours - see the note above. Ink stops just
+    /// short of black so it does not out-contrast the text beside it.
+    private static let paper = Color(white: 0.93)
+    private static let ink = Color(white: 0.12)
 
-    private var image: Image {
-        if let name = category.assetName {
-            return Image(name).renderingMode(.template)
+    var body: some View {
+        Group {
+            if let name = category.assetName {
+                Image(name)
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(BookmarkCategoryIcon.ink)
+                    // Room around the drawing so the ears and hair do not run
+                    // into the edge of the disc.
+                    .padding(size * 0.08)
+                    .background(Circle().fill(BookmarkCategoryIcon.paper))
+            } else {
+                Image(systemName: category.systemImage)
+                    .resizable()
+                    .scaledToFit()
+            }
         }
-        return Image(systemName: category.systemImage)
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
