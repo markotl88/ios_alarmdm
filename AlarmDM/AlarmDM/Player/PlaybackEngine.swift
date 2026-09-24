@@ -493,6 +493,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     /// Swaps a streaming podcast for its freshly downloaded file without losing position.
     func switchToLocalFile(_ fileURL: URL) {
+        guard currentItemURL != fileURL else { return }
         reopenEpisode(at: fileURL)
     }
 
@@ -505,10 +506,22 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// back on the next press of play - resume rebuilds a failed item, and
     /// resolveURL checks the file system and falls through to the stream -
     /// but the listen has already been interrupted by then.
+    ///
+    /// Whether it is on the network already is a question about the player,
+    /// not about the `Podcast` in `source`: that value was captured when the
+    /// listen began and still says `fileUrl == nil` after a download was
+    /// handed over mid-listen. Asking the item that is actually loaded is the
+    /// only way to get an answer that survives a swap.
     func switchToStream() {
         guard case .podcast(let podcast) = source,
-              let url = URL(string: podcast.podcastUrl) else { return }
+              let url = URL(string: podcast.podcastUrl),
+              currentItemURL != url else { return }
         reopenEpisode(at: url)
+    }
+
+    /// Where the loaded item is reading from, file or network.
+    private var currentItemURL: URL? {
+        (player?.currentItem?.asset as? AVURLAsset)?.url
     }
 
     /// Builds the episode that is loaded again from somewhere else: the same
@@ -516,7 +529,12 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     private func reopenEpisode(at url: URL) {
         guard let source, case .podcast = source, player != nil else { return }
         let resumeAt = currentTime
-        let wasPlaying = isPlaying
+        // Buffering counts as playing here. A download that finishes while
+        // the stream is still filling its buffer finds `isPlaying == false`
+        // and `timeControlStatus == .waitingToPlayAtSpecifiedRate`, and
+        // reading only the first would hand the file over paused - which is
+        // exactly the moment the handover is most likely to happen.
+        let wasPlaying = isPlaying || isBuffering
 
         teardownPlayer()
 

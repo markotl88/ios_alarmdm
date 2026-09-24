@@ -1029,17 +1029,36 @@ final class FileHandoverTests: XCTestCase {
         XCTAssertEqual(engine.streamSwitches, 0)
     }
 
-    /// Same episode, but the engine took it while it was streaming - so
-    /// there is nothing to put back. The value the engine holds is what
-    /// answers that, because it was captured before the delete.
-    func testAListenThatWasAlreadyStreamingIsNotReopened() {
+    /// The one the fix is for, and the reason the question moved: the listen
+    /// began on the network and took the file mid-listen, so the `Podcast`
+    /// the engine carries still reads `fileUrl == nil`. Deciding from that
+    /// value left the listen on a file that had just been deleted.
+    func testAListenThatTookItsFileMidwayGoesBackToTheStreamWhenItIsDeleted() {
+        engine.play(.podcast(alarm), startingAt: 600)
+        library.download(alarm, force: true)
+        service.finish()
+
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        XCTAssertTrue(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    /// Same episode, but the listen never left the network - so there is
+    /// nothing to put back. This asks anyway, which is the contract now:
+    /// only the engine can tell a file listen from a streaming one, so it
+    /// is asked every time and declines when the item it has loaded is the
+    /// stream already. That last step needs a real AVPlayer and is not
+    /// covered here.
+    func testAStreamingListenIsStillAsked() {
         engine.play(.podcast(alarm), startingAt: 600)
 
         var downloaded = alarm!
         downloaded.fileUrl = "alarm.mp3"
         XCTAssertTrue(library.deleteDownload(downloaded))
 
-        XCTAssertEqual(engine.streamSwitches, 0)
+        XCTAssertEqual(engine.streamSwitches, 1)
     }
 
     /// Emptying the folder from Settings names no episode, so the one that
@@ -1054,8 +1073,20 @@ final class FileHandoverTests: XCTestCase {
         XCTAssertEqual(engine.streamSwitches, 1)
     }
 
-    func testEmptyingTheFolderLeavesAStreamingListenAlone() {
+    /// Emptying the folder asks about whatever is playing, for the same
+    /// reason: this type cannot tell what the listen is running on.
+    func testEmptyingTheFolderAsksAboutWhateverIsPlaying() {
         engine.play(.podcast(alarm), startingAt: 600)
+
+        _ = library.deleteAllDownloads()
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    /// Radio is not an episode, so nothing is asked at all.
+    func testEmptyingTheFolderLeavesTheRadioAlone() throws {
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+        engine.play(.radio(url: stream), startingAt: nil)
 
         _ = library.deleteAllDownloads()
 

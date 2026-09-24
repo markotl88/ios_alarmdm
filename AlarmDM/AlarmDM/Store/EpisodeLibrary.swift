@@ -171,13 +171,14 @@ final class EpisodeLibrary: ProgressRecording {
     ///
     /// `nil` means every episode: emptying the whole folder does not name
     /// one, and the only one that matters is whatever is playing.
+    /// Whether the listen is on a file at all is the engine's to answer,
+    /// not this type's: the `Podcast` the engine carries was captured when
+    /// the listen began, so after a download was handed over mid-listen it
+    /// still reads `fileUrl == nil` and this would decline to put a listen
+    /// that really is on a file back on the network.
     private func releaseDownloadedFile(for id: UUID?) {
         guard case .podcast(let playing) = engine.source else { return }
         if let id, playing.id != id { return }
-        // It was playing from a file, not from the network. The value the
-        // engine holds still says so - it was captured before the delete -
-        // which is exactly the question being asked.
-        guard playing.isDownloaded else { return }
         engine.switchToStream()
     }
 
