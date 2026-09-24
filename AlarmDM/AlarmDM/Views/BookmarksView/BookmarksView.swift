@@ -71,7 +71,11 @@ struct BookmarksView: View {
             }
             ForEach(viewModel.availableCategories) { category in
                 Button {
-                    viewModel.activeCategory = category
+                    // Pressing the one that is on takes it off, the same way
+                    // the category menu on a row works. "Sve" stays, because
+                    // it is the only way out when you cannot remember which
+                    // one you picked.
+                    viewModel.activeCategory = viewModel.activeCategory == category ? nil : category
                 } label: {
                     Label {
                         Text(category.title)
@@ -173,6 +177,17 @@ struct BookmarkRowView: View {
 
             Spacer(minLength: 0)
 
+            // On the trailing edge rather than in the badge. The badge says
+            // what a tap does - play something, or nothing yet - and the
+            // category is a different fact about the row; putting them in one
+            // place meant every bookmark you could actually play showed no
+            // category at all.
+            if let category = bookmark.category {
+                BookmarkCategoryIcon(category: category, size: 22)
+                    .help(Text(category.title))
+                    .accessibilityLabel(Text(category.title))
+            }
+
             if !canPlay {
                 // "UŽIVO" said where it came from, next to a broadcast symbol,
                 // which together read as something to press. It came from the
@@ -191,19 +206,12 @@ struct BookmarkRowView: View {
         .padding(.vertical, 4)
     }
 
-    /// A triangle where a tap plays something, and the category's own symbol
-    /// where it does not - a note for a song, a bookmark for anything else.
-    /// Every row used to carry a symbol that said nothing about which of the
-    /// two it was.
+    /// A triangle where a tap plays something, a bookmark where it does not.
+    /// Only that: the category moved to the trailing edge, where it shows on
+    /// every row rather than only on the ones with nothing to play.
     @ViewBuilder
     private var leadingIcon: some View {
-        if canPlay {
-            Image(systemName: "play.fill")
-        } else if let category = bookmark.category {
-            BookmarkCategoryIcon(category: category)
-        } else {
-            Image(systemName: "bookmark")
-        }
+        Image(systemName: canPlay ? "play.fill" : "bookmark")
     }
 
     /// One that has not found its episode is a note and nothing more: tapping
