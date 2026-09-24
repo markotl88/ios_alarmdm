@@ -201,6 +201,120 @@ final class SyncMergeTests: XCTestCase {
     }
 }
 
+// MARK: - The category list
+
+/// What the person arranged, folded the same way listening is: the rows can
+/// arrive duplicated, from devices that seeded the built-ins before they had
+/// heard of each other, and one answer has to come out.
+final class BookmarkCatalogTests: XCTestCase {
+
+    private let earlier = Date(timeIntervalSince1970: 1_800_000_000)
+    private var later: Date { earlier.addingTimeInterval(60) }
+
+    /// Nothing stored at all: the app's own order, every category present.
+    func testAnUntouchedListIsTheShippedOne() {
+        let items = BookmarkCatalog.arranged([])
+
+        XCTAssertEqual(items.map(\.id), BookmarkCategory.allCases.map(\.rawValue))
+        XCTAssertTrue(items.allSatisfy(\.isBuiltIn))
+    }
+
+    /// A category the app does not ship turns up beside the ones it does.
+    func testOneOfTheirOwnSitsWhereItsPositionPutsIt() {
+        let mine = BookmarkCategoryEntity(id: UUID().uuidString,
+                                          name: "Recepti",
+                                          iconName: "bookmark-dasko-mladja",
+                                          sortOrder: 150,
+                                          isBuiltIn: false,
+                                          editedAt: earlier)
+
+        let items = BookmarkCatalog.arranged([mine])
+        let index = items.firstIndex { $0.id == mine.id }
+
+        XCTAssertNotNil(index)
+        XCTAssertEqual(items[index!].title, "Recepti")
+        XCTAssertEqual(items[index!].assetName, "bookmark-dasko-mladja")
+        XCTAssertFalse(items[index!].isBuiltIn)
+        // 150 falls between the second and third shipped category.
+        XCTAssertEqual(index, 2)
+    }
+
+    /// A built-in keeps its translated title even with a row of its own, so
+    /// the app does not start showing Serbian to somebody reading English.
+    func testABuiltInKeepsItsOwnTitle() {
+        let moved = BookmarkCategoryEntity(id: BookmarkCategory.muzika.rawValue,
+                                           name: "whatever is in the row",
+                                           sortOrder: 9_000,
+                                           isBuiltIn: true,
+                                           editedAt: earlier)
+
+        let items = BookmarkCatalog.arranged([moved])
+
+        XCTAssertEqual(items.last?.id, BookmarkCategory.muzika.rawValue)
+        XCTAssertEqual(items.last?.title, BookmarkCategory.muzika.title)
+    }
+
+    /// Two devices arranged the list separately. The later arrangement wins,
+    /// the same rule a listening position follows.
+    func testTheLaterArrangementIsWhatIsRead() {
+        let id = BookmarkCategory.film.rawValue
+        let old = BookmarkCategoryEntity(id: id, sortOrder: 50, isBuiltIn: true, editedAt: earlier)
+        let new = BookmarkCategoryEntity(id: id, sortOrder: 900, isBuiltIn: true, editedAt: later)
+
+        let items = BookmarkCatalog.arranged([old, new])
+
+        XCTAssertEqual(items.filter { $0.id == id }.count, 1)
+        XCTAssertEqual(items.first { $0.id == id }?.sortOrder, 900)
+    }
+
+    /// Both devices seeded before either had heard of the other, so the rows
+    /// are identical and undated. One category, not two.
+    func testIdenticalSeedsFoldIntoOne() {
+        let id = BookmarkCategory.knjiga.rawValue
+        let a = BookmarkCategoryEntity(id: id, sortOrder: 300, isBuiltIn: true)
+        let b = BookmarkCategoryEntity(id: id, sortOrder: 300, isBuiltIn: true)
+
+        let items = BookmarkCatalog.arranged([a, b])
+
+        XCTAssertEqual(items.filter { $0.id == id }.count, 1)
+        XCTAssertEqual(items.map(\.id).count, Set(items.map(\.id)).count)
+    }
+
+    /// A version that adds a category does not need anybody to migrate: it
+    /// has no row, and it turns up at the place the app ships it in.
+    func testACategoryWithNoRowStillAppears() {
+        let arranged = BookmarkCategory.allCases.prefix(3).map {
+            BookmarkCategoryEntity(id: $0.rawValue,
+                                   sortOrder: BookmarkCatalog.defaultOrder(of: $0),
+                                   isBuiltIn: true,
+                                   editedAt: earlier)
+        }
+
+        let items = BookmarkCatalog.arranged(Array(arranged))
+
+        XCTAssertEqual(items.count, BookmarkCategory.allCases.count)
+        XCTAssertEqual(items.map(\.id), BookmarkCategory.allCases.map(\.rawValue))
+    }
+
+    /// Dragging writes a number for every row, built-ins included: once the
+    /// list has been arranged by hand the shipped order stops being right.
+    func testADragNumbersEverythingItWasGiven() {
+        let ids = ["c", "a", "b"]
+        let positions = BookmarkCatalog.positions(forNewOrder: ids)
+
+        XCTAssertEqual(positions["c"], 0)
+        XCTAssertEqual(positions["a"], BookmarkCatalog.step)
+        XCTAssertEqual(positions["b"], BookmarkCatalog.step * 2)
+    }
+
+    func testANewCategoryGoesAfterEverything() {
+        let items = BookmarkCatalog.arranged([])
+        let next = BookmarkCatalog.orderAfter(items)
+
+        XCTAssertGreaterThan(next, items.map(\.sortOrder).max() ?? 0)
+    }
+}
+
 // MARK: - Something else wrote to the store
 
 /// What an import from iCloud looks like from inside the app: another writer
