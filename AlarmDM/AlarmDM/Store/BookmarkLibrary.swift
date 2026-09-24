@@ -60,7 +60,7 @@ final class BookmarkLibrary {
     /// Saves immediately and asks nothing. The category can be added later from
     /// the list, which is the only shape that also works while driving.
     @discardableResult
-    func capture(category: BookmarkCategory? = nil, origin: BookmarkOrigin = .phone) -> Bookmark? {
+    func capture(categoryId: String? = nil, origin: BookmarkOrigin = .phone) -> Bookmark? {
         guard let source = engine.source else { return nil }
 
         let bookmark: Bookmark
@@ -70,7 +70,7 @@ final class BookmarkLibrary {
                 id: UUID(),
                 createdAt: Date(),
                 position: max(0, engine.currentTime - Self.rewind),
-                category: category,
+                categoryId: categoryId,
                 note: "",
                 episodeTitle: podcast.title,
                 show: podcast.show,
@@ -88,7 +88,7 @@ final class BookmarkLibrary {
                 id: UUID(),
                 createdAt: Date(),
                 position: 0,
-                category: category ?? (announced ? .muzika : nil),
+                categoryId: categoryId ?? (announced ? BookmarkCategory.muzika.rawValue : nil),
                 note: engine.liveTrack?.display ?? "",
                 episodeTitle: "Radio uživo",
                 show: nil,
@@ -156,8 +156,8 @@ Analytics.record(.bookmarkCreated, [
         return position
     }
 
-    func setCategory(_ category: BookmarkCategory?, for id: UUID) {
-        repository.setCategory(category, for: id)
+    func setCategory(_ categoryId: String?, for id: UUID) {
+        repository.setCategory(categoryId, for: id)
         didChange.send()
     }
 

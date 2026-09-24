@@ -13,20 +13,31 @@ final class BookmarksViewModel: ObservableObject {
     /// worked out once per load - see canOpen.
     @Published private(set) var playableEpisodeIds: Set<UUID> = []
     /// nil means every category, including the ones with none set.
-    @Published var activeCategory: BookmarkCategory?
+    @Published var activeCategoryId: String?
 
     private let library: BookmarkLibrary
     private let podcasts: PodcastRepository
+    private let categories: BookmarkCategories
     private var cancellables = Set<AnyCancellable>()
 
-    init(library: BookmarkLibrary = .shared, podcasts: PodcastRepository = .shared) {
+    init(library: BookmarkLibrary = .shared,
+         podcasts: PodcastRepository = .shared,
+         categories: BookmarkCategories = .shared) {
         self.library = library
         self.podcasts = podcasts
+        self.categories = categories
         reload()
 
         library.didChange
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.reload() }
+            .store(in: &cancellables)
+
+        // A category made on another device changes what these rows say
+        // about themselves, without any bookmark having changed.
+        categories.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.objectWillChange.send() }
             .store(in: &cancellables)
     }
 
@@ -39,28 +50,36 @@ final class BookmarksViewModel: ObservableObject {
     }
 
     var visibleBookmarks: [Bookmark] {
-        guard let activeCategory else { return bookmarks }
-        return bookmarks.filter { $0.category == activeCategory }
+        guard let activeCategoryId else { return bookmarks }
+        return bookmarks.filter { $0.categoryId == activeCategoryId }
     }
 
     /// Only offer the categories that are actually in use - a filter that can
     /// only ever return nothing is a dead end.
-    var availableCategories: [BookmarkCategory] {
-        let used = Set(bookmarks.compactMap(\.category))
-        return BookmarkCategory.allCases.filter { used.contains($0) }
+    var availableCategories: [BookmarkCategoryItem] {
+        categories.items(usedBy: bookmarks)
     }
+
+    /// What to draw on a row, or nil when it has no category and when it
+    /// points at one that has since been deleted.
+    func category(of bookmark: Bookmark) -> BookmarkCategoryItem? {
+        categories.item(id: bookmark.categoryId)
+    }
+
+    /// Everything, for the menu that sets a bookmark's category.
+    var allCategories: [BookmarkCategoryItem] { categories.items }
 
     var isEmpty: Bool { bookmarks.isEmpty }
 
     // MARK: - Actions
 
-    func setCategory(_ category: BookmarkCategory?, for bookmark: Bookmark) {
-        library.setCategory(category, for: bookmark.id)
+    func setCategory(_ categoryId: String?, for bookmark: Bookmark) {
+        library.setCategory(categoryId, for: bookmark.id)
     }
 
     func delete(_ bookmark: Bookmark) {
         library.delete(bookmark.id)
-        if activeCategory != nil && visibleBookmarks.isEmpty { activeCategory = nil }
+        if activeCategoryId != nil && visibleBookmarks.isEmpty { activeCategoryId = nil }
     }
 
     /// The episode behind a bookmark, when the store still holds it. A live

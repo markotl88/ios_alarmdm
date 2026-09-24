@@ -38,7 +38,9 @@ struct BookmarksView: View {
     private var list: some View {
         List {
             ForEach(viewModel.visibleBookmarks) { bookmark in
-                BookmarkRowView(bookmark: bookmark, canPlay: viewModel.canOpen(bookmark))
+                BookmarkRowView(bookmark: bookmark,
+                                category: viewModel.category(of: bookmark),
+                                canPlay: viewModel.canOpen(bookmark))
                     .contentShape(Rectangle())
                     .onTapGesture { open(bookmark) }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -65,9 +67,9 @@ struct BookmarksView: View {
     private var categoryMenu: some View {
         Menu {
             Button {
-                viewModel.activeCategory = nil
+                viewModel.activeCategoryId = nil
             } label: {
-                Label("Sve", systemImage: viewModel.activeCategory == nil ? "checkmark" : "")
+                Label("Sve", systemImage: viewModel.activeCategoryId == nil ? "checkmark" : "")
             }
             ForEach(viewModel.availableCategories) { category in
                 Button {
@@ -75,21 +77,22 @@ struct BookmarksView: View {
                     // the category menu on a row works. "Sve" stays, because
                     // it is the only way out when you cannot remember which
                     // one you picked.
-                    viewModel.activeCategory = viewModel.activeCategory == category ? nil : category
+                    viewModel.activeCategoryId =
+                        viewModel.activeCategoryId == category.id ? nil : category.id
                 } label: {
                     Label {
                         Text(category.title)
                     } icon: {
-                        if viewModel.activeCategory == category {
+                        if viewModel.activeCategoryId == category.id {
                             Image(systemName: "checkmark")
                         } else {
-                            BookmarkCategoryIcon(category: category)
+                            BookmarkCategoryIcon(category)
                         }
                     }
                 }
             }
         } label: {
-            Image(systemName: viewModel.activeCategory == nil
+            Image(systemName: viewModel.activeCategoryId == nil
                   ? "line.3.horizontal.decrease.circle"
                   : "line.3.horizontal.decrease.circle.fill")
         }
@@ -97,19 +100,20 @@ struct BookmarksView: View {
 
     @ViewBuilder
     private func categoryOptions(for bookmark: Bookmark) -> some View {
-        ForEach(BookmarkCategory.allCases) { category in
+        ForEach(viewModel.allCategories) { category in
             Button {
                 // Choosing the one it already has clears it, so the menu is
                 // both how you set a category and how you take it back.
-                viewModel.setCategory(bookmark.category == category ? nil : category, for: bookmark)
+                viewModel.setCategory(bookmark.categoryId == category.id ? nil : category.id,
+                                      for: bookmark)
             } label: {
                 Label {
                     Text(category.title)
                 } icon: {
-                    if bookmark.category == category {
+                    if bookmark.categoryId == category.id {
                         Image(systemName: "checkmark")
                     } else {
-                        BookmarkCategoryIcon(category: category)
+                        BookmarkCategoryIcon(category)
                     }
                 }
             }
@@ -145,6 +149,9 @@ struct BookmarksView: View {
 struct BookmarkRowView: View {
 
     let bookmark: Bookmark
+    /// Looked up once by the view model rather than resolved here: a row is
+    /// drawn again on every tick of the player.
+    var category: BookmarkCategoryItem?
     /// Whether the episode behind it is on this device. See
     /// BookmarksViewModel.canOpen.
     var canPlay: Bool = true
@@ -182,8 +189,8 @@ struct BookmarkRowView: View {
             // category is a different fact about the row; putting them in one
             // place meant every bookmark you could actually play showed no
             // category at all.
-            if let category = bookmark.category {
-                BookmarkCategoryIcon(category: category, size: 22)
+            if let category {
+                BookmarkCategoryIcon(category, size: 22)
                     .help(Text(category.title))
                     .accessibilityLabel(Text(category.title))
             }

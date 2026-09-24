@@ -37,6 +37,8 @@
 		4DAF9EE82C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EE72C57B08A00B4FA7F /* PodcastEpisodesViewModel.swift */; };
 		4DAF9EF02C57B68700B4FA7F /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EEF2C57B68700B4FA7F /* RootView.swift */; };
 		4DAF9EF52C57B76D00B4FA7F /* RadioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */; };
+		4DD17E513064FF50007DB0BB /* BookmarkCategoryEntity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD17E503064FF50007DB0BB /* BookmarkCategoryEntity.swift */; };
+		4DD17E523064FF50007DB0BB /* BookmarkCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DD17E4F3064FF50007DB0BB /* BookmarkCatalog.swift */; };
 		AA0000000000000000000101 /* PlaybackEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000102 /* PlaybackEngine.swift */; };
 		AA0000000000000000000103 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000104 /* AppConstants.swift */; };
 		AA0000000000000000000105 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000106 /* PrivacyInfo.xcprivacy */; };
@@ -134,6 +136,8 @@
 		4DAF9EE92C57B40B00B4FA7F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4DAF9EEF2C57B68700B4FA7F /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4DAF9EF42C57B76D00B4FA7F /* RadioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RadioView.swift; sourceTree = "<group>"; };
+		4DD17E4F3064FF50007DB0BB /* BookmarkCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkCatalog.swift; sourceTree = "<group>"; };
+		4DD17E503064FF50007DB0BB /* BookmarkCategoryEntity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkCategoryEntity.swift; sourceTree = "<group>"; };
 		AA0000000000000000000102 /* PlaybackEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaybackEngine.swift; sourceTree = "<group>"; };
 		AA0000000000000000000104 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		AA0000000000000000000106 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -229,6 +233,8 @@
 		4D6677942CC7AA9500EC2ADE /* Store */ = {
 			isa = PBXGroup;
 			children = (
+				4DD17E4F3064FF50007DB0BB /* BookmarkCatalog.swift */,
+				4DD17E503064FF50007DB0BB /* BookmarkCategoryEntity.swift */,
 				AA0000000000000000000161 /* LiveBookmarkMatcher.swift */,
 				AA0000000000000000000143 /* BookmarkLibrary.swift */,
 				AA0000000000000000000141 /* BookmarkRepository.swift */,
@@ -610,6 +616,8 @@
 				4D13F4562CCBD1B100AA52D1 /* MiniPlayerView.swift in Sources */,
 				4D16A32E3060493200A6FEEA /* AppLog.swift in Sources */,
 				AA00000000000000000001F7 /* Analytics.swift in Sources */,
+				4DD17E513064FF50007DB0BB /* BookmarkCategoryEntity.swift in Sources */,
+				4DD17E523064FF50007DB0BB /* BookmarkCatalog.swift in Sources */,
 				AA00000000000000000001F9 /* AppLanguage.swift in Sources */,
 				4D13F4452CCA7E2100AA52D1 /* RadioViewModel.swift in Sources */,
 				4DAF9EB72C579D5100B4FA7F /* AlarmDMApp.swift in Sources */,

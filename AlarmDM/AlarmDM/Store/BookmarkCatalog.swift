@@ -27,6 +27,24 @@ struct BookmarkCategoryItem: Identifiable, Equatable {
 
     var isBuiltIn: Bool { builtIn != nil }
 
+    /// A built-in on its own, for the places that still hold the enum.
+    init(_ builtIn: BookmarkCategory) {
+        self.init(id: builtIn.rawValue,
+                  builtIn: builtIn,
+                  customName: "",
+                  customIcon: nil,
+                  sortOrder: BookmarkCatalog.defaultOrder(of: builtIn))
+    }
+
+    init(id: String, builtIn: BookmarkCategory?, customName: String,
+         customIcon: String?, sortOrder: Int) {
+        self.id = id
+        self.builtIn = builtIn
+        self.customName = customName
+        self.customIcon = customIcon
+        self.sortOrder = sortOrder
+    }
+
     /// The built-in's title comes from code so it is still translated; theirs
     /// is what they typed and is never translated.
     var title: String { builtIn?.title ?? customName }

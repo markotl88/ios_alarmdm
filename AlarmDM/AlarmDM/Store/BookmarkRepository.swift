@@ -28,8 +28,8 @@ final class BookmarkRepository {
         fetch().map(Bookmark.init(from:))
     }
 
-    func bookmarks(for category: BookmarkCategory) -> [Bookmark] {
-        let raw = category.rawValue
+    func bookmarks(for categoryId: String) -> [Bookmark] {
+        let raw = categoryId
         return fetch(matching: #Predicate { $0.category == raw }).map(Bookmark.init(from:))
     }
 
@@ -67,9 +67,9 @@ final class BookmarkRepository {
         commit("moving bookmark")
     }
 
-    func setCategory(_ category: BookmarkCategory?, for id: UUID) {
+    func setCategory(_ categoryId: String?, for id: UUID) {
         guard let entity = entity(with: id) else { return }
-        entity.category = category?.rawValue
+        entity.category = categoryId
         commit("updating bookmark category")
     }
 
