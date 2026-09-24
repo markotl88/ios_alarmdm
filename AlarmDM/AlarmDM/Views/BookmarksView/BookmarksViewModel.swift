@@ -47,6 +47,25 @@ final class BookmarksViewModel: ObservableObject {
         library.reconcileLiveCaptures()
         bookmarks = library.all()
         playableEpisodeIds = podcasts.existingEpisodeIds(among: Set(bookmarks.compactMap(\.podcastId)))
+        dropFilterIfNothingIsFiledUnderIt()
+    }
+
+    /// A filter nothing is filed under any more is no filter, and has to go.
+    ///
+    /// Clearing it on delete was not enough: taking the category off the last
+    /// bookmark in a filter leaves the same hole, and so does that category
+    /// arriving deleted from another device. The list then showed "nothing in
+    /// this category" over a list that had bookmarks in it - and because the
+    /// toolbar only offers the menu when some category is in use, there was
+    /// no way left to switch it off.
+    ///
+    /// Here rather than at each write, because reload is the one thing every
+    /// change already passes through.
+    private func dropFilterIfNothingIsFiledUnderIt() {
+        guard let activeCategoryId else { return }
+        if !availableCategories.contains(where: { $0.id == activeCategoryId }) {
+            self.activeCategoryId = nil
+        }
     }
 
     var visibleBookmarks: [Bookmark] {
@@ -79,7 +98,8 @@ final class BookmarksViewModel: ObservableObject {
 
     func delete(_ bookmark: Bookmark) {
         library.delete(bookmark.id)
-        if activeCategoryId != nil && visibleBookmarks.isEmpty { activeCategoryId = nil }
+        // The filter looks after itself in reload - see
+        // dropFilterIfNothingIsFiledUnderIt.
     }
 
     /// The episode behind a bookmark, when the store still holds it. A live

@@ -66,6 +66,23 @@ enum BookmarkCatalog {
     /// something the name probably did not mean.
     static let customIcons = ["bookmark-dasko-mladja", "bookmark-dasko", "bookmark-mladja"]
 
+    /// What each of the three drawings is called out loud.
+    ///
+    /// The pickers show the artwork and nothing else, and the artwork is
+    /// hidden from accessibility - it is decoration for anybody who can see
+    /// the label beside it. In the icon picker there is no label beside it,
+    /// so without this a VoiceOver user is offered three buttons that are all
+    /// called "Button" and told which one is selected.
+    ///
+    /// Names, so not translated.
+    static func name(ofCustomIcon icon: String) -> String {
+        switch icon {
+        case "bookmark-dasko": return "Daško"
+        case "bookmark-mladja": return "Mlađa"
+        default: return "Daško i Mlađa"
+        }
+    }
+
     /// How far apart the built-ins are seeded, so one can be dropped between
     /// two of them without renumbering the list.
     static let step = 100

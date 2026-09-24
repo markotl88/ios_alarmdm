@@ -122,11 +122,16 @@ struct CategorySettingsView: View {
     }
 
     private func delete(at offsets: IndexSet) {
-        for index in offsets {
-            let item = catalog.items[index]
-            guard !item.isBuiltIn else { continue }
-            catalog.delete(item.id)
-        }
+        // Every id first, then the deleting. Each delete commits and reloads
+        // the catalog underneath, so an index taken from the list before the
+        // first one is pointing somewhere else by the second - at a category
+        // nobody asked to lose, or past the end of the array.
+        let doomed = offsets
+            .map { catalog.items[$0] }
+            .filter { !$0.isBuiltIn }
+            .map(\.id)
+
+        for id in doomed { catalog.delete(id) }
     }
 }
 
@@ -166,6 +171,7 @@ private struct CategoryEditorView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
+                                .accessibilityLabel(Text(verbatim: BookmarkCatalog.name(ofCustomIcon: candidate)))
                                 .accessibilityAddTraits(icon == candidate ? [.isSelected] : [])
                             }
                             Spacer(minLength: 0)

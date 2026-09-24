@@ -212,6 +212,7 @@ struct BookmarkToastView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel(Text(verbatim: BookmarkCatalog.name(ofCustomIcon: icon)))
                             .accessibilityAddTraits(newIcon == icon ? [.isSelected] : [])
                         }
                         Spacer(minLength: 0)

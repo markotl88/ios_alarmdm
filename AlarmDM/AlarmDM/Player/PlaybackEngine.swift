@@ -240,6 +240,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// Distinguishes a seek that finished from one a newer seek replaced, so
     /// the older one cannot declare the newer one over.
     private var seekGeneration = 0
+    /// Bumped every time somebody asks for the audio to stop.
+    ///
+    /// A seek that was told to start playing when it lands checks this on the
+    /// way in. Over a stream the landing can be a second or more away, and a
+    /// pause can arrive in between - from the lock screen, the car, or the
+    /// player - and the completion would start the audio again under someone
+    /// who had just stopped it.
+    private var pauseGeneration = 0
     private var metadataOutput: AVPlayerItemMetadataOutput?
     /// How long a song announced by the station stands on its own.
     ///
@@ -282,10 +290,12 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             if let position {
                 // An explicit bookmark/seek keeps its exact target, even
                 // inside the outro. Automatic replay belongs to resume().
+                let intent = pauseGeneration
                 seek(to: position) { [weak self] in
-                    self?.activateSession()
-                    self?.player?.play()
-                    self?.updateNowPlayingPlaybackState()
+                    guard let self, intent == self.pauseGeneration else { return }
+                    self.activateSession()
+                    self.player?.play()
+                    self.updateNowPlayingPlaybackState()
                 }
                 movedByHand.send(max(0, position))
             } else {
@@ -341,6 +351,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     }
 
     func pause() {
+        pauseGeneration += 1
         player?.pause()
         updateNowPlayingPlaybackState()
     }
@@ -366,9 +377,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         activateSession()
         if case .podcast(let podcast) = source,
            podcast.isAtVeryEnd(at: currentTime, duration: duration) {
+            let intent = pauseGeneration
             seek(to: 0) { [weak self] in
-                self?.player?.play()
-                self?.updateNowPlayingPlaybackState()
+                guard let self, intent == self.pauseGeneration else { return }
+                self.player?.play()
+                self.updateNowPlayingPlaybackState()
             }
             movedByHand.send(0)
         } else {
