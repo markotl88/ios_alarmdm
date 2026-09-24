@@ -50,7 +50,10 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .muzika: return "music.note"
+        // A record rather than a note. The note is what a player button
+        // looks like, and half this list is about things you listen to -
+        // the disc says "a record" where the note said "audio".
+        case .muzika: return "opticaldisc"
         case .film:   return "film"
         case .serija: return "tv"
         case .knjiga: return "book"

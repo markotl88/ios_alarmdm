@@ -68,6 +68,10 @@ struct BookmarkToastView: View {
         )
         .padding(.horizontal, 12)
         .transition(.move(edge: .bottom).combined(with: .opacity))
+        // On the toast rather than on the row inside it. A sheet asked for by
+        // a view that is itself sliding in and out of an overlay is asking
+        // the window to present from something halfway through an animation.
+        .sheet(isPresented: $isNaming) { namingSheet }
     }
 
     private var header: some View {
@@ -154,7 +158,6 @@ struct BookmarkToastView: View {
         .fixedSize(horizontal: false, vertical: true)
         .scrollIndicators(.visible)
         .simultaneousGesture(DragGesture().onChanged { _ in onInteract() })
-        .sheet(isPresented: $isNaming) { namingSheet }
     }
 
     /// Last in the row on purpose: it is the thing you reach for when none of

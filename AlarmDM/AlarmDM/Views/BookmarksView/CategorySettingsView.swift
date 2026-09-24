@@ -13,15 +13,30 @@ struct CategorySettingsView: View {
 
     @ObservedObject private var catalog = BookmarkCategories.shared
 
-    @State private var isNaming = false
-    @State private var newName = ""
-    @State private var newIcon = BookmarkCatalog.customIcons[0]
+    /// What the one sheet is for, if anything.
+    ///
+    /// One sheet and not two. Two `.sheet` modifiers on the same view is a
+    /// SwiftUI trap: the later one wins and the earlier one silently never
+    /// presents, which is exactly what "new category does nothing" looked
+    /// like on the Mac.
+    private enum Editing: Identifiable {
+        case new
+        /// A sheet rather than an inline field: the row is already a drag
+        /// handle and a delete target, and a third thing to hit by accident
+        /// is one too many.
+        case rename(BookmarkCategoryItem)
 
-    /// The one being renamed. A sheet rather than an inline field: the row is
-    /// already a drag handle and a delete target, and a third thing to hit by
-    /// accident is one too many.
-    @State private var renaming: BookmarkCategoryItem?
-    @State private var renamedTo = ""
+        var id: String {
+            switch self {
+            case .new: return "new"
+            case .rename(let item): return item.id
+            }
+        }
+    }
+
+    @State private var editing: Editing?
+    @State private var draftName = ""
+    @State private var draftIcon = BookmarkCatalog.customIcons[0]
 
     var body: some View {
         List {
@@ -37,9 +52,9 @@ struct CategorySettingsView: View {
 
             Section {
                 Button {
-                    newName = ""
-                    newIcon = BookmarkCatalog.customIcons[0]
-                    isNaming = true
+                    draftName = ""
+                    draftIcon = BookmarkCatalog.customIcons[0]
+                    editing = .new
                 } label: {
                     Label("Nova kategorija", systemImage: "plus")
                 }
@@ -48,26 +63,29 @@ struct CategorySettingsView: View {
         .navigationTitle("Kategorije")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { EditButton() }
-        .sheet(isPresented: $isNaming) {
-            CategoryEditorView(title: "Nova kategorija",
-                               name: $newName,
-                               icon: $newIcon,
-                               showsIcons: true) {
-                catalog.add(name: newName, iconName: newIcon)
-                isNaming = false
-            } onCancel: {
-                isNaming = false
-            }
-        }
-        .sheet(item: $renaming) { item in
-            CategoryEditorView(title: "Preimenuj",
-                               name: $renamedTo,
-                               icon: .constant(item.customIcon ?? BookmarkCatalog.customIcons[0]),
-                               showsIcons: false) {
-                catalog.rename(item.id, to: renamedTo)
-                renaming = nil
-            } onCancel: {
-                renaming = nil
+        .sheet(item: $editing) { editing in
+            switch editing {
+            case .new:
+                CategoryEditorView(title: "Nova kategorija",
+                                   name: $draftName,
+                                   icon: $draftIcon,
+                                   showsIcons: true) {
+                    catalog.add(name: draftName, iconName: draftIcon)
+                    self.editing = nil
+                } onCancel: {
+                    self.editing = nil
+                }
+
+            case .rename(let item):
+                CategoryEditorView(title: "Preimenuj",
+                                   name: $draftName,
+                                   icon: $draftIcon,
+                                   showsIcons: false) {
+                    catalog.rename(item.id, to: draftName)
+                    self.editing = nil
+                } onCancel: {
+                    self.editing = nil
+                }
             }
         }
     }
@@ -88,8 +106,9 @@ struct CategorySettingsView: View {
         .contentShape(Rectangle())
         .onTapGesture {
             guard !item.isBuiltIn else { return }
-            renamedTo = item.title
-            renaming = item
+            draftName = item.title
+            draftIcon = item.customIcon ?? BookmarkCatalog.customIcons[0]
+            editing = .rename(item)
         }
         // Built-ins refuse the swipe rather than offering it and then doing
         // nothing, which is the shape of a bug even when it is a rule.
