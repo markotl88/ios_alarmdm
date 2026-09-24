@@ -147,6 +147,9 @@ struct LiveTrack: Equatable {
 protocol PlaybackEngineType: AnyObject {
     var source: PlaybackSource? { get }
     var hasContent: Bool { get }
+    /// How long the open file says it is, and zero until it has opened - see
+    /// PlayerViewModel.playbackProgress.
+    var duration: TimeInterval { get }
     var isLive: Bool { get }
     var progress: Double { get }
 
@@ -171,6 +174,9 @@ protocol PlaybackEngineType: AnyObject {
     func moveByHand(to time: TimeInterval)
     func skip(by seconds: TimeInterval)
     func switchToLocalFile(_ fileURL: URL)
+    /// The other direction: back onto the network, for when the file that
+    /// was playing has been deleted underneath it.
+    func switchToStream()
 }
 
 extension PlaybackEngineType {
@@ -230,6 +236,12 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// at a position must not be heard from the beginning first, even for the
     /// half second it takes the seek to arrive.
     private var playAfterPendingSeek = false
+    /// The pause count this pending play was asked for under.
+    ///
+    /// Taken when play() is called and not when the item becomes ready: the
+    /// wait for a stream to open is where a pause is most likely to arrive,
+    /// and the whole point is to notice one that landed in between.
+    private var pendingPlayIntent = 0
     /// Raised while a seek is in flight. The periodic observer keeps reporting
     /// the old position until the seek lands, and letting that through drags
     /// the slider back to where it was before the gesture.
@@ -237,6 +249,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// Distinguishes a seek that finished from one a newer seek replaced, so
     /// the older one cannot declare the newer one over.
     private var seekGeneration = 0
+    /// Bumped every time somebody asks for the audio to stop.
+    ///
+    /// A seek that was told to start playing when it lands checks this on the
+    /// way in. Over a stream the landing can be a second or more away, and a
+    /// pause can arrive in between - from the lock screen, the car, or the
+    /// player - and the completion would start the audio again under someone
+    /// who had just stopped it.
+    private var pauseGeneration = 0
     private var metadataOutput: AVPlayerItemMetadataOutput?
     /// How long a song announced by the station stands on its own.
     ///
@@ -276,13 +296,26 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         let isLoadedAndWell = player != nil && player?.currentItem?.status != .failed
 
         if source.isSameContent(as: self.source), isLoadedAndWell {
-            if let position { seek(to: position) }
-            resume()
+            if let position {
+                // An explicit bookmark/seek keeps its exact target, even
+                // inside the outro. Automatic replay belongs to resume().
+                let intent = pauseGeneration
+                seek(to: position) { [weak self] in
+                    guard let self, intent == self.pauseGeneration else { return }
+                    self.activateSession()
+                    self.player?.play()
+                    self.updateNowPlayingPlaybackState()
+                }
+                movedByHand.send(max(0, position))
+            } else {
+                resume()
+            }
             return
         }
 
         pendingSeek = position
         playAfterPendingSeek = position != nil
+        pendingPlayIntent = pauseGeneration
 
         guard let url = resolveURL(for: source) else {
             lastErrorMessage = String(localized: "Nije moguće pronaći audio za \(source.title).")
@@ -297,7 +330,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         self.player = player
         self.source = source
-        self.currentTime = 0
+        // Where this is going, not zero. The item opens at nothing and the
+        // seek arrives a moment later; for a downloaded file that moment is
+        // too short to see, and for a stream it is long enough to watch the
+        // scrubber fall to the start and climb back.
+        self.currentTime = pendingSeek ?? 0
         self.duration = 0
         self.lastErrorMessage = nil
         setLiveTrack(nil)
@@ -324,6 +361,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     }
 
     func pause() {
+        pauseGeneration += 1
         player?.pause()
         updateNowPlayingPlaybackState()
     }
@@ -336,13 +374,29 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         guard !isBroken else {
             guard let source else { return }
-            let resumeAt = source.isLive ? nil : currentTime
+            let resumeAt: TimeInterval?
+            if case .podcast(let podcast) = source {
+                resumeAt = podcast.isAtVeryEnd(at: currentTime, duration: duration) ? 0 : currentTime
+            } else {
+                resumeAt = nil
+            }
             play(source, startingAt: resumeAt)
             return
         }
 
         activateSession()
-        player?.play()
+        if case .podcast(let podcast) = source,
+           podcast.isAtVeryEnd(at: currentTime, duration: duration) {
+            let intent = pauseGeneration
+            seek(to: 0) { [weak self] in
+                guard let self, intent == self.pauseGeneration else { return }
+                self.player?.play()
+                self.updateNowPlayingPlaybackState()
+            }
+            movedByHand.send(0)
+        } else {
+            player?.play()
+        }
         updateNowPlayingPlaybackState()
     }
 
@@ -385,15 +439,41 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         let generation = seekGeneration
         isSeeking = true
 
-        player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
-            guard let self, generation == self.seekGeneration else { return }
-            self.isSeeking = false
-            if finished {
-                self.updateNowPlayingInfo()
+        // Which player this seek belongs to. Two different questions hang on
+        // it, and answering both with the generation counter is what left an
+        // episode loaded and silent: a seek superseded by a newer one on the
+        // same player is stale, but a seek whose player has since been torn
+        // down is gone.
+        let seekingPlayer = player
+
+        player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self, weak seekingPlayer] finished in
+            // AVFoundation calls this on a queue of its own choosing, and
+            // everything below is main-thread state.
+            DispatchQueue.main.async {
+                // The player is gone - stopped, or swapped for the downloaded
+                // file. Nothing it was asked to do afterwards applies.
+                guard let self, let seekingPlayer, self.player === seekingPlayer else { return }
+
+                // Only the newest seek owns the state the seeks left behind.
+                // An older one clearing this would open the stale-position
+                // guard while a newer seek is still in flight, which is the
+                // scrubber snapping back mid-drag.
+                if generation == self.seekGeneration {
+                    self.isSeeking = false
+                    if finished {
+                        self.updateNowPlayingInfo()
+                    }
+                }
+
+                // Control comes back whichever seek was last, and outside
+                // that guard on purpose. This is how an episode opened at a
+                // position starts playing, and a newer seek replacing the
+                // target does not make the press of play obsolete - it only
+                // moves where it starts. Dropping it here left a tap on skip
+                // during a stream's first second with a loaded, silent
+                // player.
+                completion?()
             }
-            // Even an unfinished seek has to hand back control, or an episode
-            // that was told to start here would sit silent forever.
-            completion?()
         }
     }
 
@@ -413,21 +493,64 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     /// Swaps a streaming podcast for its freshly downloaded file without losing position.
     func switchToLocalFile(_ fileURL: URL) {
+        guard currentItemURL != fileURL else { return }
+        reopenEpisode(at: fileURL)
+    }
+
+    /// Puts a playing episode back on the network.
+    ///
+    /// For when its file has gone while it was playing from it. AVPlayer does
+    /// not find that out until it needs to read past what it already holds,
+    /// so the audio runs on to the end of the buffer and then simply stops,
+    /// with a failed item and nothing on screen to say why. It would come
+    /// back on the next press of play - resume rebuilds a failed item, and
+    /// resolveURL checks the file system and falls through to the stream -
+    /// but the listen has already been interrupted by then.
+    ///
+    /// Whether it is on the network already is a question about the player,
+    /// not about the `Podcast` in `source`: that value was captured when the
+    /// listen began and still says `fileUrl == nil` after a download was
+    /// handed over mid-listen. Asking the item that is actually loaded is the
+    /// only way to get an answer that survives a swap.
+    func switchToStream() {
+        guard case .podcast(let podcast) = source,
+              let url = URL(string: podcast.podcastUrl),
+              currentItemURL != url else { return }
+        reopenEpisode(at: url)
+    }
+
+    /// Where the loaded item is reading from, file or network.
+    private var currentItemURL: URL? {
+        (player?.currentItem?.asset as? AVURLAsset)?.url
+    }
+
+    /// Builds the episode that is loaded again from somewhere else: the same
+    /// second, and playing if it was playing.
+    private func reopenEpisode(at url: URL) {
         guard let source, case .podcast = source, player != nil else { return }
         let resumeAt = currentTime
-        let wasPlaying = isPlaying
+        // Buffering counts as playing here. A download that finishes while
+        // the stream is still filling its buffer finds `isPlaying == false`
+        // and `timeControlStatus == .waitingToPlayAtSpecifiedRate`, and
+        // reading only the first would hand the file over paused - which is
+        // exactly the moment the handover is most likely to happen.
+        let wasPlaying = isPlaying || isBuffering
 
         teardownPlayer()
 
-        let item = AVPlayerItem(url: fileURL)
+        let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
         self.player = player
         attachObservers(to: player, item: item)
 
-        player.seek(to: CMTime(seconds: resumeAt, preferredTimescale: 600)) { [weak self] _ in
-            guard let self else { return }
-            self.currentTime = resumeAt
-            if wasPlaying {
+        // What was true when the swap started, and whether it still is. The
+        // swap happens mid-listen, so a pause during the handover is ordinary
+        // rather than exotic.
+        let intent = pauseGeneration
+
+        seek(to: resumeAt) { [weak self, weak player] in
+            guard let self, let player, self.player === player else { return }
+            if wasPlaying, intent == self.pauseGeneration {
                 self.activateSession()
                 player.play()
             }
@@ -479,6 +602,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 if item.status == .readyToPlay, let target = self.pendingSeek {
                     self.pendingSeek = nil
                     let resumeAfterwards = self.playAfterPendingSeek
+                    let intent = self.pendingPlayIntent
                     self.playAfterPendingSeek = false
 
                     self.seek(to: target) {
@@ -486,6 +610,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                         // what let the opening seconds of an episode out of
                         // the speaker before it jumped to where it was left.
                         guard resumeAfterwards else { return }
+                        // And only if nobody has pressed pause since it was
+                        // asked for. Opening a stream is the longest wait in
+                        // here, which makes it the likeliest place for one to
+                        // arrive - from the lock screen, or a phone call.
+                        guard intent == self.pauseGeneration else { return }
                         self.player?.play()
                         self.updateNowPlayingPlaybackState()
                     }
@@ -527,8 +656,10 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             queue: .main
         ) { [weak self] _ in
             guard let self else { return }
-            self.isPlaying = false
+            // Publish the final position before the pause writes progress.
             self.currentTime = self.duration
+            self.isPlaying = false
+            self.isBuffering = false
             self.updateNowPlayingPlaybackState()
         }
     }
@@ -569,6 +700,9 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     #endif
 
     private func teardownPlayer() {
+        // Invalidate completions already queued by AVFoundation, even if no
+        // subsequent seek occurs (stop or switching to live radio).
+        seekGeneration += 1
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
             timeObserverToken = nil

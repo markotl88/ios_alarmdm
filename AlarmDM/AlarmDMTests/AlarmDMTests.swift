@@ -10,6 +10,23 @@ import XCTest
 
 final class AlarmDMTests: XCTestCase {
 
+    func testDefaultNetworkSessionUsesConfiguredTimeouts() {
+        let manager = NetworkManager()
+        defer { manager.session.invalidateAndCancel() }
+        XCTAssertEqual(manager.session.configuration.timeoutIntervalForRequest, 15)
+        XCTAssertEqual(manager.session.configuration.timeoutIntervalForResource, 180)
+    }
+
+    func testInjectedNetworkSessionKeepsItsConfiguration() {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 7
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let manager = NetworkManager(session: session)
+        XCTAssertTrue(manager.session === session)
+        XCTAssertEqual(manager.session.configuration.timeoutIntervalForRequest, 7)
+    }
+
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
     }

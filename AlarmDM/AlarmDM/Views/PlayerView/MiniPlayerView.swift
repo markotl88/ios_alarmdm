@@ -78,7 +78,7 @@ struct MiniPlayerView: View {
                             isPlaying: playerViewModel.isPlaying
                         )
                     } else {
-                        Text(playerViewModel.subtitle)
+                        Text(playerViewModel.offersReplay ? playerViewModel.playButtonLabel : playerViewModel.subtitle)
                             .font(subtitleFont)
                             .foregroundColor(Color("secondaryText"))
                             .lineLimit(1)
@@ -116,14 +116,15 @@ struct MiniPlayerView: View {
                         if playerViewModel.isBuffering {
                             ProgressView()
                         } else {
-                            Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
+                            Image(systemName: playerViewModel.playButtonSymbol)
                                 .font(isWide ? .title : .title3)
                         }
                     }
                     .frame(width: controlSide, height: controlSide)
                     .foregroundColor(Color("primaryText"))
                 }
-                .accessibilityLabel(playerViewModel.isPlaying ? "Pauziraj" : "Pusti")
+                .accessibilityLabel(playerViewModel.playButtonLabel)
+                .help(playerViewModel.playButtonLabel)
 
                 Button {
                     playerViewModel.stop()

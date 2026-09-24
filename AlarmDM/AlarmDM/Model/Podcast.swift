@@ -190,12 +190,22 @@ extension Podcast {
     static let resumeFloor: TimeInterval = 20
 
     /// Where pressing play should pick this episode up, or nil to start at
-    /// the beginning. A finished episode starts over: its position is a record
-    /// of the last listen, not an invitation to sit through the credits again.
+    /// the beginning.
+    ///
+    /// Where the listen got to is what settles this, not whether the episode
+    /// was ever heard through. `isPlayed` is sticky and says what happened
+    /// once; it says nothing about where anybody is now. An episode finished
+    /// months ago and started again in the car is at twenty-five minutes, and
+    /// twenty-five minutes is where it carries on from - asking the flag
+    /// instead sent it back to the beginning, which is half an hour of
+    /// somebody's listening thrown away.
+    ///
+    /// What does start over is a position at the end of the show. That one is
+    /// a record of the last listen rather than an invitation to sit through
+    /// the credits again, and `hasReachedEnd` already says so.
     var resumePosition: TimeInterval? {
-        guard !isPlayed, playedPosition > Podcast.resumeFloor else { return nil }
-        let end = endOfShow
-        guard end <= 0 || playedPosition < end else { return nil }
+        guard playedPosition > Podcast.resumeFloor else { return nil }
+        guard !hasReachedEnd else { return nil }
         // A few seconds back, for the same reason a bookmark takes a few: you
         // stopped listening slightly before you stopped playing.
         return max(0, playedPosition - 3)
@@ -204,11 +214,15 @@ extension Podcast {
     /// How far through the show a listen got, as a fraction - for the line
     /// under an episode in a list.
     ///
-    /// Nil for an episode that has not been started and for one that is
-    /// finished: an empty line and a full line each say nothing, and drawing
-    /// them puts a rule under every row in the list for no reason.
+    /// Nil for an episode that has not been started and for one whose position
+    /// is at the end: an empty line and a full line each say nothing, and
+    /// drawing them puts a rule under every row in the list for no reason.
+    ///
+    /// Not nil merely because the episode was heard once. An episode being
+    /// listened to again is somewhere, and where it is is worth drawing - the
+    /// same reason resumePosition stopped asking that flag.
     var listeningProgress: Double? {
-        guard !isPlayed, playedPosition > 0 else { return nil }
+        guard !hasReachedEnd, playedPosition > 0 else { return nil }
         let end = endOfShow
         guard end > 0 else { return nil }
         // A minimum, so a minute into a three-hour episode is still visible as
@@ -241,8 +255,29 @@ extension Podcast {
     /// rather than read off the stored flag alone so a position restored
     /// mid-session answers the same way.
     var hasReachedEnd: Bool {
-        let end = endOfShow
-        return end > 0 && playedPosition >= end
+        hasReachedEnd(at: playedPosition)
+    }
+
+    /// Allow for the last fractional second not being reported by the player.
+    /// Prefer the opened file's duration when the feed's estimate differs.
+    func hasReachedEnd(at position: TimeInterval, duration: TimeInterval? = nil) -> Bool {
+        let length = duration.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? durationInSeconds
+        guard position.isFinite, position > 0, length.isFinite, length > 0 else { return false }
+        let end = max(length * Podcast.playedFraction, length - outro)
+        return position >= end || position >= length - 1
+    }
+
+    /// The very last second of the file, which is the only place where
+    /// starting over is the obvious thing to offer.
+    ///
+    /// Deliberately not the same line as `hasReachedEnd`. That one asks
+    /// whether the episode counts as heard, and answers yes with the closing
+    /// credits still running - pausing there and coming back should carry on
+    /// from where it stopped, not rewind three hours.
+    func isAtVeryEnd(at position: TimeInterval, duration: TimeInterval? = nil) -> Bool {
+        let length = duration.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? durationInSeconds
+        guard position.isFinite, position > 0, length.isFinite, length > 0 else { return false }
+        return position >= length - 1
     }
 
     /// How much of an episode has to be behind you before it counts as heard.

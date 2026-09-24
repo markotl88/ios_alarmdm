@@ -149,9 +149,9 @@ final class SyncMergeTests: XCTestCase {
         XCTAssertEqual(row?.playedPosition, 100)
     }
 
-    /// "Carry on" is the newest listen that is not finished - a finished one
-    /// written afterwards does not push it out.
-    func testCarryOnSkipsWhatWasFinished() {
+    /// "Carry on" is the newest listen with somewhere left to go - one left
+    /// sitting at the end does not push it out.
+    func testCarryOnSkipsWhatWasLeftAtTheEnd() {
         let other = makeEpisode(title: "Emigracija")
         repository.save(other)
 
@@ -159,6 +159,25 @@ final class SyncMergeTests: XCTestCase {
         repository.recordProgress(position: 10_790, hasFinished: true, for: other.id)
 
         XCTAssertEqual(repository.lastListened()?.id, episode.id)
+    }
+
+    /// Heard through, then started again and left half an hour in. That is
+    /// exactly what somebody is in the middle of, and it used to be dropped
+    /// by the fetch before anything could look at where it had got to - so
+    /// the car offered the next unfinished episode instead.
+    func testCarryOnOffersAnEpisodeBeingHeardAgain() {
+        let other = makeEpisode(title: "Emigracija")
+        repository.save(other)
+
+        repository.recordProgress(position: 600, hasFinished: false, for: other.id)
+        repository.recordProgress(position: 10_790, hasFinished: true, for: episode.id)
+        // Started again, and left twenty-five minutes in.
+        repository.recordProgress(position: 1_500, hasFinished: false, for: episode.id)
+
+        XCTAssertEqual(repository.lastListened()?.id, episode.id)
+        XCTAssertEqual(repository.lastListened()?.resumePosition ?? -1, 1_497, accuracy: 0.5)
+        // Still heard: starting it again does not undo that.
+        XCTAssertEqual(repository.podcast(with: episode.id)?.isPlayed, true)
     }
 
     // MARK: Helpers
@@ -179,6 +198,247 @@ final class SyncMergeTests: XCTestCase {
         let id = episode.id
         let descriptor = FetchDescriptor<EpisodeStateEntity>(predicate: #Predicate { $0.podcastId == id })
         return (try? database.context.fetch(descriptor)) ?? []
+    }
+}
+
+// MARK: - The category list
+
+/// What the person arranged, folded the same way listening is: the rows can
+/// arrive duplicated, from devices that seeded the built-ins before they had
+/// heard of each other, and one answer has to come out.
+final class BookmarkCatalogTests: XCTestCase {
+
+    private let earlier = Date(timeIntervalSince1970: 1_800_000_000)
+    private var later: Date { earlier.addingTimeInterval(60) }
+
+    /// Nothing stored at all: the app's own order, every category present.
+    func testAnUntouchedListIsTheShippedOne() {
+        let items = BookmarkCatalog.arranged([])
+
+        XCTAssertEqual(items.map(\.id), BookmarkCategory.allCases.map(\.rawValue))
+        XCTAssertTrue(items.allSatisfy(\.isBuiltIn))
+    }
+
+    /// A category the app does not ship turns up beside the ones it does.
+    func testOneOfTheirOwnSitsWhereItsPositionPutsIt() {
+        let mine = BookmarkCategoryEntity(id: UUID().uuidString,
+                                          name: "Recepti",
+                                          iconName: "bookmark-dasko-mladja",
+                                          sortOrder: 150,
+                                          isBuiltIn: false,
+                                          editedAt: earlier)
+
+        let items = BookmarkCatalog.arranged([mine])
+        let index = items.firstIndex { $0.id == mine.id }
+
+        XCTAssertNotNil(index)
+        XCTAssertEqual(items[index!].title, "Recepti")
+        XCTAssertEqual(items[index!].assetName, "bookmark-dasko-mladja")
+        XCTAssertFalse(items[index!].isBuiltIn)
+        // 150 falls between the second and third shipped category.
+        XCTAssertEqual(index, 2)
+    }
+
+    /// A built-in keeps its translated title even with a row of its own, so
+    /// the app does not start showing Serbian to somebody reading English.
+    func testABuiltInKeepsItsOwnTitle() {
+        let moved = BookmarkCategoryEntity(id: BookmarkCategory.muzika.rawValue,
+                                           name: "whatever is in the row",
+                                           sortOrder: 9_000,
+                                           isBuiltIn: true,
+                                           editedAt: earlier)
+
+        let items = BookmarkCatalog.arranged([moved])
+
+        XCTAssertEqual(items.last?.id, BookmarkCategory.muzika.rawValue)
+        XCTAssertEqual(items.last?.title, BookmarkCategory.muzika.title)
+    }
+
+    /// Two devices arranged the list separately. The later arrangement wins,
+    /// the same rule a listening position follows.
+    func testTheLaterArrangementIsWhatIsRead() {
+        let id = BookmarkCategory.film.rawValue
+        let old = BookmarkCategoryEntity(id: id, sortOrder: 50, isBuiltIn: true, editedAt: earlier)
+        let new = BookmarkCategoryEntity(id: id, sortOrder: 900, isBuiltIn: true, editedAt: later)
+
+        let items = BookmarkCatalog.arranged([old, new])
+
+        XCTAssertEqual(items.filter { $0.id == id }.count, 1)
+        XCTAssertEqual(items.first { $0.id == id }?.sortOrder, 900)
+    }
+
+    /// Both devices seeded before either had heard of the other, so the rows
+    /// are identical and undated. One category, not two.
+    func testIdenticalSeedsFoldIntoOne() {
+        let id = BookmarkCategory.knjiga.rawValue
+        let a = BookmarkCategoryEntity(id: id, sortOrder: 300, isBuiltIn: true)
+        let b = BookmarkCategoryEntity(id: id, sortOrder: 300, isBuiltIn: true)
+
+        let items = BookmarkCatalog.arranged([a, b])
+
+        XCTAssertEqual(items.filter { $0.id == id }.count, 1)
+        XCTAssertEqual(items.map(\.id).count, Set(items.map(\.id)).count)
+    }
+
+    /// A version that adds a category does not need anybody to migrate: it
+    /// has no row, and it turns up at the place the app ships it in.
+    func testACategoryWithNoRowStillAppears() {
+        let arranged = BookmarkCategory.allCases.prefix(3).map {
+            BookmarkCategoryEntity(id: $0.rawValue,
+                                   sortOrder: BookmarkCatalog.defaultOrder(of: $0),
+                                   isBuiltIn: true,
+                                   editedAt: earlier)
+        }
+
+        let items = BookmarkCatalog.arranged(Array(arranged))
+
+        XCTAssertEqual(items.count, BookmarkCategory.allCases.count)
+        XCTAssertEqual(items.map(\.id), BookmarkCategory.allCases.map(\.rawValue))
+    }
+
+    /// Dragging writes a number for every row, built-ins included: once the
+    /// list has been arranged by hand the shipped order stops being right.
+    func testADragNumbersEverythingItWasGiven() {
+        let ids = ["c", "a", "b"]
+        let positions = BookmarkCatalog.positions(forNewOrder: ids)
+
+        XCTAssertEqual(positions["c"], 0)
+        XCTAssertEqual(positions["a"], BookmarkCatalog.step)
+        XCTAssertEqual(positions["b"], BookmarkCatalog.step * 2)
+    }
+
+    func testANewCategoryGoesAfterEverything() {
+        let items = BookmarkCatalog.arranged([])
+        let next = BookmarkCatalog.orderAfter(items)
+
+        XCTAssertGreaterThan(next, items.map(\.sortOrder).max() ?? 0)
+    }
+}
+
+// MARK: - The filter over the bookmark list
+
+/// A filter is over a category, and a category can stop having anything in
+/// it while you are looking at it - here, on another device, either way.
+final class BookmarkFilterTests: XCTestCase {
+
+    private var database: AppDatabase!
+    private var bookmarks: BookmarkRepository!
+    private var podcasts: PodcastRepository!
+    private var categories: BookmarkCategories!
+    private var library: BookmarkLibrary!
+
+    override func setUp() {
+        database = AppDatabase(inMemory: true)
+        bookmarks = BookmarkRepository(database: database)
+        podcasts = PodcastRepository(database: database)
+        categories = BookmarkCategories(database: database)
+        library = BookmarkLibrary(repository: bookmarks, podcasts: podcasts, database: database)
+    }
+
+    override func tearDown() {
+        library = nil
+        categories = nil
+        podcasts = nil
+        bookmarks = nil
+        database = nil
+    }
+
+    /// Filter by a category, then take that category off the last bookmark
+    /// that had it. The filter used to stay, so the list said there was
+    /// nothing in this category over a list that still had bookmarks in it -
+    /// and the menu that would have cleared it is only offered while some
+    /// category is in use, so it had gone too.
+    func testTheFilterGoesWhenNothingIsFiledUnderItAnyMore() {
+        let filed = makeBookmark(categoryId: BookmarkCategory.muzika.rawValue)
+        bookmarks.add(filed)
+        bookmarks.add(makeBookmark(categoryId: nil))
+
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = BookmarkCategory.muzika.rawValue
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
+
+        list.setCategory(nil, for: filed)
+        flush()
+
+        XCTAssertNil(list.activeCategoryId)
+        XCTAssertEqual(list.visibleBookmarks.count, 2)
+    }
+
+    /// The same hole from the other side: the bookmark goes rather than its
+    /// category.
+    func testDeletingTheLastOneInAFilterClearsIt() {
+        let filed = makeBookmark(categoryId: BookmarkCategory.film.rawValue)
+        bookmarks.add(filed)
+        bookmarks.add(makeBookmark(categoryId: nil))
+
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = BookmarkCategory.film.rawValue
+
+        list.delete(filed)
+        flush()
+
+        XCTAssertNil(list.activeCategoryId)
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
+    }
+
+    /// A filter that still has something under it is left alone.
+    func testAFilterWithSomethingInItStays() {
+        let one = makeBookmark(categoryId: BookmarkCategory.knjiga.rawValue)
+        bookmarks.add(one)
+        bookmarks.add(makeBookmark(categoryId: BookmarkCategory.knjiga.rawValue))
+
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = BookmarkCategory.knjiga.rawValue
+
+        list.setCategory(nil, for: one)
+        flush()
+
+        XCTAssertEqual(list.activeCategoryId, BookmarkCategory.knjiga.rawValue)
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
+    }
+
+    /// The category itself goes, rather than the bookmarks under it - deleted
+    /// here, or arriving deleted from another device. Nothing about the
+    /// bookmarks changes, so only the catalog can say so.
+    func testDeletingTheCategoryBeingFilteredOnClearsTheFilter() {
+        guard let mine = categories.add(name: "Recepti",
+                                        iconName: BookmarkCatalog.customIcons[0]) else {
+            return XCTFail("the category was not created")
+        }
+        bookmarks.add(makeBookmark(categoryId: mine))
+        bookmarks.add(makeBookmark(categoryId: nil))
+
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = mine
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
+
+        categories.delete(mine)
+        flush()
+
+        XCTAssertNil(list.activeCategoryId)
+        XCTAssertEqual(list.visibleBookmarks.count, 2)
+    }
+
+    // MARK: Helpers
+
+    private func makeBookmark(categoryId: String?) -> Bookmark {
+        Bookmark(id: UUID(),
+                 createdAt: Date(),
+                 position: 60,
+                 categoryId: categoryId,
+                 note: "",
+                 episodeTitle: "Alarm",
+                 show: .alarmSaDaskomIMladjom,
+                 podcastId: nil,
+                 capturedLive: false)
+    }
+
+    /// The view model hears about a change on the main queue, a runloop
+    /// later. This lets that delivery land before the assertions.
+    private func flush() {
+        let delivered = expectation(description: "main queue drained")
+        DispatchQueue.main.async { delivered.fulfill() }
+        wait(for: [delivered], timeout: 1)
     }
 }
 

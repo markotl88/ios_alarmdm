@@ -49,11 +49,31 @@ final class PlayerViewModel: ObservableObject {
     /// so the bar reads from what was restored instead of showing zero for
     /// something that is plainly half finished.
     var playbackProgress: Double {
-        guard engine.hasContent else {
+        // The engine knows how long a file is only once it has opened it, and
+        // answers zero until then - which put the bar back at the start for
+        // as long as a stream took to open. The feed's own duration is known
+        // before any of that, so it stands in until the file's is.
+        guard engine.hasContent, engine.duration > 0 else {
             guard duration > 0 else { return 0 }
             return min(max(currentTime / duration, 0), 1)
         }
         return engine.progress
+    }
+
+    /// Only at the very end of the file. An episode paused in the closing
+    /// credits counts as heard, but it is still a pause - it carries on.
+    var offersReplay: Bool {
+        guard !isPlaying, !isBuffering, !isLive, let podcast else { return false }
+        return podcast.isAtVeryEnd(at: currentTime, duration: duration)
+    }
+
+    var playButtonSymbol: String {
+        isPlaying ? "pause.fill" : (offersReplay ? "arrow.counterclockwise" : "play.fill")
+    }
+
+    var playButtonLabel: String {
+        if isPlaying { return String(localized: "Pauziraj") }
+        return offersReplay ? String(localized: "Pusti od početka") : String(localized: "Pusti")
     }
 
     // MARK: - Download state
@@ -293,9 +313,9 @@ final class PlayerViewModel: ObservableObject {
             // selected again while it plays would otherwise be dragged back to
             // whatever was last written down, which is a position from before
             // the last few minutes of listening.
-            if !carriesOn, let resume = podcast?.resumePosition {
-                restoredPosition = resume
-                currentTime = resume
+            if !carriesOn {
+                restoredPosition = podcast.flatMap { $0.hasReachedEnd ? $0.playedPosition : $0.resumePosition }
+                currentTime = restoredPosition ?? 0
             }
 
         case .none:
@@ -369,6 +389,13 @@ final class PlayerViewModel: ObservableObject {
         // enough to see: the bar used to appear when the file opened rather
         // than when it was asked for.
         isPresented = true
+
+        if offersReplay {
+            restoredPosition = nil
+            currentTime = 0
+            engine.play(source, startingAt: 0)
+            return
+        }
 
         guard !source.isSameContent(as: engine.source) else {
             engine.toggle()
@@ -504,15 +531,6 @@ final class PlayerViewModel: ObservableObject {
         guard let saved = playbackState.saved,
               let podcast = episodes.podcast(with: saved.podcastId) else { return }
 
-        // Heard through to the end somewhere else since this device last
-        // touched it. There is nothing to come back to, and reopening at this
-        // device's old position - minutes before the end of something already
-        // finished - is the wrong answer twice over.
-        if finishedElsewhere(podcast) {
-            playbackState.clear()
-            return
-        }
-
         // Two records of the same listening, and the later one is right.
         //
         // This slot is written on this device only; the episode's own record
@@ -523,9 +541,8 @@ final class PlayerViewModel: ObservableObject {
         // a half - otherwise it reopens at its own position and the sync
         // looks broken when it worked.
         let position: TimeInterval
-        if let syncedAt = podcast.playedAt, syncedAt > saved.savedAt,
-           let synced = podcast.resumePosition {
-            position = synced
+        if let syncedAt = podcast.playedAt, syncedAt > saved.savedAt {
+            position = podcast.hasReachedEnd ? podcast.playedPosition : (podcast.resumePosition ?? 0)
         } else {
             position = saved.position
         }
@@ -578,15 +595,6 @@ final class PlayerViewModel: ObservableObject {
         return loaded.id == id
     }
 
-    /// Played to the end on another device, after this one last said
-    /// anything. By position rather than by the finished flag, which is
-    /// sticky: an episode heard once and started again elsewhere keeps the
-    /// flag, and that is not the same as having been finished just now.
-    private func finishedElsewhere(_ podcast: Podcast) -> Bool {
-        guard podcast.hasReachedEnd, let at = podcast.playedAt else { return false }
-        return at > lastSaidHere
-    }
-
     /// Coming back to the app, or hearing that something arrived: while
     /// nothing is playing here, show what the account listened to last, then
     /// bring its position up to date.
@@ -597,7 +605,6 @@ final class PlayerViewModel: ObservableObject {
     func catchUpIfIdle() {
         followAccountIfIdle()
         refreshFromStoreIfIdle()
-        putAwayIfFinishedElsewhere()
     }
 
     private func followAccountIfIdle() {
@@ -613,18 +620,6 @@ final class PlayerViewModel: ObservableObject {
         // to is already written down, and letting go does not write it again.
         if engine.source != nil { engine.stop() }
         showIdle(fromAccount, at: fromAccount.resumePosition ?? 0)
-    }
-
-    /// The episode on screen was finished on another device, and there is
-    /// nothing newer to show instead: the player goes away, as it would have
-    /// here. Not on a press of play - see togglePlayPause.
-    private func putAwayIfFinishedElsewhere() {
-        guard isIdle, !isLive, let podcast, finishedElsewhere(podcast) else { return }
-
-        #if DEBUG
-        AppLog.write(.player, "finished elsewhere, putting the player away: \(podcast.title)")
-        #endif
-        stop()
     }
 
     /// Re-reads this episode from the store while nothing plays here, in case
@@ -663,7 +658,7 @@ final class PlayerViewModel: ObservableObject {
     private func adoptSyncedPosition(from podcast: Podcast) {
         guard isIdle, !isLive else { return }
         guard let syncedAt = podcast.playedAt, syncedAt > lastSaidHere else { return }
-        guard let synced = podcast.resumePosition else { return }
+        guard let synced = podcast.hasReachedEnd ? podcast.playedPosition : podcast.resumePosition else { return }
         guard abs(synced - currentTime) > 1 else { return }
 
         if engineHolds(podcast.id) {
@@ -681,7 +676,11 @@ final class PlayerViewModel: ObservableObject {
     }
 
     func addBookmark() {
-        guard BookmarkLibrary.shared.capture() != nil else { return }
+        // What this screen is showing, which is not always what the engine is
+        // holding: a restored episode has never been opened, and the button
+        // used to do nothing at all until the first press of play.
+        let showing = isLive ? nil : podcast
+        guard BookmarkLibrary.shared.capture(showing: showing, at: currentTime) != nil else { return }
         justBookmarked = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             self?.justBookmarked = false
@@ -718,13 +717,12 @@ final class PlayerViewModel: ObservableObject {
         EpisodeLibrary.shared.download(podcast) { [weak self] result in
             guard let self else { return }
 
-            guard case .success(let location) = result else { return }
+            guard case .success = result else { return }
 
-            // If this episode is the one playing, continue from the local file.
-            if self.podcastId == podcast.id {
-                self.engine.switchToLocalFile(location)
-            }
-
+            // Swapping the stream for the file is the library's job now, for
+            // every download and not only the ones started from here - see
+            // EpisodeLibrary.adoptDownloadedFile. This button is left with
+            // what it is actually about: saying it worked.
             self.showCheckmark = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 self?.showCheckmark = false

@@ -65,8 +65,8 @@ struct RootView: View {
                     BookmarkToastView(
                         bookmark: bookmark,
                         asksForNote: capturedFromPhone,
-                        onCategory: { category in
-                            BookmarkLibrary.shared.setCategory(category, for: bookmark.id)
+                        onCategory: { categoryId in
+                            BookmarkLibrary.shared.setCategory(categoryId, for: bookmark.id)
                             dismissToast()
                         },
                         onNote: { note in
@@ -145,24 +145,24 @@ struct RootView: View {
     }
 
     private var wideShell: some View {
-        NavigationSplitView {
-            sidebar
-        } detail: {
-            screen
-                .frame(maxWidth: RootView.contentWidth(for: widthClass))
-                .frame(maxWidth: .infinity)
-        }
-        .navigationSplitViewStyle(.balanced)
-        // Across the whole window, under the sidebar as well. What is playing
-        // does not belong to the section you happen to be looking at - it
-        // keeps playing while you move between all four - so the bar anchors
-        // the window rather than one column of it. As a safe area inset rather
-        // than an overlay, so the list above it scrolls to its own end instead
-        // of underneath.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
+        // Give navigation a physically shorter viewport while the player is
+        // visible. An inset outside the split view can be lost by its nested
+        // navigation stacks, leaving the last list rows behind the player.
+        VStack(spacing: 0) {
+            NavigationSplitView {
+                sidebar
+            } detail: {
+                screen
+                    .frame(maxWidth: RootView.contentWidth(for: widthClass))
+                    .frame(maxWidth: .infinity)
+            }
+            .navigationSplitViewStyle(.balanced)
+            .frame(maxHeight: .infinity)
+
             if playerViewModel.isPresented && !playerViewModel.isExpanded {
                 MiniPlayerView()
                     .environmentObject(playerViewModel)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }

@@ -8,12 +8,25 @@
 import SwiftUI
 
 struct RadioView: View {
+    @ObservedObject private var settings = AppSettings.shared
     @StateObject private var viewModel = RadioViewModel()
     @EnvironmentObject private var playerViewModel: PlayerViewModel
     @Environment(\.horizontalSizeClass) private var widthClass
 
     var body: some View {
         List {
+            if isWide {
+                Section {
+                    Text("Radio")
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                .listSectionSpacing(12)
+            }
+
             // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
                 liveCard
@@ -56,13 +69,16 @@ struct RadioView: View {
                             .onAppear { viewModel.loadMoreIfNeeded(currentItem: podcast) }
                     }
 
-                    if viewModel.isLoadingMore {
-                        HStack {
-                            Spacer()
-                            ProgressView()
-                            Spacer()
-                        }
+                }
+
+                if viewModel.isLoadingMore {
+                    HStack {
+                        Spacer()
+                        ProgressView()
+                        Spacer()
                     }
+                } else if viewModel.canLoadMore && !viewModel.latestPodcasts.isEmpty {
+                    Button("Učitaj još epizoda") { viewModel.loadMore() }
                 }
             } header: {
                 HStack {
@@ -78,7 +94,12 @@ struct RadioView: View {
             }
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Radio")
+        // A wide page owns its heading so it shares the cards' margins.
+        // Text(verbatim:) for the empty one: a bare "" is a
+        // LocalizedStringKey, and Xcode kept collecting it into the catalog
+        // as a key with no string on either side of it.
+        .navigationTitle(isWide ? Text(verbatim: "") : Text("Radio"))
+        .navigationBarTitleDisplayMode(isWide ? .inline : .automatic)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { filterMenu }
         }
@@ -175,6 +196,8 @@ struct RadioView: View {
     /// scrolls away - two stacked bars saying the same thing.
     private var filterMenu: some View {
         Menu {
+            Toggle("Prikaži preslušane", isOn: settings.showsPlayedEpisodesBinding)
+            Divider()
             Picker("Filter", selection: filterBinding) {
                 Text("Sve epizode").tag(EpisodeFilter?.none)
                 ForEach(viewModel.availableFilters) { filter in
@@ -212,6 +235,14 @@ struct RadioView: View {
                     .font(.subheadline)
             }
             .padding(.vertical, 8)
+        } else if !viewModel.latestPodcasts.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Nijedna epizoda ne odgovara filteru.")
+                Button("Prikaži sve") {
+                    viewModel.activeFilter = nil
+                    settings.showsPlayedEpisodes = true
+                }
+            }
         } else {
             Text("Nema epizoda za prikaz.")
                 .foregroundColor(.secondary)

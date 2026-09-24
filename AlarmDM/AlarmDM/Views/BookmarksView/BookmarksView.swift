@@ -38,7 +38,9 @@ struct BookmarksView: View {
     private var list: some View {
         List {
             ForEach(viewModel.visibleBookmarks) { bookmark in
-                BookmarkRowView(bookmark: bookmark, canPlay: viewModel.canOpen(bookmark))
+                BookmarkRowView(bookmark: bookmark,
+                                category: viewModel.category(of: bookmark),
+                                canPlay: viewModel.canOpen(bookmark))
                     .contentShape(Rectangle())
                     .onTapGesture { open(bookmark) }
                     .swipeActions(edge: .trailing, allowsFullSwipe: false) {
@@ -65,20 +67,32 @@ struct BookmarksView: View {
     private var categoryMenu: some View {
         Menu {
             Button {
-                viewModel.activeCategory = nil
+                viewModel.activeCategoryId = nil
             } label: {
-                Label("Sve", systemImage: viewModel.activeCategory == nil ? "checkmark" : "")
+                Label("Sve", systemImage: viewModel.activeCategoryId == nil ? "checkmark" : "")
             }
             ForEach(viewModel.availableCategories) { category in
                 Button {
-                    viewModel.activeCategory = category
+                    // Pressing the one that is on takes it off, the same way
+                    // the category menu on a row works. "Sve" stays, because
+                    // it is the only way out when you cannot remember which
+                    // one you picked.
+                    viewModel.activeCategoryId =
+                        viewModel.activeCategoryId == category.id ? nil : category.id
                 } label: {
-                    Label(category.title,
-                          systemImage: viewModel.activeCategory == category ? "checkmark" : category.systemImage)
+                    Label {
+                        Text(category.title)
+                    } icon: {
+                        if viewModel.activeCategoryId == category.id {
+                            Image(systemName: "checkmark")
+                        } else {
+                            BookmarkCategoryIcon(category, size: BookmarkCategoryIcon.inMenu)
+                        }
+                    }
                 }
             }
         } label: {
-            Image(systemName: viewModel.activeCategory == nil
+            Image(systemName: viewModel.activeCategoryId == nil
                   ? "line.3.horizontal.decrease.circle"
                   : "line.3.horizontal.decrease.circle.fill")
         }
@@ -86,14 +100,22 @@ struct BookmarksView: View {
 
     @ViewBuilder
     private func categoryOptions(for bookmark: Bookmark) -> some View {
-        ForEach(BookmarkCategory.allCases) { category in
+        ForEach(viewModel.allCategories) { category in
             Button {
                 // Choosing the one it already has clears it, so the menu is
                 // both how you set a category and how you take it back.
-                viewModel.setCategory(bookmark.category == category ? nil : category, for: bookmark)
+                viewModel.setCategory(bookmark.categoryId == category.id ? nil : category.id,
+                                      for: bookmark)
             } label: {
-                Label(category.title,
-                      systemImage: bookmark.category == category ? "checkmark" : category.systemImage)
+                Label {
+                    Text(category.title)
+                } icon: {
+                    if bookmark.categoryId == category.id {
+                        Image(systemName: "checkmark")
+                    } else {
+                        BookmarkCategoryIcon(category, size: BookmarkCategoryIcon.inMenu)
+                    }
+                }
             }
         }
     }
@@ -127,13 +149,16 @@ struct BookmarksView: View {
 struct BookmarkRowView: View {
 
     let bookmark: Bookmark
+    /// Looked up once by the view model rather than resolved here: a row is
+    /// drawn again on every tick of the player.
+    var category: BookmarkCategoryItem?
     /// Whether the episode behind it is on this device. See
     /// BookmarksViewModel.canOpen.
     var canPlay: Bool = true
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: leadingSymbol)
+            leadingIcon
                 .font(.footnote)
                 .foregroundColor(leadingColor)
                 .frame(width: 26, height: 26)
@@ -146,6 +171,16 @@ struct BookmarkRowView: View {
                     .lineLimit(2)
 
                 HStack(spacing: 6) {
+                    // On the line that already says what this bookmark is,
+                    // rather than out at the trailing edge. Out there it had
+                    // nothing to sit beside on a short row and read as an
+                    // afterthought; here it is one more fact about the
+                    // bookmark, next to the second it points at.
+                    if let category {
+                        BookmarkCategoryIcon(category, size: 15)
+                            .help(Text(category.title))
+                            .accessibilityLabel(Text(category.title))
+                    }
                     Text(bookmark.positionText)
                         .monospacedDigit()
                     if let subtitle = bookmark.displaySubtitle {
@@ -177,14 +212,12 @@ struct BookmarkRowView: View {
         .padding(.vertical, 4)
     }
 
-    /// A triangle where a tap plays something, and the category's own symbol
-    /// where it does not - a note for a song, a bookmark for anything else.
-    /// Every row used to carry a symbol that said nothing about which of the
-    /// two it was.
-    private var leadingSymbol: String {
-        if canPlay { return "play.fill" }
-        if let category = bookmark.category { return category.systemImage }
-        return "bookmark"
+    /// A triangle where a tap plays something, a bookmark where it does not.
+    /// Only that: the category moved to the trailing edge, where it shows on
+    /// every row rather than only on the ones with nothing to play.
+    @ViewBuilder
+    private var leadingIcon: some View {
+        Image(systemName: canPlay ? "play.fill" : "bookmark")
     }
 
     /// One that has not found its episode is a note and nothing more: tapping

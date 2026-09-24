@@ -259,19 +259,26 @@ struct FullscreenPlayerView: View {
             Button {
                 playerViewModel.togglePlayPause()
             } label: {
-                ZStack {
-                    let side: CGFloat = isWide ? 88 : 72
-                    Circle().fill(Color("primaryLink")).frame(width: side, height: side)
-                    if playerViewModel.isBuffering {
-                        ProgressView().tint(Color(.systemBackground))
-                    } else {
-                        Image(systemName: playerViewModel.isPlaying ? "pause.fill" : "play.fill")
-                            .font(.system(size: isWide ? 36 : 30))
-                            .foregroundColor(Color(.systemBackground))
+                VStack(spacing: 6) {
+                    ZStack {
+                        let side: CGFloat = isWide ? 88 : 72
+                        Circle().fill(Color("primaryLink")).frame(width: side, height: side)
+                        if playerViewModel.isBuffering {
+                            ProgressView().tint(Color(.systemBackground))
+                        } else {
+                            Image(systemName: playerViewModel.playButtonSymbol)
+                                .font(.system(size: isWide ? 36 : 30))
+                                .foregroundColor(Color(.systemBackground))
+                        }
+                    }
+                    if playerViewModel.offersReplay {
+                        Text(playerViewModel.playButtonLabel)
+                            .font(.caption)
                     }
                 }
             }
-            .accessibilityLabel(playerViewModel.isPlaying ? "Pauziraj" : "Pusti")
+            .accessibilityLabel(playerViewModel.playButtonLabel)
+            .help(playerViewModel.playButtonLabel)
 
             if !playerViewModel.isLive {
                 Button {

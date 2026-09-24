@@ -55,22 +55,48 @@ final class BookmarkLibrary {
             .store(in: &cancellables)
     }
 
-    var canCapture: Bool { engine.source != nil }
-
     /// Saves immediately and asks nothing. The category can be added later from
     /// the list, which is the only shape that also works while driving.
+    ///
+    /// `showing` is what the screen has, for the press that arrives before the
+    /// engine holds anything. The player can be open on an episode that was
+    /// never opened - restoring at launch loads nothing into the engine on
+    /// purpose, and the first press of play is what opens the audio - and
+    /// reading only the engine meant the bookmark button sat there doing
+    /// nothing at all until something had played. What the caller is looking
+    /// at wins, because the caller is the one looking at it.
     @discardableResult
-    func capture(category: BookmarkCategory? = nil, origin: BookmarkOrigin = .phone) -> Bookmark? {
-        guard let source = engine.source else { return nil }
+    func capture(categoryId: String? = nil,
+                 origin: BookmarkOrigin = .phone,
+                 showing episode: Podcast? = nil,
+                 at position: TimeInterval = 0) -> Bookmark? {
 
         let bookmark: Bookmark
+
+        if let episode {
+            bookmark = Bookmark(
+                id: UUID(),
+                createdAt: Date(),
+                position: max(0, position - Self.rewind),
+                categoryId: categoryId,
+                note: "",
+                episodeTitle: episode.title,
+                show: episode.show,
+                podcastId: episode.id,
+                capturedLive: false
+            )
+            return save(bookmark, origin: origin)
+        }
+
+        guard let source = engine.source else { return nil }
+
         switch source {
         case .podcast(let podcast):
             bookmark = Bookmark(
                 id: UUID(),
                 createdAt: Date(),
                 position: max(0, engine.currentTime - Self.rewind),
-                category: category,
+                categoryId: categoryId,
                 note: "",
                 episodeTitle: podcast.title,
                 show: podcast.show,
@@ -88,7 +114,7 @@ final class BookmarkLibrary {
                 id: UUID(),
                 createdAt: Date(),
                 position: 0,
-                category: category ?? (announced ? .muzika : nil),
+                categoryId: categoryId ?? (announced ? BookmarkCategory.muzika.rawValue : nil),
                 note: engine.liveTrack?.display ?? "",
                 episodeTitle: "Radio uživo",
                 show: nil,
@@ -97,9 +123,16 @@ final class BookmarkLibrary {
             )
         }
 
+        return save(bookmark, origin: origin)
+    }
+
+    /// Writing one down, announcing it and counting it - the same three steps
+    /// whichever way the bookmark was arrived at.
+    @discardableResult
+    private func save(_ bookmark: Bookmark, origin: BookmarkOrigin) -> Bookmark {
         repository.add(bookmark)
         didChange.send()
-Analytics.record(.bookmarkCreated, [
+        Analytics.record(.bookmarkCreated, [
             "origin": origin == .car ? "car" : "phone",
             "kind": bookmark.capturedLive ? "live" : "episode",
         ])
@@ -156,13 +189,18 @@ Analytics.record(.bookmarkCreated, [
         return position
     }
 
-    func setCategory(_ category: BookmarkCategory?, for id: UUID) {
-        repository.setCategory(category, for: id)
+    func setCategory(_ categoryId: String?, for id: UUID) {
+        repository.setCategory(categoryId, for: id)
         didChange.send()
     }
 
     func setNote(_ note: String, for id: UUID) {
         repository.setNote(note, for: id)
+        didChange.send()
+    }
+
+    func deleteAll() {
+        repository.deleteAll()
         didChange.send()
     }
 

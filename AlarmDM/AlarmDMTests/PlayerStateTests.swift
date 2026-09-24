@@ -11,6 +11,7 @@
 import XCTest
 import Combine
 import UIKit
+import AVFoundation
 @testable import AlarmDM
 
 final class PlayerStateTests: XCTestCase {
@@ -68,6 +69,28 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(engine.playCalls.count, 1)
     }
 
+    /// Opening a stream takes a moment, and the scrubber used to spend it at
+    /// zero: the engine reports nothing until the file is open, and the bar
+    /// believed it. It shows where the episode is going instead, from what
+    /// the feed already said about its length.
+    func testTheScrubberDoesNotFallToTheStartWhileAStreamOpens() {
+        var heard = alarm!
+        heard.playedPosition = 3_600
+        heard.playedAt = Date()
+        episodes.rows[heard.id] = heard
+
+        let player = makePlayer()
+        player.mode = .podcast(podcast: heard)
+        player.togglePlayPause()
+        flush()
+
+        // What an unopened file reports: no length at all.
+        engine.reportDuration(0)
+        flush()
+
+        XCTAssertEqual(player.playbackProgress, 3_597 / 10_800, accuracy: 0.01)
+    }
+
     /// The episode row is rewritten the moment playback pauses - that is when
     /// progress is written down - so by the time play is pressed again, the
     /// value the player holds no longer equals the one the engine was given.
@@ -123,17 +146,18 @@ final class PlayerStateTests: XCTestCase {
 
     func testAFinishedEpisodeOpensAtTheBeginning() {
         var finished = alarm!
-        finished.playedPosition = 10_790
+        finished.playedPosition = 10_800
         finished.isPlayed = true
 
         let player = makePlayer()
         player.mode = .podcast(podcast: finished)
 
-        XCTAssertEqual(player.currentTime, 0)
+        XCTAssertTrue(player.offersReplay)
 
         player.togglePlayPause()
         flush()
-        XCTAssertNil(engine.lastPlayPosition)
+        XCTAssertEqual(engine.lastPlayPosition, 0)
+        XCTAssertFalse(player.offersReplay)
     }
 
     func testABookmarkBeatsTheStoredPosition() {
@@ -322,9 +346,8 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 5_397, accuracy: 0.5)
     }
 
-    /// The Mac played it to the end while the phone sat paused minutes short
-    /// of it: the phone's player goes away rather than offering those minutes.
-    func testAnEpisodeFinishedElsewhereIsPutAway() {
+    /// A synced finish stays visible and offers an explicit replay.
+    func testAnEpisodeFinishedElsewhereOffersReplay() {
         episodes.rows[alarm.id] = alarm
         PlaybackStateStore(defaults: defaults).save(
             PlaybackState(podcastId: alarm.id, position: 10_560, savedAt: Date(timeIntervalSinceNow: -600))
@@ -333,18 +356,22 @@ final class PlayerStateTests: XCTestCase {
         player.restorePlaybackState()
         XCTAssertEqual(player.title, "Alarm")
 
-        var finished = listened(alarm, at: 10_790, secondsAgo: 0)
+        var finished = listened(alarm, at: 10_800, secondsAgo: 0)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
         storeChanges.send(())
         flush()
 
-        XCTAssertNil(player.mode)
-        XCTAssertFalse(player.isPresented)
+        XCTAssertNotNil(player.mode)
+        XCTAssertTrue(player.isPresented)
+        XCTAssertTrue(player.offersReplay)
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.lastPlayPosition, 0)
     }
 
-    func testAnEpisodeFinishedElsewhereIsNotReopenedOnLaunch() {
-        var finished = listened(alarm, at: 10_790, secondsAgo: 0)
+    func testAnEpisodeFinishedElsewhereOffersReplayOnLaunch() {
+        var finished = listened(alarm, at: 10_800, secondsAgo: 0)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
         PlaybackStateStore(defaults: defaults).save(
@@ -354,15 +381,17 @@ final class PlayerStateTests: XCTestCase {
         let player = makePlayer()
         player.restorePlaybackState()
 
-        XCTAssertNil(player.mode)
+        XCTAssertNotNil(player.mode)
+        XCTAssertTrue(player.isPresented)
+        XCTAssertTrue(player.offersReplay)
     }
 
     /// Finished on this device is not finished elsewhere: the player stays.
     func testAnEpisodeFinishedHereStays() {
-        var finished = listened(alarm, at: 10_790, secondsAgo: 60)
+        var finished = listened(alarm, at: 10_800, secondsAgo: 60)
         finished.isPlayed = true
         episodes.rows[alarm.id] = finished
-        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 10_790))
+        PlaybackStateStore(defaults: defaults).save(PlaybackState(podcastId: alarm.id, position: 10_800))
 
         let player = makePlayer()
         player.restorePlaybackState()
@@ -370,6 +399,97 @@ final class PlayerStateTests: XCTestCase {
         flush()
 
         XCTAssertEqual(player.title, "Alarm")
+    }
+
+    func testLoadedEpisodeAtLastSecondRestartsWithoutHidingPlayer() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        // Actual file duration can be shorter than the feed's estimate.
+        engine.reportDuration(7_200)
+        engine.advance(to: 7_199)
+        engine.stopPlaying()
+        flush()
+
+        XCTAssertTrue(player.offersReplay)
+        XCTAssertEqual(player.playButtonSymbol, "arrow.counterclockwise")
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.lastPlayPosition, 0)
+        XCTAssertEqual(player.currentTime, 0)
+        XCTAssertTrue(player.isPresented)
+        XCTAssertFalse(player.offersReplay)
+    }
+
+    func testPausedLoadedEpisodeAdoptsSyncedFinishAndReplays() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        flush()
+
+        listened(alarm, at: 10_799, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+        XCTAssertTrue(player.isPresented)
+        XCTAssertTrue(player.offersReplay)
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.lastPlayPosition, 0)
+    }
+
+    func testPreviouslyHeardEpisodePausedDuringReplayStillResumes() {
+        var heard = alarm!
+        heard.isPlayed = true
+        let player = makePlayer()
+        player.mode = .podcast(podcast: heard)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        flush()
+
+        XCTAssertFalse(player.offersReplay)
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(engine.playCalls.count, 1)
+        XCTAssertEqual(player.currentTime, 600)
+    }
+
+    /// The final ten seconds are past the show-end threshold. It is
+    /// still a pause: pressing play again carries on, it does not rewind.
+    func testPausingInTheClosingCreditsCarriesOn() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 10_790)
+        engine.stopPlaying()
+        flush()
+
+        XCTAssertTrue(alarm.hasReachedEnd(at: 10_790))
+        XCTAssertFalse(player.offersReplay)
+        XCTAssertEqual(player.playButtonSymbol, "play.fill")
+        player.togglePlayPause()
+        flush()
+        XCTAssertEqual(player.currentTime, 10_790, accuracy: 0.5)
+    }
+
+    func testSeekingBackFromEndRemovesReplayOffer() {
+        let player = makePlayer()
+        player.mode = .podcast(podcast: alarm)
+        player.togglePlayPause()
+        flush()
+        engine.advance(to: 10_800)
+        engine.stopPlaying()
+        flush()
+        XCTAssertTrue(player.offersReplay)
+        player.seek(to: 600)
+        flush()
+        XCTAssertFalse(player.offersReplay)
     }
 
     // MARK: - Helpers
@@ -645,6 +765,27 @@ final class ListeningRecorderTests: XCTestCase {
         XCTAssertEqual(progress.calls.last?.hasFinished, true)
     }
 
+    func testMeasuredLastSecondIsRecordedAsFinished() {
+        var short = alarm!
+        short.show = .ostalo
+        engine.play(.podcast(short), startingAt: nil)
+        engine.reportDuration(3_600)
+        engine.advance(to: 3_599)
+        engine.stopPlaying()
+        XCTAssertEqual(progress.calls.last?.hasFinished, true)
+    }
+
+    func testMovingToZeroDoesNotWriteTheOldEndPosition() {
+        engine.play(.podcast(alarm), startingAt: nil)
+        engine.advance(to: 600)
+        engine.stopPlaying()
+        recorder.noteAdopted(position: 10_799)
+        engine.advance(to: 10_799)
+        engine.moveByHand(to: 0)
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertEqual(progress.calls.count, 1)
+    }
+
     func testStoppingBeforeTheEndDoesNotMarkItHeard() {
         engine.play(.podcast(alarm), startingAt: nil)
         engine.advance(to: 5_000)
@@ -687,6 +828,7 @@ private final class FakePlaybackEngine: PlaybackEngineType {
 
     var source: PlaybackSource? { sourceSubject.value }
     var hasContent: Bool { source != nil }
+    var duration: TimeInterval { durationSubject.value }
     var isLive: Bool { source?.isLive ?? false }
     var progress: Double {
         let duration = durationSubject.value
@@ -735,7 +877,11 @@ private final class FakePlaybackEngine: PlaybackEngineType {
         movedSubject.send(max(0, time))
     }
 
-    func switchToLocalFile(_ fileURL: URL) {}
+    private(set) var localFileSwitches: [URL] = []
+    func switchToLocalFile(_ fileURL: URL) { localFileSwitches.append(fileURL) }
+
+    private(set) var streamSwitches = 0
+    func switchToStream() { streamSwitches += 1 }
 
     // Driving it from a test
 
@@ -759,6 +905,280 @@ private final class EpisodeStore: EpisodeLookup {
 
     func podcast(with id: UUID) -> Podcast? { rows[id] }
     func lastListened() -> Podcast? { latest }
+}
+
+// MARK: - The file that just finished downloading
+
+/// A file arriving and a file going, from the point of view of a listen that
+/// is already running. Both used to be somebody else's job: the arriving one
+/// belonged to the player's download button, which is one of five ways a
+/// download starts, and the going one belonged to nobody at all.
+final class FileHandoverTests: XCTestCase {
+
+    private var engine: FakePlaybackEngine!
+    private var service: FakeDownloadService!
+    private var files: FakeFileService!
+    private var database: AppDatabase!
+    private var repository: PodcastRepository!
+    private var library: EpisodeLibrary!
+
+    private var alarm: Podcast!
+    private var second: Podcast!
+
+    override func setUpWithError() throws {
+        engine = FakePlaybackEngine()
+        service = FakeDownloadService()
+        database = AppDatabase(inMemory: true)
+        repository = PodcastRepository(database: database)
+        files = FakeFileService()
+        library = EpisodeLibrary(fileService: files,
+                                 podcastService: service,
+                                 database: database,
+                                 engine: engine,
+                                 repository: repository)
+
+        alarm = makeEpisode(title: "Alarm")
+        second = makeEpisode(title: "Emigracija")
+        repository.save([alarm, second])
+    }
+
+    override func tearDownWithError() throws {
+        library = nil
+        repository = nil
+        database = nil
+        files = nil
+        service = nil
+        engine = nil
+    }
+
+    /// The case the fix is for: started from a row, not from the player.
+    func testTheEpisodeBeingPlayedTakesTheFileItJustDownloaded() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        library.download(alarm, force: true)
+        let file = service.finish()
+
+        XCTAssertEqual(engine.localFileSwitches, [file])
+    }
+
+    /// Downloading one thing while listening to another is ordinary, and the
+    /// listen must not be interrupted by it.
+    func testDownloadingSomethingElseLeavesTheListenAlone() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        library.download(second, force: true)
+        service.finish()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    func testNothingPlayingIsNothingToHandOver() {
+        library.download(alarm, force: true)
+        service.finish()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    /// Live radio is not an episode, whatever is being fetched in the
+    /// background.
+    func testTheRadioIsNotSwappedForAFile() throws {
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+        engine.play(.radio(url: stream), startingAt: nil)
+
+        library.download(alarm, force: true)
+        service.finish()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    /// A download that fails hands over nothing, and says so by leaving the
+    /// engine where it was.
+    func testAFailedDownloadChangesNothing() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        library.download(alarm, force: true)
+        service.fail()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    // MARK: - The file that has just been deleted
+
+    /// Deleting the file a listen is running on puts it back on the network.
+    /// Without this the audio runs to the end of what AVPlayer holds and
+    /// stops, with nothing on screen to say why.
+    func testDeletingTheFileBeingPlayedGoesBackToTheStream() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+
+        XCTAssertTrue(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    func testDeletingSomethingElsesFileLeavesTheListenAlone() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+
+        var other = second!
+        other.fileUrl = "emigracija.mp3"
+        XCTAssertTrue(library.deleteDownload(other))
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
+    /// The one the fix is for, and the reason the question moved: the listen
+    /// began on the network and took the file mid-listen, so the `Podcast`
+    /// the engine carries still reads `fileUrl == nil`. Deciding from that
+    /// value left the listen on a file that had just been deleted.
+    func testAListenThatTookItsFileMidwayGoesBackToTheStreamWhenItIsDeleted() {
+        engine.play(.podcast(alarm), startingAt: 600)
+        library.download(alarm, force: true)
+        service.finish()
+
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        XCTAssertTrue(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    /// Same episode, but the listen never left the network - so there is
+    /// nothing to put back. This asks anyway, which is the contract now:
+    /// only the engine can tell a file listen from a streaming one, so it
+    /// is asked every time and declines when the item it has loaded is the
+    /// stream already. That last step needs a real AVPlayer and is not
+    /// covered here.
+    func testAStreamingListenIsStillAsked() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        XCTAssertTrue(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    /// Emptying the folder from Settings names no episode, so the one that
+    /// matters is whatever is playing.
+    func testEmptyingTheFolderReleasesTheListenRunningOnIt() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+
+        _ = library.deleteAllDownloads()
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    /// Emptying the folder asks about whatever is playing, for the same
+    /// reason: this type cannot tell what the listen is running on.
+    func testEmptyingTheFolderAsksAboutWhateverIsPlaying() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        _ = library.deleteAllDownloads()
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    /// Radio is not an episode, so nothing is asked at all.
+    func testEmptyingTheFolderLeavesTheRadioAlone() throws {
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+        engine.play(.radio(url: stream), startingAt: nil)
+
+        _ = library.deleteAllDownloads()
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
+    /// A delete that fails leaves the file where it is, so the listen stays
+    /// on it.
+    func testAFailedDeleteChangesNothing() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+        files.refuses = true
+
+        XCTAssertFalse(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
+    // MARK: Helpers
+
+    private func makeEpisode(title: String) -> Podcast {
+        var podcast = Podcast(show: .alarmSaDaskomIMladjom)
+        podcast.id = UUID()
+        podcast.title = title
+        podcast.itunesDuration = "3:00:00"
+        podcast.podcastUrl = "https://example.com/\(title).mp3"
+        podcast.createdDate = Date()
+        return podcast
+    }
+}
+
+/// A downloads folder that agrees to everything, or refuses everything, and
+/// never touches the disk either way.
+private final class FakeFileService: FileServiceProtocol {
+
+    var refuses = false
+    private(set) var deleted: [String] = []
+    private(set) var emptiedTimes = 0
+
+    func deleteFile(with fileName: String) -> Result<Bool, FileServiceError> {
+        guard !refuses else { return .failure(.fileNotFound(fileName: fileName)) }
+        deleted.append(fileName)
+        return .success(true)
+    }
+
+    func deleteAllDownloads() -> Result<Int, FileServiceError> {
+        guard !refuses else { return .failure(.unknownError(message: "no")) }
+        emptiedTimes += 1
+        return .success(deleted.count)
+    }
+
+    func getFile(with fileName: String) -> Result<URL, FileServiceError> {
+        .failure(.fileNotFound(fileName: fileName))
+    }
+
+    func downloadedFiles() -> [URL] { [] }
+    func downloadedBytes() -> Int64 { 0 }
+}
+
+/// A download that finishes when the test says so, and never touches the
+/// network or the disk.
+private final class FakeDownloadService: PodcastServiceProtocol {
+
+    private var pending: ((Result<URL, Error>) -> Void)?
+    private(set) var requested: [URL] = []
+
+    func downloadPodcasts(from url: URL,
+                          completion: @escaping (Result<URL, Error>) -> Void,
+                          progressHandler: @escaping (Double) -> Void) {
+        requested.append(url)
+        pending = completion
+    }
+
+    /// Lands the file and hands back where it landed.
+    @discardableResult
+    func finish(at name: String = "episode.mp3") -> URL {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        pending?(.success(location))
+        pending = nil
+        return location
+    }
+
+    func fail() {
+        pending?(.failure(NSError(domain: "test", code: 1)))
+        pending = nil
+    }
+
+    // Not what these tests are about.
+    func getPodcasts(for show: String?, page: Int?, date: String?, isBefore: Bool?,
+                     completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, Error>) -> Void) {}
+    func getLivestream(completion: @escaping (Result<URL, Error>) -> Void) {}
 }
 
 // MARK: - What the stream announces
@@ -798,5 +1218,103 @@ final class LiveTrackTests: XCTestCase {
     func testANumericTitleFromARealArtistSurvives() {
         let track = LiveTrack(raw: "Smashing Pumpkins - 1979")
         XCTAssertEqual(track?.title, "1979")
+    }
+}
+
+
+/// Exercise AVPlayer itself at EOF, not just the presentation test double.
+final class PlaybackReplayTests: XCTestCase {
+    func testActualPlayerCanResumeAndExplicitlyReplayAfterEOF() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".wav")
+        var wave = Data()
+        func text(_ value: String) { wave.append(contentsOf: value.utf8) }
+        func word(_ value: UInt16) {
+            var value = value.littleEndian
+            withUnsafeBytes(of: &value) { wave.append(contentsOf: $0) }
+        }
+        func number(_ value: UInt32) {
+            var value = value.littleEndian
+            withUnsafeBytes(of: &value) { wave.append(contentsOf: $0) }
+        }
+        let bytes: UInt32 = 44_100 * 4 * 2
+        text("RIFF"); number(36 + bytes); text("WAVEfmt "); number(16)
+        word(1); word(1); number(44_100); number(88_200); word(2); word(16)
+        text("data"); number(bytes); wave.append(Data(count: Int(bytes)))
+        try wave.write(to: url)
+
+        let engine = PlaybackEngine.shared
+        var subscriptions = Set<AnyCancellable>()
+        defer {
+            subscriptions.removeAll()
+            engine.stop()
+            try? FileManager.default.removeItem(at: url)
+        }
+        var episode = Podcast(show: .ostalo)
+        episode.id = UUID()
+        episode.podcastUrl = url.absoluteString
+        episode.itunesDuration = "0:04"
+
+        let ended = expectation(description: "AVPlayer reaches EOF")
+        NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)
+            .prefix(1)
+            .sink { _ in ended.fulfill() }
+            .store(in: &subscriptions)
+        engine.play(.podcast(episode), startingAt: 3)
+        wait(for: [ended], timeout: 15)
+
+        let resumed = expectation(description: "Remote-style resume restarts at zero")
+        engine.isPlayingPublisher
+            .filter { $0 && engine.currentTime < 1 }
+            .prefix(1)
+            .sink { _ in resumed.fulfill() }
+            .store(in: &subscriptions)
+        engine.resume()
+        wait(for: [resumed], timeout: 10)
+        engine.pause()
+
+        let bookmark = expectation(description: "Explicit near-end bookmark keeps its position")
+        engine.isPlayingPublisher
+            .filter { $0 && engine.currentTime >= 3 }
+            .prefix(1)
+            .sink { _ in bookmark.fulfill() }
+            .store(in: &subscriptions)
+        engine.play(.podcast(episode), startingAt: 3)
+        wait(for: [bookmark], timeout: 10)
+        engine.pause()
+
+        let positioned = expectation(description: "Seek back to EOF")
+        engine.seek(to: engine.duration) {
+            XCTAssertTrue(Thread.isMainThread)
+            positioned.fulfill()
+        }
+        wait(for: [positioned], timeout: 10)
+
+        let replayed = expectation(description: "Explicit replay starts at zero")
+        engine.isPlayingPublisher
+            .filter { $0 && engine.currentTime < 1 }
+            .prefix(1)
+            .sink { _ in replayed.fulfill() }
+            .store(in: &subscriptions)
+        engine.play(.podcast(episode), startingAt: 0)
+        wait(for: [replayed], timeout: 10)
+
+        // A newer seek replaces where the older one was going. It does not
+        // replace the fact that somebody asked to start playing on arrival,
+        // and the player it was asked of is still the one that is loaded -
+        // so control still comes back. Dropping this left a tap on skip
+        // during a stream's first second with a loaded, silent player.
+        engine.pause()
+        let superseded = expectation(description: "A superseded seek still hands control back")
+        engine.seek(to: 1) { superseded.fulfill() }
+        engine.seek(to: 2)
+        wait(for: [superseded], timeout: 10)
+
+        let obsolete = expectation(description: "A stopped player's seek cannot resume playback")
+        obsolete.isInverted = true
+        engine.seek(to: 2) { obsolete.fulfill() }
+        engine.stop()
+        wait(for: [obsolete], timeout: 0.5)
+        XCTAssertNil(engine.source)
+        XCTAssertFalse(engine.isPlaying)
     }
 }

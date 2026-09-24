@@ -12,6 +12,8 @@ import SwiftUI
 import UIKit
 
 struct SupportView: View {
+    @Environment(\.horizontalSizeClass) private var widthClass
+
 
     @State private var didCopyAccount = false
     @State private var isShowingFullscreenQR = false
@@ -26,6 +28,12 @@ struct SupportView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
+                if widthClass == .regular {
+                    Text("Podrži")
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                }
+
                 intro
 
                 sectionHeader(String(localized: "Daško i Mlađa"))
@@ -41,7 +49,8 @@ struct SupportView: View {
             .padding(20)
         }
         .background(Color("background").ignoresSafeArea())
-        .navigationTitle("Podrži")
+        .navigationTitle(widthClass == .regular ? Text(verbatim: "") : Text("Podrži"))
+        .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
     }
 
     // MARK: - Sections

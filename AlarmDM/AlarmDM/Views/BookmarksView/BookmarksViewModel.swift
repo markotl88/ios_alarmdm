@@ -13,20 +13,39 @@ final class BookmarksViewModel: ObservableObject {
     /// worked out once per load - see canOpen.
     @Published private(set) var playableEpisodeIds: Set<UUID> = []
     /// nil means every category, including the ones with none set.
-    @Published var activeCategory: BookmarkCategory?
+    @Published var activeCategoryId: String?
 
     private let library: BookmarkLibrary
     private let podcasts: PodcastRepository
+    private let categories: BookmarkCategories
     private var cancellables = Set<AnyCancellable>()
 
-    init(library: BookmarkLibrary = .shared, podcasts: PodcastRepository = .shared) {
+    init(library: BookmarkLibrary = .shared,
+         podcasts: PodcastRepository = .shared,
+         categories: BookmarkCategories = .shared) {
         self.library = library
         self.podcasts = podcasts
+        self.categories = categories
         reload()
 
         library.didChange
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.reload() }
+            .store(in: &cancellables)
+
+        // A category made, renamed or deleted on another device changes what
+        // these rows say about themselves, without any bookmark having
+        // changed - so the filter has to be looked at here too. The bookmarks
+        // and the categories arrive on their own schedules, and if the
+        // category the list is filtering on is the thing that went, nothing
+        // about the bookmarks will say so.
+        categories.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.dropFilterIfNothingIsFiledUnderIt()
+                self.objectWillChange.send()
+            }
             .store(in: &cancellables)
     }
 
@@ -36,31 +55,59 @@ final class BookmarksViewModel: ObservableObject {
         library.reconcileLiveCaptures()
         bookmarks = library.all()
         playableEpisodeIds = podcasts.existingEpisodeIds(among: Set(bookmarks.compactMap(\.podcastId)))
+        dropFilterIfNothingIsFiledUnderIt()
+    }
+
+    /// A filter nothing is filed under any more is no filter, and has to go.
+    ///
+    /// Clearing it on delete was not enough: taking the category off the last
+    /// bookmark in a filter leaves the same hole, and so does that category
+    /// arriving deleted from another device. The list then showed "nothing in
+    /// this category" over a list that had bookmarks in it - and because the
+    /// toolbar only offers the menu when some category is in use, there was
+    /// no way left to switch it off.
+    ///
+    /// Here rather than at each write, because reload is the one thing every
+    /// change already passes through.
+    private func dropFilterIfNothingIsFiledUnderIt() {
+        guard let activeCategoryId else { return }
+        if !availableCategories.contains(where: { $0.id == activeCategoryId }) {
+            self.activeCategoryId = nil
+        }
     }
 
     var visibleBookmarks: [Bookmark] {
-        guard let activeCategory else { return bookmarks }
-        return bookmarks.filter { $0.category == activeCategory }
+        guard let activeCategoryId else { return bookmarks }
+        return bookmarks.filter { $0.categoryId == activeCategoryId }
     }
 
     /// Only offer the categories that are actually in use - a filter that can
     /// only ever return nothing is a dead end.
-    var availableCategories: [BookmarkCategory] {
-        let used = Set(bookmarks.compactMap(\.category))
-        return BookmarkCategory.allCases.filter { used.contains($0) }
+    var availableCategories: [BookmarkCategoryItem] {
+        categories.items(usedBy: bookmarks)
     }
+
+    /// What to draw on a row, or nil when it has no category and when it
+    /// points at one that has since been deleted.
+    func category(of bookmark: Bookmark) -> BookmarkCategoryItem? {
+        categories.item(id: bookmark.categoryId)
+    }
+
+    /// Everything, for the menu that sets a bookmark's category.
+    var allCategories: [BookmarkCategoryItem] { categories.items }
 
     var isEmpty: Bool { bookmarks.isEmpty }
 
     // MARK: - Actions
 
-    func setCategory(_ category: BookmarkCategory?, for bookmark: Bookmark) {
-        library.setCategory(category, for: bookmark.id)
+    func setCategory(_ categoryId: String?, for bookmark: Bookmark) {
+        library.setCategory(categoryId, for: bookmark.id)
     }
 
     func delete(_ bookmark: Bookmark) {
         library.delete(bookmark.id)
-        if activeCategory != nil && visibleBookmarks.isEmpty { activeCategory = nil }
+        // The filter looks after itself in reload - see
+        // dropFilterIfNothingIsFiledUnderIt.
     }
 
     /// The episode behind a bookmark, when the store still holds it. A live

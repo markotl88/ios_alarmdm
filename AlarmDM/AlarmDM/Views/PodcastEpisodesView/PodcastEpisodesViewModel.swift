@@ -39,9 +39,36 @@ enum EpisodeFilter: String, CaseIterable, Identifiable {
     }
 }
 
+/// Keep newly finished rows in place until the next refresh/open, while
+/// hiding episodes that were already finished when this list was loaded.
+struct EpisodeVisibility {
+    private var unfinishedThisSession = Set<UUID>()
+
+    mutating func remember(_ episodes: [Podcast]) {
+        unfinishedThisSession.formUnion(episodes.filter { !$0.isPlayed && !$0.hasReachedEnd }.map(\.id))
+    }
+
+    func visible(_ episodes: [Podcast], filter: EpisodeFilter?, showsPlayed: Bool) -> [Podcast] {
+        episodes.filter { episode in
+            switch filter {
+            case .downloaded: return episode.isDownloaded
+            case .favourites: return episode.isFavorite
+            case .withMusic where !episode.isWithMusic: return false
+            case .withoutMusic where episode.isWithMusic: return false
+            default: break
+            }
+            return showsPlayed || (!episode.isPlayed && !episode.hasReachedEnd)
+                || unfinishedThisSession.contains(episode.id)
+        }
+    }
+}
+
 final class PodcastEpisodesViewModel: ObservableObject {
     
-    @Published var podcasts: [Podcast] = []
+    @Published var podcasts: [Podcast] = [] {
+        didSet { visibility.remember(podcasts) }
+    }
+    private var visibility = EpisodeVisibility()
     /// nil means no filter. Tapping the active chip clears it.
     @Published var activeFilter: EpisodeFilter?
     @Published var errorMessage: String?
@@ -56,13 +83,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
     /// Episodes after the active filter. Pagination still works off `podcasts`,
     /// so filtering never stops the list from loading more.
     var visiblePodcasts: [Podcast] {
-        guard let activeFilter else { return podcasts }
-        switch activeFilter {
-        case .withMusic: return podcasts.filter { $0.isWithMusic }
-        case .withoutMusic: return podcasts.filter { !$0.isWithMusic }
-        case .downloaded: return podcasts.filter { $0.isDownloaded }
-        case .favourites: return podcasts.filter { $0.isFavorite }
-        }
+        visibility.visible(podcasts, filter: activeFilter, showsPlayed: AppSettings.shared.showsPlayedEpisodes)
     }
 
     /// Some shows publish both cuts of an episode, most do not. The music
@@ -127,6 +148,7 @@ final class PodcastEpisodesViewModel: ObservableObject {
     
     // MARK: - Fetch episodes from the server and save them
     func fetchData() {
+        visibility = EpisodeVisibility()
         repository.refreshFromStore()
         podcasts = storedPodcasts()
         

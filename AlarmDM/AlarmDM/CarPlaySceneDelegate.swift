@@ -23,6 +23,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private var cancellables = Set<AnyCancellable>()
 
     private var radioItem: CPListItem?
+    /// The carry-on row and the episode it names, kept so the one string on
+    /// it that moves can be rewritten without rebuilding anything.
+    private var continueItem: CPListItem?
+    private var continuePodcast: Podcast?
     /// Kept so the sections can be rebuilt in place. Replacing the root
     /// template instead would throw away wherever the person had navigated
     /// to, which in a car is worse than a stale row.
@@ -62,6 +66,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         CPNowPlayingTemplate.shared.remove(self)
         self.interfaceController = nil
         self.radioItem = nil
+        self.continueItem = nil
+        self.continuePodcast = nil
         self.radioTemplate = nil
     }
 
@@ -138,13 +144,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         )
 
         guard let unfinished = continueListening() else {
+            continueItem = nil
+            continuePodcast = nil
             return [radioSection, podcastSection]
         }
 
+        let carryOn = listItem(for: unfinished,
+                               detail: continueDetail(for: unfinished),
+                               marksCut: bothCuts.contains(unfinished.show))
+        continueItem = carryOn
+        continuePodcast = unfinished
+
         let continueSection = CPListSection(
-            items: [listItem(for: unfinished,
-                             detail: continueDetail(for: unfinished),
-                             marksCut: bothCuts.contains(unfinished.show))],
+            items: [carryOn],
             header: String(localized: "Nastavi"),
             sectionIndexTitle: nil
         )
@@ -345,7 +357,21 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     private func observeEngine() {
         engine.isPlayingPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.refreshRadioItem() }
+            .sink { [weak self] _ in
+                self?.refreshRadioItem()
+                // Pausing is where the position stops moving, so it is the
+                // last chance to write down where it stopped - the throttle
+                // below can be up to fifteen seconds behind it.
+                self?.refreshContinueItem()
+            }
+            .store(in: &cancellables)
+
+        // Fifteen seconds, not every half second the observer fires: the row
+        // is read when somebody comes back to the list, not while they stare
+        // at it, and this costs one string assignment.
+        engine.currentTimePublisher
+            .throttle(for: .seconds(15), scheduler: DispatchQueue.main, latest: true)
+            .sink { [weak self] _ in self?.refreshContinueItem() }
             .store(in: &cancellables)
 
         engine.sourcePublisher
@@ -359,6 +385,28 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
                 self?.refreshNowPlayingButtons()
             }
             .store(in: &cancellables)
+    }
+
+    /// The position on the carry-on row, while the episode it names is the
+    /// one playing.
+    ///
+    /// The sections are rebuilt when the source changes and not otherwise, so
+    /// through one long listen the row went on showing the second the car
+    /// connected at - half an hour behind by the time anybody came back to
+    /// the list. Tapping it was always right, because the handler resumes
+    /// whatever is loaded rather than trusting the text; it was the text that
+    /// lied, and it lied in the one shape that reads as the listen not having
+    /// been saved.
+    ///
+    /// Only the string is rewritten. Rebuilding the sections would send the
+    /// repository for the whole list every few seconds in a moving car, to
+    /// change six characters.
+    private func refreshContinueItem() {
+        guard let continueItem, let podcast = continuePodcast else { return }
+        // Not ours to update when something else is playing: the text then
+        // comes from the store, and the store has not moved either.
+        guard case .podcast(let playing) = engine.source, playing.id == podcast.id else { return }
+        continueItem.setDetailText(continueDetail(for: podcast))
     }
 
     private func refreshRadioItem() {

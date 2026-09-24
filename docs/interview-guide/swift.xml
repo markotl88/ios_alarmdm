@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language name="Swift" version="1" kateversion="5.0" section="Sources"
+          extensions="*.swift" mimetype="text/x-swift" author="AlarmDM guide" license="MIT">
+  <highlighting>
+    <list name="keywords">
+      <item>associatedtype</item><item>class</item><item>deinit</item><item>enum</item>
+      <item>extension</item><item>fileprivate</item><item>func</item><item>import</item>
+      <item>init</item><item>inout</item><item>internal</item><item>let</item>
+      <item>open</item><item>operator</item><item>private</item><item>protocol</item>
+      <item>public</item><item>rethrows</item><item>static</item><item>struct</item>
+      <item>subscript</item><item>typealias</item><item>var</item><item>actor</item>
+      <item>break</item><item>case</item><item>continue</item><item>default</item>
+      <item>defer</item><item>do</item><item>else</item><item>fallthrough</item>
+      <item>for</item><item>guard</item><item>if</item><item>in</item>
+      <item>repeat</item><item>return</item><item>switch</item><item>where</item>
+      <item>while</item><item>as</item><item>catch</item><item>is</item>
+      <item>super</item><item>throw</item><item>throws</item><item>try</item>
+      <item>async</item><item>await</item><item>some</item><item>any</item>
+      <item>lazy</item><item>weak</item><item>unowned</item><item>mutating</item>
+      <item>nonmutating</item><item>override</item><item>required</item><item>final</item>
+      <item>convenience</item><item>indirect</item><item>get</item><item>set</item>
+      <item>willSet</item><item>didSet</item>
+    </list>
+    <list name="constants">
+      <item>true</item><item>false</item><item>nil</item><item>self</item><item>Self</item>
+    </list>
+    <list name="types">
+      <item>Int</item><item>Double</item><item>Float</item><item>Bool</item><item>String</item>
+      <item>Character</item><item>Array</item><item>Dictionary</item><item>Set</item>
+      <item>Optional</item><item>Result</item><item>Data</item><item>Date</item>
+      <item>URL</item><item>UUID</item><item>TimeInterval</item><item>CGFloat</item>
+      <item>Error</item><item>Void</item><item>AnyObject</item><item>Any</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr String="///.*$" attribute="Documentation" context="#stay"/>
+        <Detect2Chars char="/" char1="/" attribute="Comment" context="LineComment"/>
+        <Detect2Chars char="/" char1="*" attribute="Comment" context="BlockComment" beginRegion="Comment"/>
+        <DetectChar char="&quot;" attribute="String" context="String"/>
+        <RegExpr String="@[A-Za-z_][A-Za-z0-9_]*" attribute="Attribute" context="#stay"/>
+        <RegExpr String="#[A-Za-z_][A-Za-z0-9_]*" attribute="Attribute" context="#stay"/>
+        <RegExpr String="\b[0-9][0-9_]*(\.[0-9_]+)?\b" attribute="Number" context="#stay"/>
+        <keyword String="keywords" attribute="Keyword" context="#stay"/>
+        <keyword String="constants" attribute="Constant" context="#stay"/>
+        <keyword String="types" attribute="Data Type" context="#stay"/>
+        <RegExpr String="\b[A-Z][A-Za-z0-9_]*\b" attribute="Data Type" context="#stay"/>
+        <DetectIdentifier/>
+      </context>
+      <context name="LineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="BlockComment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars char="*" char1="/" attribute="Comment" context="#pop" endRegion="Comment"/>
+      </context>
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <RegExpr String="\\\(" attribute="Special Char" context="Interpolation"/>
+        <RegExpr String="\\." attribute="Special Char" context="#stay"/>
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+      </context>
+      <context name="Interpolation" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char=")" attribute="Special Char" context="#pop"/>
+        <keyword String="keywords" attribute="Keyword" context="#stay"/>
+        <keyword String="constants" attribute="Constant" context="#stay"/>
+        <DetectIdentifier/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Special Char" defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Documentation" defStyleNum="dsDocumentation"/>
+      <itemData name="Attribute" defStyleNum="dsAttribute"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+    <keywords casesensitive="1" additionalDeliminator="" weakDeliminator=""/>
+  </general>
+</language>

@@ -8,11 +8,18 @@
 import Foundation
 
 enum BookmarkCategory: String, CaseIterable, Identifiable {
+    // Declaration order is the order the picker offers them in - allCases
+    // follows it.
     case muzika
     case film
+    case serija
     case knjiga
+    case urnebesno
+    case zoli
+    case rejdz
+    case mladja
+    case dasko
     case strip
-    case fora
 
     var id: String { rawValue }
 
@@ -20,19 +27,40 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         switch self {
         case .muzika: return String(localized: "Muzika")
         case .film:   return String(localized: "Film")
+        case .serija: return String(localized: "Serija")
         case .knjiga: return String(localized: "Knjiga")
         case .strip:  return String(localized: "Strip")
-        case .fora:   return String(localized: "Fora")
+        case .urnebesno: return String(localized: "Urnebesno")
+        case .rejdz:  return String(localized: "Rejdž")
+        case .dasko:  return String(localized: "Masti")
+        case .mladja: return String(localized: "Dobar čovek")
+        case .zoli:   return String(localized: "Zoli")
+        }
+    }
+
+    var assetName: String? {
+        switch self {
+        // Both of them, the way the app icon has them.
+        case .urnebesno: return "bookmark-dasko-mladja"
+        case .rejdz, .dasko: return "bookmark-dasko"
+        case .mladja: return "bookmark-mladja"
+        default: return nil
         }
     }
 
     var systemImage: String {
         switch self {
-        case .muzika: return "music.note"
+        // A record rather than a note. The note is what a player button
+        // looks like, and half this list is about things you listen to -
+        // the disc says "a record" where the note said "audio".
+        case .muzika: return "opticaldisc"
         case .film:   return "film"
+        case .serija: return "tv"
         case .knjiga: return "book"
         case .strip:  return "books.vertical"
-        case .fora:   return "face.smiling"
+        case .urnebesno: return "face.smiling"
+        case .rejdz, .dasko, .mladja: return "person.crop.circle"
+        case .zoli:   return "guitars"
         }
     }
 }
@@ -48,7 +76,10 @@ struct Bookmark: Identifiable, Equatable {
 
     /// Nil until someone says what it was. The whole point of the button is
     /// that it does not ask at the moment you press it.
-    var category: BookmarkCategory?
+    /// Which category, as the id the catalog knows it by: a built-in's raw
+    /// value, or the UUID of one they made. A string rather than the enum,
+    /// because a category they made has no case to be.
+    var categoryId: String?
     var note: String
 
     /// A copy of what was playing, not a lookup. The episode row can be

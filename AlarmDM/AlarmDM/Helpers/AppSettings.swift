@@ -13,6 +13,7 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     private enum Key {
+        static let showsPlayedEpisodes = "showsPlayedEpisodes"
         static let downloadsOverWiFiOnly = "downloadsOverWiFiOnly"
         static let suppressesUsageStatistics = "suppressesUsageStatistics"
     }
@@ -21,6 +22,18 @@ final class AppSettings: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+    }
+
+    var showsPlayedEpisodes: Bool {
+        get { defaults.bool(forKey: Key.showsPlayedEpisodes) }
+        set {
+            objectWillChange.send()
+            defaults.set(newValue, forKey: Key.showsPlayedEpisodes)
+        }
+    }
+
+    var showsPlayedEpisodesBinding: Binding<Bool> {
+        Binding(get: { self.showsPlayedEpisodes }, set: { self.showsPlayedEpisodes = $0 })
     }
 
     /// On by default. An hour of radio is a few megabytes; a back catalogue of

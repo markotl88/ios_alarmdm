@@ -41,9 +41,16 @@ final class SettingsViewModel: ObservableObject {
         return "\(episodes) · \(formattedSize)"
     }
 
+    var hasBookmarks: Bool { bookmarkCount > 0 }
+
     var bookmarksSummary: String {
-        guard bookmarkCount > 0 else { return String(localized: "Nema zabeleški") }
+        guard hasBookmarks else { return String(localized: "Nema zabeleški") }
         return String(localized: "\(bookmarkCount) zabeleška")
+    }
+
+    func deleteAllBookmarks() {
+        BookmarkLibrary.shared.deleteAll()
+        refresh()
     }
 
     func refresh() {
@@ -78,9 +85,12 @@ final class SettingsViewModel: ObservableObject {
     #endif
 
     func deleteAllDownloads() {
-        switch fileService.deleteAllDownloads() {
+        // Through the library rather than past it. This screen used to call
+        // the file service and the repository itself, so nothing was told the
+        // files had gone - and an episode playing from one of them kept
+        // playing until AVPlayer tried to read past its buffer.
+        switch EpisodeLibrary.shared.deleteAllDownloads() {
         case .success:
-            repository.clearAllDownloadReferences()
             deleteFailureMessage = nil
         case .failure(let error):
             deleteFailureMessage = String(localized: "Brisanje nije uspelo: \(error.localizedDescription)")
@@ -92,10 +102,13 @@ final class SettingsViewModel: ObservableObject {
 // MARK: - View
 
 struct SettingsView: View {
+    @Environment(\.horizontalSizeClass) private var widthClass
+
 
     @StateObject private var viewModel = SettingsViewModel()
     @ObservedObject private var settings = AppSettings.shared
     @State private var showDeleteConfirmation = false
+    @State private var showBookmarkDeleteConfirmation = false
     #if DEBUG
     @State private var showEraseConfirmation = false
     @State private var eraseReport: String?
@@ -116,6 +129,18 @@ struct SettingsView: View {
 
     var body: some View {
         List {
+            if widthClass == .regular {
+                Section {
+                    Text("Ostalo")
+                        .font(.largeTitle.bold())
+                        .accessibilityAddTraits(.isHeader)
+                        .listRowInsets(EdgeInsets())
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                .listSectionSpacing(12)
+            }
+
             bookmarksSection
             networkSection
             statisticsSection
@@ -124,7 +149,8 @@ struct SettingsView: View {
             appSection
         }
         .listStyle(.insetGrouped)
-        .navigationTitle("Ostalo")
+        .navigationTitle(widthClass == .regular ? Text(verbatim: "") : Text("Ostalo"))
+        .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
         .onAppear { viewModel.refresh() }
         .confirmationDialog(
             "Obrisati sve preuzete epizode?",
@@ -135,6 +161,16 @@ struct SettingsView: View {
             Button("Odustani", role: .cancel) {}
         } message: {
             Text("Epizode ostaju dostupne za slušanje preko interneta i možeš ih ponovo preuzeti.")
+        }
+        .confirmationDialog(
+            "Obrisati sve zabeleške?",
+            isPresented: $showBookmarkDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Obriši sve", role: .destructive) { viewModel.deleteAllBookmarks() }
+            Button("Odustani", role: .cancel) {}
+        } message: {
+            Text("Zabeleške se sinhronizuju, pa će nestati i sa ostalih tvojih uređaja. Kategorije ostaju.")
         }
         #if DEBUG
         .confirmationDialog(
@@ -185,6 +221,19 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
+
+            NavigationLink {
+                CategorySettingsView()
+            } label: {
+                Label("Kategorije", systemImage: "tag")
+            }
+
+            Button(role: .destructive) {
+                showBookmarkDeleteConfirmation = true
+            } label: {
+                Label("Obriši sve zabeleške", systemImage: "trash")
+            }
+            .disabled(!viewModel.hasBookmarks)
         }
     }
 

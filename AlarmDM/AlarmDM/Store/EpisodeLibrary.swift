@@ -34,7 +34,7 @@ final class EpisodeLibrary: ProgressRecording {
     /// deciding for the person - it has no way to ask.
     let downloadBlocked = PassthroughSubject<Podcast, Never>()
 
-    private let repository = PodcastRepository.shared
+    private let repository: PodcastRepository
     private let fileService: FileServiceProtocol
     private let podcastService: PodcastServiceProtocol
     private let settings = AppSettings.shared
@@ -58,11 +58,19 @@ final class EpisodeLibrary: ProgressRecording {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// Only to hand a finished file to whatever is playing - see
+    /// adoptDownloadedFile. Nothing here starts or stops audio.
+    private let engine: PlaybackEngineType
+
     init(fileService: FileServiceProtocol = FileService(),
          podcastService: PodcastServiceProtocol = PodcastService(),
-         database: AppDatabase = .shared) {
+         database: AppDatabase = .shared,
+         engine: PlaybackEngineType = PlaybackEngine.shared,
+         repository: PodcastRepository = .shared) {
         self.fileService = fileService
         self.podcastService = podcastService
+        self.engine = engine
+        self.repository = repository
 
         // A favourite marked on another device is a change to this list like
         // any other, and the screens already know what to do with didChange.
@@ -110,6 +118,7 @@ final class EpisodeLibrary: ProgressRecording {
 
             if case .success(let location) = result {
                 self.repository.setDownloadedFile(location.lastPathComponent, for: podcast.id)
+                self.adoptDownloadedFile(location, for: podcast.id)
             } else if case .failure(let error) = result {
                 AppLog.write(.library, "Error downloading episode: \(error.localizedDescription)")
             }
@@ -129,6 +138,65 @@ final class EpisodeLibrary: ProgressRecording {
         })
 
         return true
+    }
+
+    /// Hands the file that just landed to the engine, when the episode it
+    /// belongs to is the one playing.
+    ///
+    /// Here rather than on the player's download button, which is where it
+    /// used to be. That button is one of five ways a download starts - a row
+    /// in the Radio tab, a row in a show's list, and the two ways out of the
+    /// metered-network alert are the others - and from any of those the
+    /// engine went on pulling from the network with the finished file sitting
+    /// on disk beside it. It caught up the next time that episode was opened,
+    /// which is to say: not during the listen the download was for.
+    ///
+    /// The same shape as the listen that went unrecorded in the car. A thing
+    /// that has to happen whenever a download finishes cannot live on a
+    /// screen, because the screen is open in one of the five cases.
+    private func adoptDownloadedFile(_ location: URL, for id: UUID) {
+        guard case .podcast(let playing) = engine.source, playing.id == id else { return }
+        engine.switchToLocalFile(location)
+    }
+
+    /// The same handover the other way: the file a listen was running on has
+    /// been deleted, so the listen goes back to the network before it notices.
+    ///
+    /// Without it the audio runs to the end of what AVPlayer already holds
+    /// and stops there, with a failed item and nothing on screen to explain
+    /// it. Pressing play again recovers - a failed item is rebuilt, and the
+    /// URL is resolved against a file system that no longer has the file -
+    /// but by then the listen has been interrupted for no reason the person
+    /// can see.
+    ///
+    /// `nil` means every episode: emptying the whole folder does not name
+    /// one, and the only one that matters is whatever is playing.
+    /// Whether the listen is on a file at all is the engine's to answer,
+    /// not this type's: the `Podcast` the engine carries was captured when
+    /// the listen began, so after a download was handed over mid-listen it
+    /// still reads `fileUrl == nil` and this would decline to put a listen
+    /// that really is on a file back on the network.
+    private func releaseDownloadedFile(for id: UUID?) {
+        guard case .podcast(let playing) = engine.source else { return }
+        if let id, playing.id != id { return }
+        engine.switchToStream()
+    }
+
+    /// Empties the downloads folder and forgets every file in it.
+    ///
+    /// Here rather than in the settings screen, which is where it was: that
+    /// screen reached past this type to the file service and the repository,
+    /// so nothing knew a file had gone - including a listen that happened to
+    /// be running on one of them.
+    @discardableResult
+    func deleteAllDownloads() -> Result<Int, FileServiceError> {
+        let result = fileService.deleteAllDownloads()
+        if case .success = result {
+            repository.clearAllDownloadReferences()
+            releaseDownloadedFile(for: nil)
+            didChange.send()
+        }
+        return result
     }
 
     /// Called by whoever wrote to the store outside this type - the player,
@@ -160,6 +228,7 @@ final class EpisodeLibrary: ProgressRecording {
         switch fileService.deleteFile(with: fileName) {
         case .success:
             repository.clearDownloadReference(for: podcast.id)
+            releaseDownloadedFile(for: podcast.id)
             didChange.send()
             return true
         case .failure(let error):
