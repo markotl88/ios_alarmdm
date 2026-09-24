@@ -15,11 +15,11 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
     case serija
     case knjiga
     case urnebesno
+    case zoli
     case rejdz
     case mladja
     case dasko
     case strip
-    case zoli
 
     var id: String { rawValue }
 
