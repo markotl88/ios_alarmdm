@@ -199,6 +199,11 @@ final class BookmarkLibrary {
         didChange.send()
     }
 
+    func deleteAll() {
+        repository.deleteAll()
+        didChange.send()
+    }
+
     func delete(_ id: UUID) {
         repository.delete(id)
         didChange.send()

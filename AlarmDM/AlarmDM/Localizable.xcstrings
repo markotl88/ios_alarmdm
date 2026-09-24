@@ -837,6 +837,26 @@
         }
       }
     },
+    "Obriši sve zabeleške" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all bookmarks"
+          }
+        }
+      }
+    },
+    "Obrisati sve zabeleške?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all bookmarks?"
+          }
+        }
+      }
+    },
     "Obriši" : {
       "localizations" : {
         "en" : {
@@ -1660,6 +1680,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symbol"
+          }
+        }
+      }
+    },
+    "Zabeleške se sinhronizuju, pa će nestati i sa ostalih tvojih uređaja. Kategorije ostaju." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks sync, so they will disappear from your other devices too. The categories stay."
           }
         }
       }

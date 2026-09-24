@@ -85,6 +85,18 @@ final class BookmarkRepository {
         commit("deleting bookmark")
     }
 
+    /// Every one of them, in a single transaction.
+    ///
+    /// Bookmarks are the half that syncs, so this reaches the other devices
+    /// too - which is the whole point, and which is why the screen asking for
+    /// it says so before it is pressed.
+    func deleteAll() {
+        let all = fetch()
+        guard !all.isEmpty else { return }
+        for entity in all { context.delete(entity) }
+        commit("deleting every bookmark")
+    }
+
     // MARK: - Store access
 
     private func fetch(limit: Int? = nil,

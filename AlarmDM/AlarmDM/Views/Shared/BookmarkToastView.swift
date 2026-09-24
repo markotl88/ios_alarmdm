@@ -287,6 +287,12 @@ struct BookmarkCategoryIcon: View {
         self.init(BookmarkCategoryItem(category), size: size)
     }
 
+    /// What a menu row can take without standing taller than the rows around
+    /// it. A menu sizes an SF Symbol to its own text; a view it cannot
+    /// measure that way it simply makes room for, so a portrait at the list
+    /// size set the height for every row in the menu.
+    static let inMenu: CGFloat = 17
+
     /// Deliberately not dynamic colours - see the note above. Ink stops just
     /// short of black so it does not out-contrast the text beside it.
     private static let paper = Color(white: 0.93)

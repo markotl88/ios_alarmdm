@@ -86,7 +86,7 @@ struct BookmarksView: View {
                         if viewModel.activeCategoryId == category.id {
                             Image(systemName: "checkmark")
                         } else {
-                            BookmarkCategoryIcon(category)
+                            BookmarkCategoryIcon(category, size: BookmarkCategoryIcon.inMenu)
                         }
                     }
                 }
@@ -113,7 +113,7 @@ struct BookmarksView: View {
                     if bookmark.categoryId == category.id {
                         Image(systemName: "checkmark")
                     } else {
-                        BookmarkCategoryIcon(category)
+                        BookmarkCategoryIcon(category, size: BookmarkCategoryIcon.inMenu)
                     }
                 }
             }
