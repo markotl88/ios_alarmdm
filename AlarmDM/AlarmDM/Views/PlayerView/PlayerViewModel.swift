@@ -717,13 +717,12 @@ final class PlayerViewModel: ObservableObject {
         EpisodeLibrary.shared.download(podcast) { [weak self] result in
             guard let self else { return }
 
-            guard case .success(let location) = result else { return }
+            guard case .success = result else { return }
 
-            // If this episode is the one playing, continue from the local file.
-            if self.podcastId == podcast.id {
-                self.engine.switchToLocalFile(location)
-            }
-
+            // Swapping the stream for the file is the library's job now, for
+            // every download and not only the ones started from here - see
+            // EpisodeLibrary.adoptDownloadedFile. This button is left with
+            // what it is actually about: saying it worked.
             self.showCheckmark = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 self?.showCheckmark = false

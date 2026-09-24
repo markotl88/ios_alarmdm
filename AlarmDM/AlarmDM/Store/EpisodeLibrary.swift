@@ -58,11 +58,17 @@ final class EpisodeLibrary: ProgressRecording {
 
     private var cancellables = Set<AnyCancellable>()
 
+    /// Only to hand a finished file to whatever is playing - see
+    /// adoptDownloadedFile. Nothing here starts or stops audio.
+    private let engine: PlaybackEngineType
+
     init(fileService: FileServiceProtocol = FileService(),
          podcastService: PodcastServiceProtocol = PodcastService(),
-         database: AppDatabase = .shared) {
+         database: AppDatabase = .shared,
+         engine: PlaybackEngineType = PlaybackEngine.shared) {
         self.fileService = fileService
         self.podcastService = podcastService
+        self.engine = engine
 
         // A favourite marked on another device is a change to this list like
         // any other, and the screens already know what to do with didChange.
@@ -110,6 +116,7 @@ final class EpisodeLibrary: ProgressRecording {
 
             if case .success(let location) = result {
                 self.repository.setDownloadedFile(location.lastPathComponent, for: podcast.id)
+                self.adoptDownloadedFile(location, for: podcast.id)
             } else if case .failure(let error) = result {
                 AppLog.write(.library, "Error downloading episode: \(error.localizedDescription)")
             }
@@ -129,6 +136,25 @@ final class EpisodeLibrary: ProgressRecording {
         })
 
         return true
+    }
+
+    /// Hands the file that just landed to the engine, when the episode it
+    /// belongs to is the one playing.
+    ///
+    /// Here rather than on the player's download button, which is where it
+    /// used to be. That button is one of five ways a download starts - a row
+    /// in the Radio tab, a row in a show's list, and the two ways out of the
+    /// metered-network alert are the others - and from any of those the
+    /// engine went on pulling from the network with the finished file sitting
+    /// on disk beside it. It caught up the next time that episode was opened,
+    /// which is to say: not during the listen the download was for.
+    ///
+    /// The same shape as the listen that went unrecorded in the car. A thing
+    /// that has to happen whenever a download finishes cannot live on a
+    /// screen, because the screen is open in one of the five cases.
+    private func adoptDownloadedFile(_ location: URL, for id: UUID) {
+        guard case .podcast(let playing) = engine.source, playing.id == id else { return }
+        engine.switchToLocalFile(location)
     }
 
     /// Called by whoever wrote to the store outside this type - the player,
