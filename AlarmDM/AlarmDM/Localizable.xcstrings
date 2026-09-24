@@ -143,16 +143,6 @@
         }
       }
     },
-    "Rejdž" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rage"
-          }
-        }
-      }
-    },
     "Bez muzike" : {
       "localizations" : {
         "en" : {
@@ -406,6 +396,9 @@
           }
         }
       }
+    },
+    "Ime kategorije" : {
+
     },
     "Instagram" : {
       "localizations" : {
@@ -746,6 +739,12 @@
           }
         }
       }
+    },
+    "Nova" : {
+
+    },
+    "Nova kategorija" : {
+
     },
     "O čemu se radi?" : {
       "localizations" : {
@@ -1277,6 +1276,16 @@
         }
       }
     },
+    "Rejdž" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rage"
+          }
+        }
+      }
+    },
     "Reprodukcija nije uspela." : {
       "localizations" : {
         "en" : {
@@ -1307,6 +1316,19 @@
         }
       }
     },
+    "Sačuvaj" : {
+
+    },
+    "Serija" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Series"
+          }
+        }
+      }
+    },
     "show.other" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1320,16 +1342,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ostalo"
-          }
-        }
-      }
-    },
-    "Serija" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Series"
           }
         }
       }
@@ -1494,6 +1506,9 @@
         }
       }
     },
+    "Vidljiva je na svim tvojim uređajima." : {
+
+    },
     "Zabeleženo" : {
       "localizations" : {
         "en" : {
@@ -1563,6 +1578,9 @@
           }
         }
       }
+    },
+    "Znak" : {
+
     },
     "Zoli" : {
       "localizations" : {

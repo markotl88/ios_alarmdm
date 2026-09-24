@@ -676,7 +676,11 @@ final class PlayerViewModel: ObservableObject {
     }
 
     func addBookmark() {
-        guard BookmarkLibrary.shared.capture() != nil else { return }
+        // What this screen is showing, which is not always what the engine is
+        // holding: a restored episode has never been opened, and the button
+        // used to do nothing at all until the first press of play.
+        let showing = isLive ? nil : podcast
+        guard BookmarkLibrary.shared.capture(showing: showing, at: currentTime) != nil else { return }
         justBookmarked = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { [weak self] in
             self?.justBookmarked = false

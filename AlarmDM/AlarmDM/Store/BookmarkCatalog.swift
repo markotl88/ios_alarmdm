@@ -61,7 +61,10 @@ enum BookmarkCatalog {
     /// The three drawings a category of their own can wear. Deliberately a
     /// short list: the point is to tell one of their categories from another
     /// at a glance, not to build an icon set.
-    static let customIcons = ["bookmark-dasko", "bookmark-mladja", "bookmark-dasko-mladja"]
+    /// Both of them first, and so the default: a category of their own is
+    /// theirs rather than one host's, and picking a single face for it says
+    /// something the name probably did not mean.
+    static let customIcons = ["bookmark-dasko-mladja", "bookmark-dasko", "bookmark-mladja"]
 
     /// How far apart the built-ins are seeded, so one can be dropped between
     /// two of them without renumbering the list.
