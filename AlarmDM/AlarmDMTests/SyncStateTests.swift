@@ -149,9 +149,9 @@ final class SyncMergeTests: XCTestCase {
         XCTAssertEqual(row?.playedPosition, 100)
     }
 
-    /// "Carry on" is the newest listen that is not finished - a finished one
-    /// written afterwards does not push it out.
-    func testCarryOnSkipsWhatWasFinished() {
+    /// "Carry on" is the newest listen with somewhere left to go - one left
+    /// sitting at the end does not push it out.
+    func testCarryOnSkipsWhatWasLeftAtTheEnd() {
         let other = makeEpisode(title: "Emigracija")
         repository.save(other)
 
@@ -159,6 +159,25 @@ final class SyncMergeTests: XCTestCase {
         repository.recordProgress(position: 10_790, hasFinished: true, for: other.id)
 
         XCTAssertEqual(repository.lastListened()?.id, episode.id)
+    }
+
+    /// Heard through, then started again and left half an hour in. That is
+    /// exactly what somebody is in the middle of, and it used to be dropped
+    /// by the fetch before anything could look at where it had got to - so
+    /// the car offered the next unfinished episode instead.
+    func testCarryOnOffersAnEpisodeBeingHeardAgain() {
+        let other = makeEpisode(title: "Emigracija")
+        repository.save(other)
+
+        repository.recordProgress(position: 600, hasFinished: false, for: other.id)
+        repository.recordProgress(position: 10_790, hasFinished: true, for: episode.id)
+        // Started again, and left twenty-five minutes in.
+        repository.recordProgress(position: 1_500, hasFinished: false, for: episode.id)
+
+        XCTAssertEqual(repository.lastListened()?.id, episode.id)
+        XCTAssertEqual(repository.lastListened()?.resumePosition ?? -1, 1_497, accuracy: 0.5)
+        // Still heard: starting it again does not undo that.
+        XCTAssertEqual(repository.podcast(with: episode.id)?.isPlayed, true)
     }
 
     // MARK: Helpers

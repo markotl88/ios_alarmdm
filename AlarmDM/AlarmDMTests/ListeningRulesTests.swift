@@ -72,11 +72,20 @@ final class ListeningRulesTests: XCTestCase {
         XCTAssertNil(episode.resumePosition)
     }
 
-    /// What is stored for a finished episode is a record of the last listen,
-    /// not an invitation to sit through the credits again.
-    func testAFinishedEpisodeStartsOver() {
+    /// What is stored for an episode left at the end is a record of the last
+    /// listen, not an invitation to sit through the credits again.
+    func testAnEpisodeLeftAtTheEndStartsOver() {
         let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_790, isPlayed: true)
         XCTAssertNil(episode.resumePosition)
+    }
+
+    /// Heard through once, and now being heard again: twenty-five minutes in
+    /// is twenty-five minutes in. The flag says what happened once and says
+    /// nothing about where this listen is, and asking it sent the car back to
+    /// the beginning of an episode somebody was in the middle of.
+    func testAnEpisodeHeardOnceAndStartedAgainCarriesOn() {
+        let episode = makeEpisode(duration: "1:00:00", outro: 20, playedPosition: 1_500, isPlayed: true)
+        XCTAssertEqual(episode.resumePosition ?? -1, 1_497, accuracy: 0.5)
     }
 
     /// Past the end of the show but never marked - the flag is written when
@@ -93,9 +102,16 @@ final class ListeningRulesTests: XCTestCase {
         XCTAssertNil(makeEpisode(duration: "3:00:00", outro: 20).listeningProgress)
     }
 
-    func testNothingIsDrawnForAFinishedEpisode() {
+    func testNothingIsDrawnForAnEpisodeLeftAtTheEnd() {
         let episode = makeEpisode(duration: "3:00:00", outro: 20, playedPosition: 10_780, isPlayed: true)
         XCTAssertNil(episode.listeningProgress)
+    }
+
+    /// An episode being heard again is somewhere, and where it is is worth
+    /// drawing - the same rule resumePosition follows.
+    func testALineIsDrawnForAnEpisodeBeingHeardAgain() {
+        let episode = makeEpisode(duration: "1:00:00", outro: 20, playedPosition: 1_790, isPlayed: true)
+        XCTAssertEqual(episode.listeningProgress ?? 0, 0.5, accuracy: 0.01)
     }
 
     func testHalfwayThroughIsHalfALine() {

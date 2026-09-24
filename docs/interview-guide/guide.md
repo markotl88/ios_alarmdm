@@ -1900,16 +1900,41 @@ func testPausingInTheClosingCreditsCarriesOn() {
 static let resumeFloor: TimeInterval = 20
 
 /// Where pressing play should pick this episode up, or nil to start at
-/// the beginning. A finished episode starts over: its position is a record
-/// of the last listen, not an invitation to sit through the credits again.
+/// the beginning.
+///
+/// Where the listen got to is what settles this, not whether the episode
+/// was ever heard through. `isPlayed` is sticky and says what happened
+/// once; it says nothing about where anybody is now.
 var resumePosition: TimeInterval? {
-    guard !isPlayed, playedPosition > Podcast.resumeFloor else { return nil }
+    guard playedPosition > Podcast.resumeFloor else { return nil }
     guard !hasReachedEnd else { return nil }
     // A few seconds back, for the same reason a bookmark takes a few: you
     // stopped listening slightly before you stopped playing.
     return max(0, playedPosition - 3)
 }
 ```
+
+That first guard used to read `!isPlayed, playedPosition > ...`, and the bug
+it caused is the third member of this chapter's family. An episode heard
+through months ago, started again in the car and paused twenty-five minutes
+in, has `isPlayed == true` and `playedPosition == 1500`. Asking the flag threw
+the twenty-five minutes away and started the show over — and the same flag in
+`lastListened`'s fetch predicate dropped that episode out of the car's *Carry
+on* row entirely, so the car offered something else while the thing you were
+actually in the middle of was invisible.
+
+**Three questions, not one**, and the third only surfaced when a real person
+re-listened to something in a car:
+
+| Question | Answered by | Sticky? |
+|---|---|---|
+| Does it count as heard? | `isPlayed` / `hasReachedEnd` | yes |
+| Is it at the very end? | `isAtVeryEnd` | no |
+| Where does it carry on from? | `playedPosition` + `hasReachedEnd` | no |
+
+A sticky historical flag can answer the first and must not be asked the other
+two. Both later bugs were the same mistake at different scales: the first
+conflated two of these questions, the second conflated all three.
 
 Both constants encode something about *people* rather than about audio. The
 20-second floor: below that, the thinking costs more than the listening. The
@@ -1924,11 +1949,11 @@ rather than at the silence after it.
 /// How far through the show a listen got, as a fraction - for the line
 /// under an episode in a list.
 ///
-/// Nil for an episode that has not been started and for one that is
-/// finished: an empty line and a full line each say nothing, and drawing
-/// them puts a rule under every row in the list for no reason.
+/// Nil for an episode that has not been started and for one whose position
+/// is at the end: an empty line and a full line each say nothing, and
+/// drawing them puts a rule under every row in the list for no reason.
 var listeningProgress: Double? {
-    guard !isPlayed, !hasReachedEnd, playedPosition > 0 else { return nil }
+    guard !hasReachedEnd, playedPosition > 0 else { return nil }
     let end = endOfShow
     guard end > 0 else { return nil }
     // A minimum, so a minute into a three-hour episode is still visible as
@@ -1960,7 +1985,7 @@ instinct, applied to presentation.
 
 All of it is on the `Podcast` **struct**, computed from stored values, with no
 dependency on the store, the network, or the player. `ListeningRulesTests` has
-23 tests and needs no fixtures beyond a struct literal:
+25 tests and needs no fixtures beyond a struct literal:
 
 ```swift
 /// Three hours with twenty seconds of credits: the show ends at 10 780.
@@ -1986,7 +2011,7 @@ database.
 function of data the type already holds. Ours answers four questions about an
 episode — is it finished, is it at the very end, where should it resume, what
 bar should the row draw — and none of them touches the store or the network,
-so twenty-three tests run in milliseconds against struct literals. The
+so twenty-five tests run in milliseconds against struct literals. The
 interesting part was discovering that two of those questions, which agree on
 almost every input, are genuinely different: 'counts as heard' is a sticky
 record that syncs, 'is at the end' is a momentary transport state. We shipped
@@ -3887,7 +3912,7 @@ relative to `AlarmDM/AlarmDM/`.
 | `Views/Shared/EpisodeRowActions.swift` | Runtime platform adaptation — chapter 10. |
 | `AlarmDMTests/PlayerStateTests.swift` | Player state, the recorder, live track parsing, and all the doubles. |
 | `AlarmDMTests/SyncStateTests.swift` | Merge rules, two-container store change, schema acceptance. |
-| `AlarmDMTests/ListeningRulesTests.swift` | 23 tests on the listening rules, plus 6 on which rows a list shows. No fixtures beyond struct literals. |
+| `AlarmDMTests/ListeningRulesTests.swift` | 25 tests on the listening rules, plus 6 on which rows a list shows. No fixtures beyond struct literals. |
 | `Info.plist` | The CarPlay scene declaration, `UIApplicationSupportsMultipleScenes`, background audio. |
 
 ## Numbers worth having ready

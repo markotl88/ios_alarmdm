@@ -97,25 +97,34 @@ final class PodcastRepository: EpisodeLookup {
     }
 
     /// The episode to offer as "carry on", or nil when there is nothing to
-    /// carry on with: the most recent listen that has not finished.
+    /// carry on with: the most recent listen with somewhere left to go.
     ///
     /// It looks at the listening rows rather than the episodes, because that
     /// is where the dates are, and it takes the first few rather than all of
     /// them - an episode heard a hundred listens ago is not what anyone means
     /// by continuing.
+    ///
+    /// "Somewhere left to go" is resumePosition's question, not the isPlayed
+    /// flag's. Filtering the flag out here dropped an episode heard through
+    /// once and started again before anything could look at where it had got
+    /// to: half an hour into a re-listen, the car offered the next unfinished
+    /// episode instead of the one that had been playing.
     func lastListened() -> Podcast? {
         refreshFromStore()
 
         // Asked of the store rather than of every row this device has ever
         // held: the predicate, the order and the limit all go down with the
-        // fetch. Ten rather than five because two devices can leave two rows
-        // for the same episode, and duplicates would otherwise crowd out the
-        // episodes behind them.
+        // fetch.
         var descriptor = FetchDescriptor<EpisodeStateEntity>(
-            predicate: #Predicate { $0.playedAt != nil && !$0.isPlayed },
+            predicate: #Predicate { $0.playedAt != nil },
             sortBy: [SortDescriptor(\.playedAt, order: .reverse)]
         )
-        descriptor.fetchLimit = 10
+        // Whether a row has anywhere left to go needs the episode's running
+        // time, which lives in the other store and cannot be reached from
+        // this predicate - so the finished ones come back too and are sorted
+        // out below. Thirty rather than ten: they take up room now, and two
+        // devices can leave two rows apiece.
+        descriptor.fetchLimit = 30
 
         let recent = (try? context.fetch(descriptor)) ?? []
 
