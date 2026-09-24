@@ -174,6 +174,9 @@ protocol PlaybackEngineType: AnyObject {
     func moveByHand(to time: TimeInterval)
     func skip(by seconds: TimeInterval)
     func switchToLocalFile(_ fileURL: URL)
+    /// The other direction: back onto the network, for when the file that
+    /// was playing has been deleted underneath it.
+    func switchToStream()
 }
 
 extension PlaybackEngineType {
@@ -490,6 +493,27 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     /// Swaps a streaming podcast for its freshly downloaded file without losing position.
     func switchToLocalFile(_ fileURL: URL) {
+        reopenEpisode(at: fileURL)
+    }
+
+    /// Puts a playing episode back on the network.
+    ///
+    /// For when its file has gone while it was playing from it. AVPlayer does
+    /// not find that out until it needs to read past what it already holds,
+    /// so the audio runs on to the end of the buffer and then simply stops,
+    /// with a failed item and nothing on screen to say why. It would come
+    /// back on the next press of play - resume rebuilds a failed item, and
+    /// resolveURL checks the file system and falls through to the stream -
+    /// but the listen has already been interrupted by then.
+    func switchToStream() {
+        guard case .podcast(let podcast) = source,
+              let url = URL(string: podcast.podcastUrl) else { return }
+        reopenEpisode(at: url)
+    }
+
+    /// Builds the episode that is loaded again from somewhere else: the same
+    /// second, and playing if it was playing.
+    private func reopenEpisode(at url: URL) {
         guard let source, case .podcast = source, player != nil else { return }
         let resumeAt = currentTime
         let wasPlaying = isPlaying
@@ -502,7 +526,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         attachObservers(to: player, item: item)
 
         // What was true when the swap started, and whether it still is. The
-        // file lands mid-listen, so a pause during the handover is ordinary
+        // swap happens mid-listen, so a pause during the handover is ordinary
         // rather than exotic.
         let intent = pauseGeneration
 

@@ -85,9 +85,12 @@ final class SettingsViewModel: ObservableObject {
     #endif
 
     func deleteAllDownloads() {
-        switch fileService.deleteAllDownloads() {
+        // Through the library rather than past it. This screen used to call
+        // the file service and the repository itself, so nothing was told the
+        // files had gone - and an episode playing from one of them kept
+        // playing until AVPlayer tried to read past its buffer.
+        switch EpisodeLibrary.shared.deleteAllDownloads() {
         case .success:
-            repository.clearAllDownloadReferences()
             deleteFailureMessage = nil
         case .failure(let error):
             deleteFailureMessage = String(localized: "Brisanje nije uspelo: \(error.localizedDescription)")

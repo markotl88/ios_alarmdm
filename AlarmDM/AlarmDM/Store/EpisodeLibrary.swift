@@ -159,6 +159,45 @@ final class EpisodeLibrary: ProgressRecording {
         engine.switchToLocalFile(location)
     }
 
+    /// The same handover the other way: the file a listen was running on has
+    /// been deleted, so the listen goes back to the network before it notices.
+    ///
+    /// Without it the audio runs to the end of what AVPlayer already holds
+    /// and stops there, with a failed item and nothing on screen to explain
+    /// it. Pressing play again recovers - a failed item is rebuilt, and the
+    /// URL is resolved against a file system that no longer has the file -
+    /// but by then the listen has been interrupted for no reason the person
+    /// can see.
+    ///
+    /// `nil` means every episode: emptying the whole folder does not name
+    /// one, and the only one that matters is whatever is playing.
+    private func releaseDownloadedFile(for id: UUID?) {
+        guard case .podcast(let playing) = engine.source else { return }
+        if let id, playing.id != id { return }
+        // It was playing from a file, not from the network. The value the
+        // engine holds still says so - it was captured before the delete -
+        // which is exactly the question being asked.
+        guard playing.isDownloaded else { return }
+        engine.switchToStream()
+    }
+
+    /// Empties the downloads folder and forgets every file in it.
+    ///
+    /// Here rather than in the settings screen, which is where it was: that
+    /// screen reached past this type to the file service and the repository,
+    /// so nothing knew a file had gone - including a listen that happened to
+    /// be running on one of them.
+    @discardableResult
+    func deleteAllDownloads() -> Result<Int, FileServiceError> {
+        let result = fileService.deleteAllDownloads()
+        if case .success = result {
+            repository.clearAllDownloadReferences()
+            releaseDownloadedFile(for: nil)
+            didChange.send()
+        }
+        return result
+    }
+
     /// Called by whoever wrote to the store outside this type - the player,
     /// after a download finishes.
     func episodeDidChange() {
@@ -188,6 +227,7 @@ final class EpisodeLibrary: ProgressRecording {
         switch fileService.deleteFile(with: fileName) {
         case .success:
             repository.clearDownloadReference(for: podcast.id)
+            releaseDownloadedFile(for: podcast.id)
             didChange.send()
             return true
         case .failure(let error):

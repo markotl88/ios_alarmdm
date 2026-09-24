@@ -880,6 +880,9 @@ private final class FakePlaybackEngine: PlaybackEngineType {
     private(set) var localFileSwitches: [URL] = []
     func switchToLocalFile(_ fileURL: URL) { localFileSwitches.append(fileURL) }
 
+    private(set) var streamSwitches = 0
+    func switchToStream() { streamSwitches += 1 }
+
     // Driving it from a test
 
     func advance(to time: TimeInterval) { timeSubject.send(time) }
@@ -906,13 +909,15 @@ private final class EpisodeStore: EpisodeLookup {
 
 // MARK: - The file that just finished downloading
 
-/// Whoever started the download, the episode that is playing should carry on
-/// from the file rather than the network. The swap used to live on the
-/// player's own download button, which is one of five ways in.
-final class DownloadHandoverTests: XCTestCase {
+/// A file arriving and a file going, from the point of view of a listen that
+/// is already running. Both used to be somebody else's job: the arriving one
+/// belonged to the player's download button, which is one of five ways a
+/// download starts, and the going one belonged to nobody at all.
+final class FileHandoverTests: XCTestCase {
 
     private var engine: FakePlaybackEngine!
     private var service: FakeDownloadService!
+    private var files: FakeFileService!
     private var database: AppDatabase!
     private var repository: PodcastRepository!
     private var library: EpisodeLibrary!
@@ -925,7 +930,9 @@ final class DownloadHandoverTests: XCTestCase {
         service = FakeDownloadService()
         database = AppDatabase(inMemory: true)
         repository = PodcastRepository(database: database)
-        library = EpisodeLibrary(podcastService: service,
+        files = FakeFileService()
+        library = EpisodeLibrary(fileService: files,
+                                 podcastService: service,
                                  database: database,
                                  engine: engine,
                                  repository: repository)
@@ -939,6 +946,7 @@ final class DownloadHandoverTests: XCTestCase {
         library = nil
         repository = nil
         database = nil
+        files = nil
         service = nil
         engine = nil
     }
@@ -994,6 +1002,79 @@ final class DownloadHandoverTests: XCTestCase {
         XCTAssertTrue(engine.localFileSwitches.isEmpty)
     }
 
+    // MARK: - The file that has just been deleted
+
+    /// Deleting the file a listen is running on puts it back on the network.
+    /// Without this the audio runs to the end of what AVPlayer holds and
+    /// stops, with nothing on screen to say why.
+    func testDeletingTheFileBeingPlayedGoesBackToTheStream() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+
+        XCTAssertTrue(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    func testDeletingSomethingElsesFileLeavesTheListenAlone() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+
+        var other = second!
+        other.fileUrl = "emigracija.mp3"
+        XCTAssertTrue(library.deleteDownload(other))
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
+    /// Same episode, but the engine took it while it was streaming - so
+    /// there is nothing to put back. The value the engine holds is what
+    /// answers that, because it was captured before the delete.
+    func testAListenThatWasAlreadyStreamingIsNotReopened() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        XCTAssertTrue(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
+    /// Emptying the folder from Settings names no episode, so the one that
+    /// matters is whatever is playing.
+    func testEmptyingTheFolderReleasesTheListenRunningOnIt() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+
+        _ = library.deleteAllDownloads()
+
+        XCTAssertEqual(engine.streamSwitches, 1)
+    }
+
+    func testEmptyingTheFolderLeavesAStreamingListenAlone() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        _ = library.deleteAllDownloads()
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
+    /// A delete that fails leaves the file where it is, so the listen stays
+    /// on it.
+    func testAFailedDeleteChangesNothing() {
+        var downloaded = alarm!
+        downloaded.fileUrl = "alarm.mp3"
+        engine.play(.podcast(downloaded), startingAt: 600)
+        files.refuses = true
+
+        XCTAssertFalse(library.deleteDownload(downloaded))
+
+        XCTAssertEqual(engine.streamSwitches, 0)
+    }
+
     // MARK: Helpers
 
     private func makeEpisode(title: String) -> Podcast {
@@ -1005,6 +1086,34 @@ final class DownloadHandoverTests: XCTestCase {
         podcast.createdDate = Date()
         return podcast
     }
+}
+
+/// A downloads folder that agrees to everything, or refuses everything, and
+/// never touches the disk either way.
+private final class FakeFileService: FileServiceProtocol {
+
+    var refuses = false
+    private(set) var deleted: [String] = []
+    private(set) var emptiedTimes = 0
+
+    func deleteFile(with fileName: String) -> Result<Bool, FileServiceError> {
+        guard !refuses else { return .failure(.fileNotFound(fileName: fileName)) }
+        deleted.append(fileName)
+        return .success(true)
+    }
+
+    func deleteAllDownloads() -> Result<Int, FileServiceError> {
+        guard !refuses else { return .failure(.unknownError(message: "no")) }
+        emptiedTimes += 1
+        return .success(deleted.count)
+    }
+
+    func getFile(with fileName: String) -> Result<URL, FileServiceError> {
+        .failure(.fileNotFound(fileName: fileName))
+    }
+
+    func downloadedFiles() -> [URL] { [] }
+    func downloadedBytes() -> Int64 { 0 }
 }
 
 /// A download that finishes when the test says so, and never touches the
