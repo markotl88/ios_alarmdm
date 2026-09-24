@@ -7,7 +7,8 @@ code excerpt in the guide is copied from a real file, not invented. If an
 excerpt and the repository disagree, the repository is right and the guide is
 stale.
 
-- Base commit: `0e5639d` (branch `bugfix/3.1`)
+- Base commit: `e64c568` (branch `bugfix/3.1`); Parts I-V were first
+  written against `0e5639d` and carried forward from there
 - Guide: `docs/interview-guide/guide.md`
 - PDF: `docs/interview-guide/Senior_iOS_Interview_Guide.pdf`
 - Build: `bash docs/interview-guide/build.sh` (pandoc + xelatex)
@@ -43,8 +44,40 @@ stale.
 
 ## Done
 
-Everything in the table above is written, reviewed and in the PDF: 18 chapters
-and 3 appendices, 66 A4 pages.
+Everything in the table above is written, reviewed and in the PDF: 22 chapters
+and 3 appendices, 79 A4 pages.
+
+**Second pass, after a parallel review.** Codex reviewed the walkthrough in
+`guide.reviewed.md` and wrote a new Part VI in `modern-swift.md`. Both were
+folded into `guide.md`, which stays the single source - the review's factual
+corrections in this document's voice, its over-hedging left out, and Part VI
+kept close to as written. The corrections worth knowing about, because they
+were real errors:
+
+- CarPlay is a second *scene in the same process*, not a second UI process.
+- The masks in `UUID.stable` leave 122 variable bits, not 128, and the result
+  is not a standards-compliant v5. The claim that CloudKit record names need
+  that bit pattern was wrong and is gone - record names are the mirroring
+  layer's, not ours.
+- The feed may carry an id; the decode falls back to the media URL.
+- `seek(to:)` does **not** default to zero tolerance. Sample accuracy is what
+  you ask for explicitly.
+- `preferredTimescale: 600` is 1.67 ms, not sub-millisecond.
+- `isNewer` has no tie-break, so equal timestamps have no defined winner. Now
+  named as a weakness rather than glossed.
+- `isEphemeral` marks the in-memory tier only, so the "opened but not syncing"
+  tier is represented by nothing at all.
+- `canImport` does not remove the SPM dependency.
+- Xcode does ship a CarPlay simulator; what it does not cover is what broke.
+- The closing-credits test was at 10 500, inside the last five percent but
+  short of the 10 780 show-end line, so it never crossed the boundary its name
+  claims. Now at 10 790 with the precondition asserted.
+
+Two items left the weakness list because they were fixed: the NetworkManager
+timeout bug (`3b4735a`) and part of the concurrency one - seek completions now
+hop to main. A new bug went in and came out again in the same review: moving
+`completion?()` behind the generation guard left a tap on skip during a
+stream's first second with a loaded, silent player (`e64c568`).
 
 **Verification that was run, and should be re-run after any edit:**
 

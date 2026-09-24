@@ -24,9 +24,8 @@ of Swift, of which roughly 1 600 are tests.
 That size is the point. It is small enough that one person holds all of it in
 their head, and large enough to have produced every category of problem a
 senior interview asks about: identity across devices, conflict resolution
-without a server, an audio pipeline with real timing bugs, a second scene in
-the same process with no window behind it, localization, privacy, and a code
-review that found things.
+without a server, an audio pipeline with real timing bugs, a second scene in the same app process
+without a phone window, localization, privacy, and a code review that found things.
 
 **A note on language.** The guide is in English because the interviews are.
 Rehearse out loud in English; the ideas are yours either way. *(Vodič je na
@@ -34,11 +33,8 @@ engleskom jer su i intervjui na engleskom — ideje su svakako tvoje.)*
 
 ## The shape of each chapter
 
-Parts I–V are the walkthrough, and each of their chapters has the same four
-parts — you can read only the last one if you are short of time. Part VI is
-different in kind: a Q&A lab on modern SwiftUI and concurrency, where
-"current approach" means code in this app and "alternative" means a design
-being proposed rather than one that shipped.
+Each chapter has the same four parts, and you can read only the last one if
+you are short of time:
 
 1. **The problem** — what actually went wrong, in user-visible terms.
 2. **The code** — the real excerpt, from the file named above it.
@@ -90,13 +86,13 @@ follow-up questions are the interview.
 > has to be true on four surfaces at once, with no server of my own holding the
 > answer. The phone writes it, the car writes it, the Mac writes it, and
 > CloudKit's private database is the only thing between them — which has no
-> unique constraints, no transactions across devices, and nothing you can use
-> as event order. So the merge rules had to live in the app, and they had to be
-> the *same* rules wherever a position is read.
+> unique constraints, no transactions across devices, and no ordering
+> guarantee beyond system-managed conflict resolution. So the merge rules had to live
+> in the app, and they had to be the *same* rules wherever a position is read.
 >
-> The thing I would change: the store layer is main-thread-by-convention rather
-> than by the compiler. It behaves today; nothing proves it keeps behaving, and
-> turning on strict concurrency is a real piece of work rather than a flag.
+> The thing I would change: the whole store layer is main-thread-by-convention
+> rather than by the compiler. Its main-thread assumptions need
+> compiler enforcement and a callback audit, not just a Swift version change.
 
 That is roughly 150 words and it hands the interviewer three threads to pull
 on: CloudKit conflict resolution, the multi-surface architecture, and
@@ -108,7 +104,7 @@ concurrency. All three are chapters in this guide.
                     ┌───────────────────────────────┐
    SwiftUI scene ──▶│                               │
    CarPlay scene ──▶│      PlaybackEngine.shared    │──▶ AVPlayer
-   Lock screen   ──▶│   (one live AVPlayer)         │──▶ MPNowPlayingInfoCenter
+   Lock screen   ──▶│   (one active player)        │──▶ MPNowPlayingInfoCenter
    Media keys    ──▶│                               │──▶ MPRemoteCommandCenter
                     └───────────────┬───────────────┘
                                     │ publishers
@@ -134,7 +130,7 @@ Four rules hold that picture together, and each one is a chapter:
 
 | Rule | Where it lives | Chapter |
 |---|---|---|
-| One object owns the only live `AVPlayer` | `PlaybackEngine` | 2 |
+| One active playback engine owns the current `AVPlayer` | `PlaybackEngine` | 2 |
 | Exactly one object writes listening progress | `ListeningRecorder` | 6 |
 | Exactly one object applies the merge rules | `PodcastRepository` | 5 |
 | What syncs and what does not is a schema decision | `AppDatabase` | 4 |
@@ -308,17 +304,13 @@ and that the singleton owns nothing a test needs to control.
 
 **The follow-up to expect:** *"How do you test it, then?"* — chapter 13.
 
-**The second follow-up:** *"What about thread safety?"* — be honest, and be
-specific about what you have actually checked. The engine intends main-thread
-ownership: every KVO callback hops through `DispatchQueue.main.async` before
-touching state, and the seek completions do now too, which they did not until
-a review went looking. That covers the paths anybody has audited. It does not
-prove the rest, and `@Published` on a class that is only main-thread by habit
-is an invariant the compiler is not being asked to check. `@MainActor` on the
-engine would make the contract checkable; the reason it is not there yet is in
-chapter 15. Saying all that before they ask is worth more than any answer you
-could give after — and "I know which callbacks I have audited and which I have
-not" is a better sentence than "it is thread-safe."
+**The second follow-up:** *"What about thread safety?"* — be honest. The engine intends main-thread ownership. KVO callbacks dispatch to main;
+the review also routes seek completions to main and invalidates pending
+completions when the player is torn down. The remaining entry points still
+need an isolation audit; convention is not proof of race freedom. Under
+Swift 6 strict concurrency, explicit `@MainActor` ownership would make that
+contract compiler-checkable. Saying that before they ask is
+worth more than any answer you could give after.
 
 \newpage
 # Part II — Hard problems, worked
@@ -328,11 +320,10 @@ not" is a better sentence than "it is thread-safe."
 ### The problem
 
 The backend is a Firebase Cloud Function that derives episodes from the
-station's RSS feed. The payload may carry an id and may not — the decode reads
-`response.id` when it is there and falls back to the media URL — so "there is
-a stable key" is a contract with the feed to be checked, not a property to
-assume. The first version of the model assumed the opposite and did the
-obvious thing:
+station's RSS feed. RSS may supply a GUID; the boundary here uses `response.id` when present
+and falls back to the media URL. Stability is a feed contract to verify,
+not a property every RSS feed necessarily lacks. The first
+version of the model did the obvious thing:
 
 ```swift
 var id = UUID()          // a fresh one, on every decode
@@ -387,13 +378,12 @@ Three things are worth being precise about, because an interviewer who knows
 this area will probe all three.
 
 **1. Why a derived UUID rather than just using the URL as the key?**
-Because the domain is typed on `UUID` throughout — `Podcast.id`, the
-`podcastId` foreign key every synced row carries, CarPlay's list identity.
-Keeping the type and deriving the value is much less invasive than changing
-the key type everywhere. Be careful not to overclaim here: the CloudKit
-*record* name is managed by `NSPersistentCloudKitContainer` and is not our
-UUID. Ours is a domain identifier that happens to be stable across devices,
-which is all the design needs.
+Because the app domain uses UUIDs for episode identity and for stored
+references such as `podcastId`. SwiftData/CloudKit mirroring has its own
+record identity; a domain UUID is not automatically a CloudKit record name. Keeping the
+type and deriving the value is much less invasive than changing the key type
+everywhere. The derivation is the adapter between a world with no ids and a
+codebase that assumes them.
 
 **2. Why is this not a security problem?**
 `Insecure.MD5` is named that for good reason, and the name is doing its job
@@ -411,16 +401,17 @@ able to say why.
 remove the conversation entirely. It is on the list in chapter 15.)*
 
 **3. What do those two bit-twiddles do?**
-They set the version and variant fields, per RFC 4122: byte 6's high nibble
-and byte 8's top bits. The result is a well-formed UUID rather than sixteen
-loose bytes, so anything that parses or validates one accepts it.
+They set UUID version and variant bits. The result is a custom deterministic
+identifier tagged with version 5 bits, **not a standards-compliant UUID v5**:
+v5 uses SHA-1 over a namespace and name. Do not claim CloudKit requires this
+bit pattern for record names. A standards-based replacement needs a migration
+because changing the derivation changes existing domain IDs. The version and
+variant masks also leave 122 variable bits, not the full 128, in the result.
 
-Two things not to claim. It is **not** a standards-compliant v5 — a real v5 is
-SHA-1 over a namespace plus a name, and the code's own comment says "version
-5-ish" for exactly that reason. And masking six bits leaves **122 variable
-bits**, not 128; that is still far more than a few thousand episodes need, but
-if you say 128 to someone who knows the format, you have just told them you do
-not.
+**Trust boundary.** MD5 is not suitable where an attacker can benefit from
+chosen-input collisions. This app assumes a trusted feed. Even without an
+adversary, stable input IDs matter more than hash choice: adding a backend ID
+later must not silently replace the URL-derived identity for an existing item.
 
 ### The payoff, which is the actual interview answer
 
@@ -461,10 +452,8 @@ unique constraints."
   the real answer is that this is a known, accepted failure mode, and the
   alternative — a server-assigned id — would mean running a server that
   remembers, which this project deliberately does not.
-- *"Collisions?"* 122 variable bits over a few thousand episodes. The
-  birthday bound is not the risk here; a feed that reuses a URL for different
-  audio is, and so is a backend that starts sending ids later — that would
-  silently re-key every episode unless the fallback order is preserved.
+- *"Collisions?"* 122 variable bits after masking, over a few thousand episodes. The birthday bound is
+  not the risk here; a feed that reuses a URL for different audio is.
 - *"Why not `hashValue`?"* Swift's `Hashable` is explicitly seeded per-process
   and is not stable across launches. This is a genuinely common mistake and a
   good thing to know cold.
@@ -613,14 +602,13 @@ do {
 }
 ```
 
-Three tiers: **synced → local → memory**, and a `try!` at the bottom. Being
-able to defend a `try!` is itself a small senior signal, and the defence has
-to be the honest one: it is a deliberate fail-fast when there is no usable
-persistence left at all. A malformed schema is the likeliest cause and not the
-only one, so calling it *proof* of a programmer error overstates it. The rule
-worth stating is that a forced operation is defensible when there is no
-recovery left to attempt, and indefensible as a shortcut past an error that
-depends on the environment.
+Three tiers: **synced → local → memory**, and a `try!` at the bottom that is
+a fail-fast policy because there is no usable persistence layer left. A schema
+problem is one plausible cause, but framework or resource failures are also
+possible; failure of an in-memory store does not prove a programmer error. Being able to defend a
+`try!` is itself a small senior signal — the rule is that it is acceptable
+when the failure is *impossible without a programmer error*, and unacceptable
+when it depends on the environment.
 
 There is a real hole here, and it is worth volunteering: `isEphemeral` is
 recorded, but **nothing on screen tells the user that syncing is off**. Silent
@@ -989,35 +977,21 @@ private func insertRow(position: Double, at date: Date?,
 
 **Answer, in four sentences:** "It depends on what the field *means*. A
 position is a measurement of a moment, so the later moment wins —
-last-write-wins, with a timestamp we write ourselves, because CloudKit's
-ordering is arrival order and that is not event order. A flag is a decision,
+last-write-wins, with a timestamp we write ourselves, because CloudKit mirroring does not implement our domain-level listening-time policy. A flag is a decision,
 so decisions from both devices are unioned, which converges regardless of
 delivery order. The price of the union is that clearing a flag cannot
 propagate, and the fix for that is to store the decision's timestamp too, or a
 tombstone — we know that, we have not paid for the migration yet."
 
-**Follow-up to expect:** *"Is that a CRDT?"* — the boolean union has the
-shape of one: commutative, associative, idempotent, so it converges whatever
-order the rows arrive in. Say it that way only if you are comfortable, because
-the next question is *"so what is the convergence proof?"*, and there are two
-honest answers.
-
-The union is trivially convergent. The position is not, quite, and this is
-worth volunteering because it is a real hole:
-
-```swift
-static func isNewer(_ lhs: EpisodeStateEntity, than rhs: EpisodeStateEntity) -> Bool {
-    (lhs.playedAt ?? .distantPast) > (rhs.playedAt ?? .distantPast)
-}
-```
-
-An LWW register converges only on a **total** order, and this comparator is
-strict: two rows with the same `playedAt` are "not newer" in both directions,
-so which one wins is whatever order the fetch returned. In practice two
-devices do not write the same millisecond, and two rows that *did* would
-almost certainly hold the same position — but "almost certainly" is not a
-proof, and the fix is cheap: break the tie on a stable writer id. Clock skew
-is the second assumption underneath it, and chapter 15 names it.
+**Follow-up to expect:** *"Is that a CRDT?"* The boolean OR operation is
+commutative, associative and idempotent. That alone does not prove the whole
+store protocol is a CRDT. For position selection, the current comparator uses
+only `playedAt`; equal timestamps have no explicit deterministic tie-breaker.
+A robust LWW register needs a total ordering, such as timestamp plus a stable
+operation/device ID. Clock skew affects whether the winner reflects human
+chronology; deterministic ordering is what enables convergence for the same
+set of delivered updates. CloudKit mirroring and duplicate cleanup introduce
+additional delivery assumptions that local merge tests do not prove.
 
 \newpage
 
@@ -1397,75 +1371,34 @@ seekGeneration += 1
 let generation = seekGeneration
 isSeeking = true
 
-let seekingPlayer = player
-
-player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self, weak seekingPlayer] finished in
+player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
     DispatchQueue.main.async {
-        // The player is gone - stopped, or swapped for the downloaded
-        // file. Nothing it was asked to do afterwards applies.
-        guard let self, let seekingPlayer, self.player === seekingPlayer else { return }
-
-        // Only the newest seek owns the state the seeks left behind.
-        if generation == self.seekGeneration {
-            self.isSeeking = false
-            if finished {
-                self.updateNowPlayingInfo()
-            }
+        guard let self, generation == self.seekGeneration else { return }
+        self.isSeeking = false
+        if finished {
+            self.updateNowPlayingInfo()
         }
-
-        // Control comes back whichever seek was last, and outside that
-        // guard on purpose.
+        // A superseded seek must not restart a replacement player.
         completion?()
     }
 }
 ```
 
-Four separate ideas, and an interviewer can spend five minutes on any of them:
+Three separate ideas in ten lines, and an interviewer can spend five minutes
+on any of them:
 
 - **Optimistic UI.** `currentTime` is set to the target before the seek is
   issued, so the slider follows the finger.
-- **The queue hop.** AVFoundation calls this handler on a queue of its own
-  choosing, and everything inside it is main-thread state. This was missing
-  for a long time and nothing ever visibly broke, which is what an unchecked
-  concurrency assumption looks like right up until it does not.
 - **A generation counter.** Drag across the bar and you issue many seeks.
   `AVPlayer` calls earlier completions with `finished == false`. Without the
   generation check, an old completion clears `isSeeking` while a newer seek is
   still in flight, and the stale-position guard opens at exactly the wrong
-  moment. Same pattern as a request-id check in networking, and naming it that
-  way in an interview lands well.
-- **Two guards, because there are two questions.** This is the part worth
-  telling, because it was got wrong twice in opposite directions.
-
-#### The second act, which is the better half of the story
-
-The first version called `completion?()` unconditionally, under a comment
-warning that an unfinished seek still has to hand control back. Then a review
-added the queue hop and, in the same change, moved the generation guard in
-front of `completion?()` — reasonable-looking, and it fixed a real thing: a
-seek issued against a player that has since been torn down must not start a
-*replacement* player.
-
-It also reintroduced the hang the old comment was about. Press play on a
-restored episode — the seek is parked until the item is ready — then tap skip
-before the stream opens. The skip bumps the generation, the parked seek's
-completion is the one that calls `player.play()`, and it is now dropped.
-Loaded, positioned, **silent**.
-
-Both are right about different things, and one counter cannot answer both:
-
-| Question | Answered by | If it fails |
-|---|---|---|
-| Does this completion still apply at all? | is `self.player` the same object? | drop everything |
-| Does it still own `isSeeking` and Now Playing? | the generation counter | skip the state, still hand back control |
-
-A superseded seek is stale about *where it was going*; it is not stale about
-the fact that somebody asked to start playing on arrival, and the newer seek
-has already moved where "there" is. So the identity guard wraps the whole
-body, the generation guard wraps only the state, and `completion?()` sits
-outside it. **Two different lifetimes wearing the same shape** — the same
-mistake as chapter 9's, three chapters away and in a completely different
-layer.
+  moment. This is the same pattern as a request-id check in networking, and
+  naming it that way in an interview lands well.
+- **`completion?()` runs even when `finished` is false.** An unfinished seek
+  still has to hand control back, or the episode told to start at that
+  position never starts at all. This engine deliberately discards superseded
+  callbacks; do not wrap that contract directly as a checked continuation. *A one-shot continuation adapter must resume exactly once, including cancellation* — the single most common source of hangs.
 
 ### Bug 3 — Seek tolerance
 
@@ -1479,26 +1412,17 @@ layer.
 let tolerance = CMTime(seconds: 1, preferredTimescale: 600)
 ```
 
-Get the API right, because it is a common thing to get backwards in an
-interview: the convenience `seek(to:)` and `seek(to:completionHandler:)` do
-**not** mean zero tolerance — they are the efficient form and allow the player
-latitude. Sample accuracy is what you ask for *explicitly*, by passing
-`.zero` for both tolerances. So the choice here is not "stop using the
-expensive default"; it is picking a deliberate one-second window instead of
-either extreme.
+The convenience `seek(to:completionHandler:)` does **not** mean zero
+tolerance: its documented default permits broad tolerance. Explicit
+`.zero/.zero` requests sample-accurate seeking; a one-second tolerance allows
+a bounded trade-off. Readiness, buffering and overlapping requests can also
+cause stalls, so the observed symptom alone does not prove tolerance was the
+cause. This app's key correctness fixes are waiting until ready, gating play
+on seek completion, and rejecting obsolete callbacks.
 
-Why it matters over a stream: an exact target means the player must have the
-surrounding data, and going forward into a buffer that has not arrived stalls
-where going back is instant. That asymmetry is the giveaway — *backwards
-instant, forwards hanging* is the shape of a buffering problem, not a seeking
-one. Worth adding honestly that tolerance was not the only cause in this app:
-waiting for `readyToPlay`, gating play on the seek's completion, and rejecting
-obsolete callbacks all fixed stalls too.
-
-`preferredTimescale: 600` is the conventional choice because 600 is divisible
-by 24, 25, 30 and 60 — a safe common denominator for frame rates. It means
-ticks of 1/600 s, about **1.67 ms**. Do not call that sub-millisecond, and do
-not call it sample accuracy: audio runs at 44 100 samples a second.
+`preferredTimescale: 600` represents ticks of 1/600 second, approximately
+**1.67 milliseconds**, not sub-millisecond precision. It is divisible by
+common integer frame rates but is not audio sample precision.
 
 ### Bug 4 — Mutual recursion after an interruption
 
@@ -1967,26 +1891,16 @@ and "is at the end" (a *transport state*, momentary, local) share a shape and
 nothing else. The test names the distinction:
 
 ```swift
-/// The final ten seconds are past the show-end threshold. It is
+/// Ten seconds before EOF is inside the known twenty-second outro. It is
 /// still a pause: pressing play again carries on, it does not rewind.
 func testPausingInTheClosingCreditsCarriesOn() {
     // ... advance to 10_790 of 10_800, stop playing ...
-    XCTAssertTrue(alarm.hasReachedEnd(at: 10_790))
     XCTAssertFalse(player.offersReplay)
     XCTAssertEqual(player.playButtonSymbol, "play.fill")
     player.togglePlayPause()
     XCTAssertEqual(player.currentTime, 10_790, accuracy: 0.5)
 }
 ```
-
-That test first went in at **10 500**, and a review caught it: 10 500 is
-inside the last five percent, which is what the bug report said, but a
-three-hour episode's show-end line is at 10 780, so the position never crossed
-the threshold the test's name claims. It passed, and it passed for the wrong
-reason. At 10 790 it is genuinely past the end of the show — hence the added
-`hasReachedEnd` assertion, which pins the precondition instead of assuming it.
-**A test whose name describes a boundary should assert that it is on the far
-side of it.**
 
 ### Where to resume, which is a third question
 
@@ -2019,19 +1933,18 @@ the twenty-five minutes away and started the show over — and the same flag in
 on* row entirely, so the car offered something else while the thing you were
 actually in the middle of was invisible.
 
-**Three questions, not one**, and the third only surfaced when a real person
+**Separate questions,** and the third only surfaced when a real person
 re-listened to something in a car:
 
 | Question | Answered by | Sticky? |
 |---|---|---|
-| Was it ever heard through? | `isPlayed` | **yes** |
-| Has this position passed the end of the show? | `hasReachedEnd` | no |
-| Is it at the very last second? | `isAtVeryEnd` | no |
+| Was it heard before? | `isPlayed` | yes |
+| Has this position reached the show end? | `hasReachedEnd` | no |
+| Is it at the very end? | `isAtVeryEnd` | no |
 | Where does it carry on from? | `playedPosition` + `hasReachedEnd` | no |
 
-Only the first is sticky, and only the first is a record of history. The other
-three are all questions about *this position, right now*, and every bug in
-this family came from letting the sticky one answer one of them. Both later bugs were the same mistake at different scales: the first
+A sticky historical flag can answer the first and must not be asked the other
+two. Both later bugs were the same mistake at different scales: the first
 conflated two of these questions, the second conflated all three.
 
 Both constants encode something about *people* rather than about audio. The
@@ -2144,13 +2057,11 @@ produces a codebase with `#if` in every view.
 
 ### Compile-time: when the API is absent
 
-The audio session is the clean case. `AVAudioSession` is an iOS API, and the
-Catalyst build has no single session to claim — the system mixes applications
-itself — so the three calls that matter are wrapped once rather than guarded
-at every call site. (Scope this claim carefully if pressed: it is this app's
-platform policy, not a promise that a Mac never sees a route change. And note
-that an iOS build running on Apple silicon is a third case again, which is
-why the *interaction* checks below are runtime ones.)
+The app conditionally bypasses audio-session operations in its Catalyst
+build. That is this implementation's platform policy; do not extrapolate it
+into a guarantee that Mac playback cannot face route changes or interruptions.
+An iOS app running on Apple silicon is also distinct from a Catalyst build.
+Consult SDK availability for the API and deployment target in use:
 
 ```swift
 // AVAudioSession is an iOS idea. On the Mac there is no single session to
@@ -2479,19 +2390,17 @@ enum AppLanguage {
     }
 ```
 
-Three properties make this defensible rather than hostile:
+Three implementation choices and their limits:
 
-- **It writes the same key the system writes.** iOS's per-app Language
-  setting *is* `AppleLanguages` in the app's own defaults domain, so this
-  leaves the user's own control working rather than fighting it. Be honest
-  about what it is not: writing that key yourself is a compatibility move, not
-  a documented language-switching API, so it is worth re-testing on a clean
-  install with each OS rather than assuming it keeps working.
+- **It writes the same key the system writes.** iOS's per-app Language setting
+  *is* `AppleLanguages` in the app's own defaults domain. Treat programmatic writes to this system preference as a compatibility
+  workaround, not a documented public language-switching API. Test clean
+  installs and explicit per-app choices on every supported OS.
 - **It runs once, ever.** Guarded by a key of our own — so if the user later
   picks English in Settings, that overwrites `AppleLanguages` and this code
   never writes again.
 - **It is a *default*, not a lock.** The English localization is complete and
-  one tap away.
+  available through the per-app language setting.
 
 ### The launch-ordering problem, and a failed fix
 
@@ -2592,8 +2501,11 @@ codebase takes is worth defending in an interview:
 
 ### Plurals, which Serbian makes non-negotiable
 
-English has two plural forms. Serbian has three: *one*, *few* (2–4), *other*
-(5+). `1 epizoda`, `3 epizode`, `7 epizoda`. String Catalogs handle this with
+English has two cardinal plural categories. Serbian has *one*, *few* and
+*other*, with rules based on the final digits and exceptions for 11-14, not
+simple numeric ranges. For integers: 21 uses *one*, 22 uses *few*, and 12 uses
+*other*. Examples: `1 epizoda`, `3 epizode`, `7 epizoda`. Decimal rules are
+also defined by CLDR. String Catalogs handle this with
 plural variations per language, and the code stays a single interpolation:
 
 ```swift
@@ -2633,10 +2545,10 @@ reason the app was rewritten, it cost weeks, and there is no way to know
 from the outside — bookmarks live in the user's own private CloudKit
 database, which the developer cannot read and should not be able to.
 
-The wrong instinct is to reach for a general-purpose SDK. That brings a device
-identifier, IP-based geolocation, a session graph, a privacy manifest with
-tracking domains, an App Tracking Transparency prompt, and a privacy label
-that says far more than the question needed.
+The SDK decision must follow the question. Inventory automatic metadata,
+identifiers, retention and subprocessors, not only properties supplied by app
+code. A general-purpose SDK does not inherently imply ATT tracking, and a
+privacy-oriented SDK is not by itself proof of anonymous processing.
 
 ### The code
 
@@ -2717,8 +2629,8 @@ static func range(of count: Int) -> String {
 Two independent privacy mechanisms, and being able to name both is the
 substance of this chapter:
 
-- **Generalisation.** `47` is close to a fingerprint when combined with
-  anything else; `20+` is not. The bucket is applied **on the device, before
+- **Generalisation.** Bucketing reduces precision; it does not prove
+  anonymity when combined with timing or other metadata. The bucket is applied **on the device, before
   transmission** — so the precise number never exists off the phone, which is
   a much stronger guarantee than a promise to discard it at the server.
 - **Rate limiting.** Once a week. A count that can be sent on every launch
@@ -2733,18 +2645,14 @@ return !appKey.isEmpty && !AppSettings.shared.suppressesUsageStatistics
 
 The user-facing control is phrased **negatively and defaults to off**: *"Ne
 šalji anonimnu statistiku"* — "Do not send anonymous statistics", unchecked.
-That is a deliberate choice worth defending. A switch labelled positively and
-defaulting to on is technically the same behaviour and reads as a
-pre-ticked consent box. Phrasing the control as the *opt-out it actually is*
-means the default state of the UI matches the default state of the world:
-nothing is switched on that the user did not switch on.
+It is an opt-out: analytics are enabled in eligible Release builds until
+the user disables them. Negative wording does not change that behavior or
+establish consent. For clarity, a positive switch may be easier to understand;
+legal requirements depend on actual processing, not the label's polarity.
 
-And `appKey.isEmpty` disables everything, which is the correct behaviour for
-a fork of a public repository. This one is going on GitHub as a reference
-project; a clone should not silently report to the original author's
-dashboard. The key is committed, though, so that is a default rather than a
-guarantee — a fork has to blank it, and that belongs in the README rather
-than in anybody's assumptions.
+`appKey.isEmpty` is a kill switch, but the committed key is **not empty**.
+A fork will keep that key unless its maintainer removes or replaces it. Do not
+claim a clone automatically stops reporting to the original dashboard.
 
 ### The dependency, made optional at compile time
 
@@ -2761,68 +2669,34 @@ static func start() {
 }
 ```
 
-`canImport` rather than a protocol wrapper: the code **compiles wherever the
-module is not available to the target**, and analytics then does not exist in
-that build rather than existing and being disabled. For a third-party SDK on a
-dependency-light project that is the right amount of abstraction; a protocol
-and a null implementation would be more ceremony for the same outcome.
+`canImport` allows compilation when the module is unavailable to the target.
+It does not remove an existing Swift Package Manager dependency or guarantee
+an offline clone builds without resolving that package.
 
-State the limit precisely, because it is easy to overclaim: `canImport` is a
-compile-time question about the module. It does **not** remove the package
-from the project — it is in `project.pbxproj` — and it does not promise that
-a fresh clone builds offline without resolving it. What it buys is that the
-call sites do not care, and that a target built without the package still
-compiles.
+### Privacy boundaries to explain accurately
 
-### What may be collected without consent — the actual legal shape
+ATT addresses Apple's definition of tracking, including linking data across
+companies for advertising or sharing with data brokers. Whether a particular
+SDK requires the prompt depends on its actual use and data flow, not whether
+it is called analytics. Verify the SDK's automatic fields and vendor policy.
 
-Worth being able to state, because most engineers get the boundary wrong in
-both directions.
-
-**App Tracking Transparency** is narrower than people think. It is required
-for *tracking*: linking user or device data to data from **other companies'**
-apps or websites for advertising or data-broker purposes. First-party
-analytics that never leave your own measurement, and carry no advertising
-identifier, are not tracking and do not require the ATT prompt.
-
-**GDPR is the binding constraint**, and it turns on whether the data is
-personal. No device identifier, no IP retention, no cookie, no fingerprint, a
-bucketed count — that is aggregate measurement rather than personal data. EU
-hosting removes the transfer question entirely.
-
-**The App Store privacy label** must still declare it: *Usage Data → Product
-Interaction*, **not linked to the user**, **not used for tracking**. Collecting
-nothing personal does not mean declaring nothing — and the label covers the
-app *as shipped*, SDKs included.
-
-**The caveat that keeps all of the above honest.** Everything in this section
-is a claim about what the app sends. The vendor also sends things the app did
-not write — a session identifier, a timestamp, an OS and locale string — and
-"I did not attach an identifier" is not the same as "no identifier is
-attached". Before repeating any of this in an interview, say that you checked
-the SDK's own payload and retention, because the difference between an
-engineer who knows the boundary and one who has read a marketing page is
-exactly that sentence.
-
-**The honest ordering**, and the thing to say: "The switch is there because
-the label and the law are not the whole of it. People should be able to say no
-to being counted even when being counted is anonymous, and the cost of
-offering that is one row in Settings."
+The app's four event names and bucketed counts minimize its custom payload.
+They do not establish that all processing is anonymous or outside privacy law.
+EU hosting alone does not settle international-access or transfer questions.
+A privacy label must describe the app and its SDKs as actually shipped. Treat
+lawful basis, consent and vendor contracts as a separate review; no legal
+conclusion follows solely from absence of an app-supplied device ID.
 
 ### In an interview
 
 **Question:** *"How would you add analytics to an app?"*
 
-**Answer:** "Start from the question, not the SDK. We had exactly one — does
-anyone use the bookmarks — so the implementation is four event names and a
-bucketed weekly count, with the bucketing done on the device so the precise
-number never leaves it. The vendor was chosen for what it does not collect: no
-device identifier, no IP retention, EU hosting, which keeps it aggregate
-measurement rather than personal data. ATT is not required because we are not
-tracking across other companies' properties, but the privacy label still
-declares Usage Data → Product Interaction, not linked, not for tracking. And
-there is an opt-out phrased as an opt-out, defaulting to off, because people
-should be able to decline being counted even when the counting is anonymous."
+**Answer:** "Start from the product question, minimize the payload, and then
+verify what the SDK sends automatically. Here the app sends four event types
+and a weekly bucketed count, with an opt-out. I would inspect identifiers,
+timestamps, vendor use and retention before claiming anonymity or deciding
+ATT/privacy-label obligations. Debug builds disable these events. A fork also
+needs to remove the committed analytics key if it should not report."
 
 **Follow-up to expect:** *"What if you exceeded the free tier?"* — a real
 question that was asked during this work. The answer is the interesting part:
@@ -2838,21 +2712,17 @@ the metric.**
 
 ### The problem
 
-Three of the four things this app does badly wrong resist an ordinary unit
-test, each for a different reason — and it is worth being exact about which,
-because "you can't test that" is usually laziness wearing a disguise:
+Three areas need layered tests; simulator coverage alone is insufficient:
 
-- **A car.** Xcode does ship a CarPlay simulator, and it covers what it is
-  good for: templates, navigation, the scene lifecycle. What it does not
-  cover is the part that broke — audio routing, the cable being pulled, the
-  phone locked, the app launched by the car with no window. That needed
-  hardware, and then it needed a test that did not involve a car at all.
+- **CarPlay.** Apple provides a CarPlay simulator and debugging tools. Use
+  them for templates and lifecycle, then test real hardware for audio routing,
+  interruptions, locked-phone behavior and connection changes.
 - **A second device.** CloudKit sync needs two signed-in machines, a network
   and minutes of patience.
 - **Real audio.** `AVPlayer` is asynchronous in five places (chapter 7) and
   none of them are deterministic.
 
-The instinct is to conclude that none of it is testable. The answer is to be
+Hardware coverage is still needed, but this does not mean the logic is untestable. The answer is to be
 precise about *what* is untestable, and then test the rest — which turns out
 to be nearly all of the logic.
 
@@ -3081,6 +2951,10 @@ against the framework.**
 
 ### The async helper
 
+The helper below only waits behind deliveries already enqueued on the main
+queue. It is not a universal guarantee that all nested asynchronous work has
+finished; tests for that work should observe its explicit completion.
+
 ```swift
 /// The view model takes everything from the engine on the main queue, a
 /// runloop later. This lets those deliveries land before the assertions.
@@ -3095,12 +2969,6 @@ A fence rather than a sleep. Enqueue a block behind everything already
 queued; when it runs, everything before it has run. Deterministic, and it
 takes microseconds instead of a fixed delay. `XCTest` has no built-in for
 this and most codebases use `sleep(0.1)`, which is both slower and flaky.
-
-Know its limit, because it is the kind of helper people over-trust: it waits
-only for work *already* on the main queue. Anything that hops elsewhere and
-comes back later is not covered, and a test for that has to observe the
-completion it actually cares about — which is what the real-`AVPlayer` test
-below does with expectations.
 
 ### The test that failed honestly
 
@@ -3145,12 +3013,10 @@ silently and everyone's sync stops.
 
 ## 14. Reading a code review like a senior
 
-> **Scope note for anyone reading this as repository documentation rather
-> than as interview prep:** the app is on SwiftData and has no Realm
-> dependency. The migration argument below is a record of a decision that was
-> taken, not an open question, and the legacy bookmark categories mentioned in
-> passing were never released — the reader that once handled them has since
-> been removed for that reason.
+**Scope note.** The current app uses SwiftData and has no Realm dependency.
+The owner confirmed that legacy bookmark categories were never released and
+need no compatibility reader. The migration story below is historical source
+commentary, not a requirement to restore Realm or old category names.
 
 ### Why this chapter exists
 
@@ -3387,10 +3253,10 @@ accompanied by the fix you have not made yet.** "I sometimes over-engineer" is
 not a weakness, it is a humblebrag. What follows is the real list for this
 codebase, in the order it would actually be addressed.
 
-### 1. Concurrency is held by convention, not by the compiler
+### 1. Concurrency relies on conventions not enforced by the compiler
 
-**The problem.** `SWIFT_VERSION = 5.0` — which selects the Swift 5 language
-mode, not an old compiler — and strict concurrency checking is not turned on.
+**The problem.** `SWIFT_VERSION = 5.0` selects Swift 5 language mode, not an
+old compiler. Complete strict-concurrency checking is not enabled explicitly.
 `AppDatabase.context` is a hand-made `ModelContext`, deliberately
 non-isolated, and its rule is documented rather than enforced:
 
@@ -3402,43 +3268,38 @@ non-isolated, and its rule is documented rather than enforced:
 /// completion that already hopped there.
 ```
 
-The KVO callbacks in `PlaybackEngine` hop to main before touching state, and
-the seek completions now do too — they did not until a review went looking,
-which is the point. Those are the paths somebody has audited. `ModelContext`
-is explicitly not thread-safe and is confined to its owner by documentation
-alone.
+KVO callbacks hop to main, and the review now does the same for seek
+completions. That improves the known paths but does not prove all callers obey
+the intended isolation. `ModelContext` must remain confined to its owner.
 
 **The fix, in order:** turn on `SWIFT_STRICT_CONCURRENCY = complete` and read
 the warnings; annotate `PlaybackEngine` and `PodcastRepository` `@MainActor`;
-work through the remaining callback and synchronous entry points, of which
-the seek handlers were only the first. The reason it has not been done is
-honest: it is a refactor with no user-visible benefit, scheduled for after 3.1
-ships. What *did* get done during review is the queue hop and invalidating
-completions at teardown — a fix to two known paths, not a proof about the
-rest, and worth describing that way.
+audit remaining callback and synchronous entry points. The seek-completion
+hop and teardown generation invalidation were fixed during this review. The reason it has not
+been done is honest: it is a refactor with no user-visible benefit, scheduled
+for after 3.1 ships.
 
 ### 2. Silent degradation
 
 Three places where the app quietly does less and never says so:
 
-- **Sync off.** This is worse than it first looks. `isEphemeral` marks the
-  *in-memory* tier, so the middle tier — store opened, syncing refused — is
-  not represented by any state at all, let alone shown. A user whose schema
-  was refused, or whose entitlement is missing on a build, gets an app that
-  works perfectly and never syncs again, and nothing anywhere knows.
+- **Sync off.** The local-only fallback is not represented by
+  `AppDatabase.isEphemeral`; that flag describes the in-memory tier. No
+  explicit sync-mode state is exposed to the UI. A user whose schema was refused — or whose entitlement is
+  missing on a build — gets an app that works perfectly and never syncs again.
 - **In-memory store.** Third tier of the same fallback. Favourites do not
   survive the session and nothing says so.
 - **Analytics.** Correct to be silent, but it is the same shape.
 
-**The fix.** A single "iCloud sync is unavailable" row in Settings, driven by
-`isEphemeral`. Perhaps thirty lines. It is the highest value-per-line item on
+**The fix.** Expose separate persistence mode (synced/local/memory) and
+account/sync availability, then drive an honest Settings status from those
+values. `isEphemeral` alone cannot distinguish the first two modes. It is the highest value-per-line item on
 this list.
 
-### 3. `NetworkManager` set timeouts that had no effect — fixed
+### 3. A timeout configuration bug, fixed in review
 
-Kept on the list because the *story* is the useful part, and because it is a
-good one to volunteer: small, subtle, and everyone has written it. This is
-what it looked like:
+The pre-review initializer below configured a discarded copy. It is a
+historical excerpt; the current implementation is corrected:
 
 ```swift
 init(session: URLSession = URLSession.shared) {
@@ -3452,31 +3313,28 @@ init(session: URLSession = URLSession.shared) {
 lines mutate a temporary and are discarded. The app runs on the default
 60-second request timeout, not the intended 15.
 
-**The fix**, now shipped: build the configuration first, make the session
-from it, and leave an injected session exactly as it arrived.
+**The fix.** Build the configuration first, then the session; preserve an
+explicitly injected session unchanged:
 
 ```swift
 init(session: URLSession? = nil) {
     if let session {
         self.session = session
     } else {
-        // URLSession.configuration returns a copy; configure before creation.
         let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = Constants.timeoutIntervalForRequest
-        configuration.timeoutIntervalForResource = Constants.timeoutIntervalForResource
+        configuration.timeoutIntervalForRequest = 15
+        configuration.timeoutIntervalForResource = 180
         self.session = URLSession(configuration: configuration)
     }
 }
 ```
 
-Mutating a shared session's configuration would have been wrong anyway —
-`URLSession.shared` is used by other things, which is the second reason the
-old signature was a trap.
+Tests assert the actual session configuration and the identity/configuration
+of an injected session. Checking only a local configuration object would not
+catch the original defect.
 
-The tests are the part worth copying. They assert against
-`manager.session.configuration`, not against a local configuration object —
-checking the object you just built would have passed against the broken
-version too, which is how a bug like this survives a test suite.
+Mutating a shared session's configuration would be wrong anyway —
+`URLSession.shared` is used by other things.
 
 ### 4. The network layer is completion-handler based
 
@@ -3508,18 +3366,12 @@ clocks would resolve in the wrong order. Across one person's own Apple devices
 this is a theoretical problem, not a practical one — but it is an assumption,
 and it should be stated as one rather than discovered.
 
-There is a smaller, sharper version of the same gap: `isNewer` compares with
-`>`, so two rows written in the same millisecond are "not newer" in both
-directions and the winner is whatever order the fetch returned. No total
-order, no convergence guarantee — even with perfect clocks.
-
-**The fix, in increasing order of cost:** break the tie on a stable writer id,
-which is cheap and removes the non-determinism; then, if it ever mattered, a
-Lamport counter or vector clocks, which detect concurrent edits but still
-cannot tell you the real-time order of two disconnected actions. Almost
-certainly not worth the second one here, and saying *"not worth it, and here
-is what it would cost"* is a better answer than either building it or not
-knowing.
+**An alternative:** logical versions with a stable writer ID for total
+ordering, or vector clocks to detect concurrent edits and a separate conflict
+policy. Neither tells you the real-time order of disconnected actions. Weigh
+the domain benefit against the schema and migration cost; and saying *"not worth it here,
+and here is what it would cost"* is a better answer than either building it or
+not knowing.
 
 ### 7. `Insecure.MD5` invites a conversation it does not need
 
@@ -3542,12 +3394,11 @@ submission, which is currently a checklist rather than a build-phase check.
 
 ### 9. Test coverage is deep, not wide
 
-Ninety-six tests in about 1 700 lines, concentrated where the bugs were:
-listening rules, sync merge, player state, the recorder, stream metadata, and
-now the session configuration. Almost nothing covers the rest of the network
-layer, the download manager, the bookmark library's live-matching path, or any
-view. And the default template tests are still sitting in `AlarmDMTests`,
-beside the two real ones that were added to it:
+About 1 600 lines of tests, and they concentrate where the bugs were:
+listening rules, sync merge, player state, the recorder, stream metadata.
+Almost nothing covers the network layer, the download manager, the bookmark
+library's live-matching path, or any view. Two of the default template tests
+are still present and empty:
 
 ```swift
 final class AlarmDMTests: XCTestCase {
@@ -3624,11 +3475,11 @@ launches. `UUID.stable(from:)` hashes deterministically instead (ch. 3).
 container = try! ModelContainer(for: schema, configurations: /* in memory */)
 ```
 
-A deliberate fail-fast: reaching it means not even an in-memory store could
-be built, so there is no persistence layer left to fall back to. Do not
-overclaim the cause — a malformed schema is the likeliest, not the only one.
-A forced operation is defensible when no recovery remains, and indefensible
-as a shortcut past an error that depends on the environment (ch. 4).
+It expresses a deliberate fail-fast policy when even an in-memory store
+cannot be built. It does not prove the cause is a malformed schema; review
+whether an explicit fatal-error path with diagnostics better communicates
+the failure. Avoid forced operations for ordinary recoverable errors
+(ch. 4).
 
 ### SwiftUI
 
@@ -3639,9 +3490,7 @@ as a shortcut past an error that depends on the environment (ch. 4).
 below it, so the mini player, the full-screen player and every row read the
 same instance. `@ObservedObject` only when it is passed in and owned
 elsewhere. The failure mode people get bitten by: `@ObservedObject` on
-something created inline can be rebuilt whenever the owning view value is,
-taking its state with it — `@StateObject` is what ties the object's lifetime
-to the view's identity instead.
+something created inline can be reconstructed whenever the owning view value is rebuilt.
 
 **Q. Why does `Text(myString)` not localize?**
 
@@ -3667,12 +3516,10 @@ compile time (ch. 10).
 
 **Q. Where does this codebase enforce the main thread?**
 
-By convention, and that is the honest answer. KVO callbacks and seek
-completions hop through `DispatchQueue.main.async` before touching published
-state; store writes arrive from network completions that have already hopped.
-Those are the audited paths, not a proof about the others. Strict concurrency
-plus explicit `@MainActor` ownership is what would make it checkable
-(ch. 15).
+By convention at most boundaries. KVO and seek completions dispatch to main;
+other entry points and store access still require auditing. Enable complete
+checking and add explicit ownership annotations; the review cannot claim
+global thread safety from a few callback paths (ch. 15).
 
 **Q. Why is `ListeningRecorder` subscribed without `.receive(on:)`?**
 
@@ -3705,12 +3552,9 @@ file's opening second reaches the speaker before the seek lands (ch. 7).
 
 **Q. Why use seek tolerance?**
 
-Careful with the API: the convenience `seek(to:)` does *not* default to zero
-tolerance — sample accuracy is what you request explicitly by passing `.zero`
-for both. With an exact target the player must have the surrounding data, so
-backwards is instant and forwards stalls; one second either way is nothing in
-a three-hour show. Readiness and obsolete callbacks cause stalls too, and were
-separate fixes (ch. 7).
+Zero tolerance explicitly requests sample accuracy; the convenience overload
+does not default to zero. This app chooses a bounded one-second tolerance.
+Readiness, buffering and obsolete callbacks must be handled separately (ch. 7).
 
 **Q. What must be cleaned up before releasing an `AVPlayer`?**
 
@@ -3742,10 +3586,8 @@ radio shows no skip buttons (ch. 8, 10).
 Ch. 5, in full. The compressed version: CloudKit private database via
 `NSPersistentCloudKitContainer`; no unique constraints, so you merge duplicates
 yourself; positions resolve last-write-wins on a timestamp you write, because
-the transport's ordering is arrival order and arrival order is not event
-order; flags union, because a union converges regardless of delivery order.
-The honest footnote: the comparator has no tie-break, so equal timestamps have
-no defined winner (ch. 15).
+transport conflict resolution is not the app's listening-time policy;
+flags union, because a union converges regardless of delivery order.
 
 **Q. What does CloudKit refuse?**
 
@@ -3815,19 +3657,16 @@ device's listen. The fixture was wrong (ch. 13).
 
 **Q. What can you collect without consent?**
 
-ATT is about tracking across *other companies'* apps and sites; first-party
-anonymous counts are not that. GDPR is the binding constraint and turns on
-whether the data is personal — no identifier, no IP retention, bucketed
-counts, EU hosting. The privacy label still declares *Usage Data → Product
-Interaction*, not linked, not for tracking, and it covers the SDKs as shipped,
-not just your own code. And there is still an opt-out, because people should
-be able to decline being counted. Say one more sentence than most candidates
-do: that the SDK sends fields you did not write — session id, timestamp, OS,
-locale — and that you verified them rather than assuming (ch. 12).
+There is no universal exemption for something called analytics. Separate
+Apple's tracking definition, the complete SDK data flow, applicable privacy
+requirements and the store disclosure. Minimize and inspect the data; do not
+infer a legal conclusion from EU hosting or a bucketed counter (ch. 12).
+
+
 
 **Q. You are deliberately losing user data on upgrade. Defend it.**
 
-Ch. 14. The import was written and thrown away: old rows were keyed by
+Ch. 14. The historical notes describe an import that was written and thrown away: old rows were keyed by
 identifiers that mean nothing in the new schema, so matching was by media URL,
 and a mismatch wrote a listening position onto the wrong episode. Silently
 corrupt data is worse than an empty start. What is lost is named, what is
@@ -4072,558 +3911,6 @@ because the reading conditions are opposite.**
 
 \newpage
 
-# Part VI — Modern Swift and SwiftUI lab
-
-This part supplies the SwiftUI and concurrency depth needed alongside the
-repository walkthrough. **Current approach** means code present in this app.
-**Alternative** means a proposed design, not a claim that it has shipped.
-Complete examples below stand alone; excerpts with `...` are deliberately
-incomplete. The deployment target is iOS 17.5, so Observation is available,
-but this app currently uses Combine's `ObservableObject` and `@Published`.
-
-## 19. SwiftUI: identity, ownership and updates
-
-**Q. How should an experienced UIKit developer think about a View struct?**
-
-**A.** It describes the UI for some inputs. It is not the persistent screen
-object that a `UIViewController` is. SwiftUI can recreate the description
-while retaining state in storage associated with the view's identity.
-Re-evaluating `body` is neither destroying every underlying UIKit view nor
-necessarily repainting every pixel. Dependency changes invalidate relevant
-view computations; reconciliation then decides what needs updating.
-
-**Project example.** `RootView` describes a sidebar or tab layout depending
-on size class. Its `@StateObject playerViewModel` survives repeated `body`
-evaluations at the same root identity. Starting audio, fetching the feed, or
-writing SwiftData from `body` would make those effects repeat for reasons
-unrelated to user intent. Keep rendering cheap and side-effect-free.
-
-**Follow-up: Is a View initializer called only once?** No. Initializers may
-run frequently. Do not interpret initializer/deinitializer logging of a
-helper as proof of a screen's visible lifetime. UIKit's view-controller
-lifecycle and SwiftUI identity are different abstractions.
-
-**Q. What are structural and explicit identity?**
-
-**A.** Structural identity comes from type and position in the hierarchy.
-Explicit identity is supplied by an ID, including `ForEach`'s element IDs or
-`.id(...)`. Identity determines which state storage SwiftUI reuses.
-
-**Project example.** `RootView` gives `BookmarkToastView` `.id(bookmark.id)`.
-A new capture intentionally gets fresh local state. By contrast, episode rows
-must use the stable `Podcast.id`; a freshly generated UUID on each fetch would
-turn updates into replacements, losing row state and disrupting animations.
-`Podcast` equality includes mutable data, so equality is not a substitute for
-stable identity. In UIKit terms, think stable diffable-data-source identifiers,
-not array indexes or equality of the entire view model.
-
-**Follow-up: Is `.id(UUID())` a harmless refresh trick?** No. It discards the
-subtree's state on every reevaluation. Use explicit identity only when that
-reset represents the domain, such as choosing a different episode editor.
-
-**Q. What owns state in the current project?**
-
-| Mechanism | Ownership and correct use here |
-|---|---|
-| `@State` | View-lifetime value storage: scrubber draft value and drag offset. |
-| `@Binding` | A read/write connection to another owner's storage; not storage itself. |
-| `@StateObject` | Owns the lifetime of a Combine observable model for a view identity. |
-| `@ObservedObject` | Observes an externally owned model, such as `AppSettings.shared`. |
-| `@EnvironmentObject` | Retrieves an ancestor-injected Combine model such as the player. |
-| `@Environment` | Retrieves values or dependencies, such as size class and scene phase. |
-
-**Project example, `PodcastEpisodesView.swift`:**
-
-```swift
-@StateObject private var viewModel: PodcastEpisodesViewModel
-
-init(show: Show) {
-    _viewModel = StateObject(
-        wrappedValue: PodcastEpisodesViewModel(show: show)
-    )
-}
-```
-
-The declaration says this view owns the model's lifetime. The initializer
-supplies its initial value through `StateObject`'s deferred construction.
-Recreating the same view description does not replace the installed model.
-However, changing `show` while preserving the *same identity* does not
-reinitialize that model either. A destination must have appropriate show
-identity, or explicitly update its model when its input changes.
-
-**Trap.** `@ObservedObject var model = Model()` constructs a model whenever
-that view value is constructed. The wrapper observes; it does not provide
-stable ownership. It is not specifically `body` that calls the initializer.
-
-**Q. Why does the scrubber keep local state instead of binding directly to the engine?**
-
-**A.** `ScrubberView` in `FullscreenPlayerView.swift` owns a draft slider
-value and an `isScrubbing` flag. During a drag, the user's draft is authoritative;
-periodic playback reports must not pull the thumb back. On release it sends an
-intent to seek; outside editing it can mirror engine progress again.
-
-This is one source of truth per responsibility: the engine owns actual
-playback, the control owns an in-progress gesture. A binding to engine time
-would mix a user command with a measurement. The UIKit comparison is an
-editable text field that does not replace its text on every server refresh
-while the user is typing.
-
-**Follow-up: Could a binding setter start an expensive request?** It can, but
-controls may call it repeatedly. For a seek slider, commit on edit completion
-or explicitly throttle. Keep the measurement path distinct from the command.
-
-**Q. How would you migrate to Observation?**
-
-**A. Current approach:** `PlayerViewModel` and the list models use
-`ObservableObject`; changes announced through `objectWillChange` can invalidate
-subscribers even when they do not display that particular property.
-
-**Alternative, complete standalone illustration:**
-
-```swift
-import SwiftUI
-import Observation
-
-@MainActor @Observable
-final class EpisodeFilter {
-    var showsPlayed = false
-}
-
-@MainActor
-struct FilterHost: View {
-    @State private var filter = EpisodeFilter()
-
-    var body: some View {
-        FilterControl(filter: filter)
-    }
-}
-
-@MainActor
-struct FilterControl: View {
-    @Bindable var filter: EpisodeFilter
-
-    var body: some View {
-        Toggle("Prikaži preslušane", isOn: $filter.showsPlayed)
-    }
-}
-```
-
-`@Observable` instruments property access and mutation. `@State` preserves the
-owned instance for this view identity. `@Bindable` produces the writable
-projection needed by `Toggle`; it does not own the instance. A child that
-only reads the model may use an ordinary stored reference. Observation tracks
-properties read while evaluating the view, so unrelated property changes need
-not invalidate that view.
-
-**Trade-off.** The real `AppSettings` also persists preferences; replacing it
-with this illustrative model would lose that behavior. Migrate ownership and
-persistence deliberately. Observation does not make a model thread-safe, and
-it does not automatically replace Combine pipelines used by the recorder.
-`@MainActor` answers isolation; `@Observable` answers observation.
-
-**Follow-up: Must a View never own a service with `@State`?** That is too broad.
-An owned `@Observable` reference can correctly live in `@State`. A service
-whose lifetime must exceed the screen, such as the playback engine, belongs
-in an app-level owner. An ordinary non-observable class in `@State` retains
-its reference, but mutating its internal properties does not by itself notify
-SwiftUI. Decide from lifetime and observation requirements, not from the name
-"service".
-
-**Q. Is the environment dependency injection or a service locator?**
-
-**A.** It is a propagation mechanism with implicit lookup at consumption.
-The app injects the player at the root so all descendant controls share it.
-That avoids threading a parameter through every intermediate view, but hides
-requirements from initializer signatures. A missing `@EnvironmentObject`
-crashes at runtime, including in previews. Test and preview roots must inject
-it. For domain services, explicit initializer injection makes dependencies
-and test doubles easier to see; use environment for genuinely shared UI scope.
-Typed Observation injection uses `.environment(model)` with
-`@Environment(Model.self)`, not `@EnvironmentObject`.
-
-**Q. How should navigation and presentation be modeled?**
-
-**A. Current approach:** show selection leads to `PodcastEpisodesView`; the
-expanded player is an overlay driven by `PlayerViewModel.isExpanded`, so audio
-can continue across tab changes and collapse. This is presentation state, not
-a second playback engine.
-
-**Alternative:** if the app needs deep links and restoration of multi-step
-routes, use a typed `NavigationStack` path whose values are stable domain IDs.
-Resolve IDs at the destination and handle an episode missing from the local
-cache. For a selected editor, `.sheet(item:)` makes the selected item and its
-presentation one optional state value, avoiding contradictory booleans.
-
-**Trade-off.** A navigation coordinator is useful when route policy is shared;
-adding one just to wrap a two-screen stack adds indirection. Do not keep full
-SwiftData model objects as navigation state across unrelated contexts.
-
-**Q. How do `.task`, `onAppear`, and `scenePhase` differ?**
-
-**A.** `onAppear` is a visibility callback and can run more than once. In the
-current episode view it calls `fetchData()`, whose model must prevent duplicate
-loads. `.task` starts async work associated with the view's lifetime and
-requests cancellation when that lifetime ends; `.task(id:)` also restarts
-when its ID changes. Cancellation is cooperative, not a guarantee that every
-operation has stopped before the next one begins. `scenePhase` describes a
-scene's activity, not whether a particular view is on screen.
-
-**Project implication.** Re-fetching a list is appropriate view work. Audio
-playback and recording a CarPlay listen cannot depend on a view task that may
-not exist. `ListeningRecorder` therefore starts at application launch.
-
-**Follow-up: Does `Task {}` inside `onAppear` inherit view cancellation?** No.
-That creates an unstructured task. Keep and cancel its handle if that is the
-intended ownership, or use the view's `.task` modifier for view-scoped work.
-
-**Q. What would you profile before optimizing this UI?**
-
-**A.** Reproduce scrolling with playback active, a long episode list, and
-incoming store updates. Use Instruments to distinguish main-thread CPU, layout,
-image decoding, database fetches, and excessive view invalidations. A frequent
-`body` evaluation is evidence to investigate, not automatically a defect.
-
-**Project example.** The player publishes progress frequently, while rows
-mostly need current-episode identity and playback state. Splitting those
-observations can reduce unnecessary work. Keep row IDs stable, avoid sorting
-or fetching all episodes inside `body`, and decode/resize artwork once rather
-than per frame. Measure release builds on a device as well as the simulator.
-A 60 Hz frame is about 16.7 ms; 120 Hz leaves roughly half that time.
-
-**Follow-up: Does `withAnimation` move work off the main actor?** No. It supplies
-an animation transaction to state changes. It cannot make expensive synchronous
-work cheap. Respect Reduce Motion, avoid animating every periodic time update,
-and use transitions only when insertion/removal and identity are intentional.
-
-**Q. How would you migrate a UIKit screen incrementally?**
-
-**A.** Embed a SwiftUI feature in `UIHostingController`, keeping its dependencies
-owned by the surrounding composition root. Expose explicit actions back to the
-UIKit coordinator. In the other direction use `UIViewRepresentable` or
-`UIViewControllerRepresentable`, with `make` for creation, `update` for applying
-current inputs, a coordinator for delegates, and teardown for observers.
-The coordinator must not keep stale copies of changing inputs or create a
-retain cycle through callbacks. The repository already retains UIKit lifecycle
-integration through `AppDelegate`; a rewrite of the whole app is unnecessary.
-
-## 20. Concurrency: execution, cancellation and isolation
-
-**Q. What actually happens at `await`?**
-
-**A.** It marks a possible suspension point. If the operation suspends, the task
-preserves its continuation and releases its executing thread to other work.
-It resumes when the awaited operation completes, on the executor required by
-isolation. It does not block a thread like a semaphore wait. An `await` may
-complete without suspending; it is not a mandatory context switch.
-
-**Project example.** An async replacement for `PodcastService` could suspend
-while `URLSession` waits for network data. Decoding a large response remains
-CPU work. Calling an `async` method does not automatically move decoding off
-the main actor, and wrapping synchronous decoding in `Task {}` from a
-main-actor context does not solve that problem.
-
-**Version trap.** This project uses Swift 5 language mode. Swift 6.2's
-`NonisolatedNonsendingByDefault` feature changes unannotated nonisolated async
-execution to remain on the caller's actor; earlier semantics use the generic
-executor. Check language mode and enabled features. With modern semantics,
-`@concurrent` explicitly requests concurrent execution for CPU work. State the
-configuration before claiming that a nonisolated async function leaves main.
-
-**Q. How do structured and unstructured tasks differ?**
-
-| Form | Lifetime and suitable project use |
-|---|---|
-| `async let` | Fixed child operations whose results are awaited before leaving scope. |
-| Task group | Dynamic children, bounded by their enclosing scope. |
-| `Task {}` | Unstructured task; caller owns lifecycle explicitly. Inherits surrounding isolation when applicable. |
-| `Task.detached` | Unstructured; does not inherit actor isolation or task-local values. Requires an explicit ownership and cancellation plan. |
-
-**A.** Child tasks cannot outlive their structured scope. Scope exit waits for
-them, including after cancellation. An unstructured task is not automatically
-cancelled because its creator returns or is cancelled. Detached does not mean
-"dedicated thread" or "guaranteed faster". For this app, a screen load is
-view-owned work; a download intentionally continuing after navigation needs
-an application-level owner and a user-visible cancel operation.
-
-**Follow-up: Does a throwing group instantly stop siblings?** No. When an
-error propagates out of the group body, remaining children are cancelled and
-awaited. Children must cooperate. You must consume throwing results; an error
-is not a magical immediate broadcast just because a child throws. A race that
-returns the first answer still waits for cancelled children to finish before
-leaving its structured scope.
-
-**Q. What is cooperative cancellation?**
-
-**A.** `cancel()` records a cancellation request. Code checks
-`Task.isCancelled`, calls `Task.checkCancellation()`, or awaits an API that
-responds to cancellation. A CPU loop must check periodically. Cleanup still
-runs. Cancellation is distinct from a user-visible network failure.
-
-**Project alternative.** A feed request should cancel when its screen-owned
-task disappears. A response for an old show must never overwrite a newer
-selection. Use cancellation *and* a request identity check: callback adapters
-may not stop promptly, and an old result can race a new request.
-
-**Follow-up: Is weak self sufficient?** No. `guard let self` before a long
-`await` holds the object strongly through that suspension. A model holding a
-task whose closure holds the model can keep itself alive indefinitely,
-especially when consuming an endless stream. Capture a service independently,
-use an explicit owner to cancel, and avoid relying only on `deinit` to break a
-cycle that prevents `deinit` from running.
-
-**Q. How would an async network boundary look here?**
-
-**A. Current approach:** `NetworkManaging` uses callbacks and has inconsistent
-callback-queue contracts across overloads. Its API does not expose the task
-needed to cancel a request. The review fixes session construction so the
-configured timeouts actually apply; it does not silently migrate callers to
-async/await.
-
-**Alternative, standalone example:**
-
-```swift
-import Foundation
-
-enum FeedFailure: Error {
-    case invalidResponse
-    case http(Int)
-}
-
-struct FeedClient: Sendable {
-    func data(for url: URL) async throws -> Data {
-        var request = URLRequest(url: url)
-        request.timeoutInterval = 15
-        let (data, response) = try await URLSession.shared.data(for: request)
-        try Task.checkCancellation()
-        guard let http = response as? HTTPURLResponse else {
-            throw FeedFailure.invalidResponse
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            throw FeedFailure.http(http.statusCode)
-        }
-        return data
-    }
-}
-```
-
-The request carries its timeout before submission. The suspension waits for
-transport. The cancellation check prevents processing a just-cancelled result.
-HTTP validation is explicit because a completed transport can still return a
-500 response. Returning `Data` separates transport from decoding and state
-mutation. The real app would inject a session for protocol-based tests rather
-than hard-code `.shared`.
-
-**Trade-off.** `data(for:)` buffers the response. For large media use download
-APIs or streaming bytes, not whole-file `Data` in memory. Retry idempotent feed
-reads with bounded backoff; do not treat cancellation as a reason to retry.
-Keep cached episodes visible on failure and offer an actionable retry state.
-
-**Q. What does `@MainActor` guarantee?**
-
-**A.** It establishes isolation for state and operations, with main-executor
-serialization. In Swift concurrency, accessing isolated state from outside
-requires crossing that boundary appropriately. It is not a spell that makes
-an arbitrary synchronous legacy callback hop queues. Annotate the owner and
-adapt callback entry points deliberately; enable strict concurrency checking
-to find violations rather than assuming runtime thread conventions suffice.
-
-**Project example.** Playback state, UI models, and the current synchronous
-store layer are intended for main-thread access. AVFoundation completion
-callbacks need an explicit hop before changing `@Published` properties. The
-seek review adds that hop and invalidates old completions on teardown.
-
-**Follow-up: Should decoding run on MainActor?** Small decoding may be fine;
-measure. Large decoding and full-library transformations can block input even
-inside an async method. Move CPU work to a deliberately non-main execution
-boundary and transfer value snapshots back. Never move a live `ModelContext`
-or managed model instance into a detached task just to silence a hang.
-
-**Q. Are actors transactions across an `await`?**
-
-**A.** No. They serialize access to isolated state, but can process other work
-while a method is suspended. This reentrancy is useful for throughput and
-requires rechecking assumptions after suspension.
-
-**Alternative example: deduplicating feed downloads.** An actor checks whether
-an episode is downloaded, awaits the network, and then writes the path. Another
-request can arrive during that await and also start a download. Record an
-in-flight task *before* suspension, or recheck and resolve duplication after
-suspension. Make failure remove that in-flight entry so retry is possible.
-
-**Follow-up: Does an actor have its own thread?** No. An actor provides an
-isolation domain and executor scheduling, not a dedicated OS thread. Actors
-also do not solve cross-device ordering: the CloudKit merge policy is still
-necessary because two processes do not share an actor.
-
-**Q. What is Sendable, and what is it not?**
-
-**A.** It describes values safe to transfer across concurrency domains.
-Compiler-checked value types require their stored values to satisfy the relevant
-rules; an immutable reference or synchronized reference can also be suitable.
-`@Sendable` constrains closure captures. It is not a scheduling mechanism and
-does not mean "run in the background".
-
-**Project example.** Prefer passing an episode ID or immutable DTO into a
-background worker and returning a value result. `Podcast` is a useful candidate
-for a checked conformance after auditing its stored properties. SwiftData
-entities and contexts are not interchangeable with those snapshots.
-`@unchecked Sendable` is a manual proof obligation, not a warning suppression
-strategy. Audit all mutation paths and callbacks before using it.
-
-**Q. How do you bridge a one-shot callback with a continuation?**
-
-**A.** A checked throwing continuation suspends the task and must be resumed
-exactly once, with a result or error. It does not add cancellation to the
-callback API. A correct adapter needs the underlying cancel handle, a
-cancellation handler, and synchronization for completion-versus-cancel races.
-Cancellation can arrive before that handle is installed. Both paths must
-share a once-only completion state.
-
-**Project trap.** `NetworkManaging` currently returns `Void`, so a naive
-`withCheckedThrowingContinuation` wrapper cannot cancel the underlying request.
-Expose the task or use native async URLSession APIs. The seek callback is the
-sharper trap: a superseded seek does hand control back, but one whose player
-has been torn down is dropped on purpose (ch. 7), so a direct
-`withCheckedContinuation` wrapper around it would leak a suspended task on
-every `stop()`. Wrapping it needs the teardown path to resume the continuation
-with cancellation.
-
-**Follow-up: When is an unsafe continuation appropriate?** Only after a measured
-need and a proven exactly-once contract. Checked continuations help diagnose
-misuse; neither kind repairs missing callbacks or races automatically.
-
-**Q. When would AsyncSequence or AsyncStream help?**
-
-**A.** An async sequence supplies multiple values over time through `for await`.
-For this app, download progress or live metadata is a better fit than a
-one-shot continuation. `AsyncThrowingStream` can additionally end with an
-error. A stream does not automatically make its producer structured or cancel
-external observers when the consumer leaves.
-
-**Alternative design.** Adapt a download delegate into a progress stream with
-`.bufferingNewest(1)` because the UI needs the latest percentage, not thousands
-of stale samples. Use `onTermination` to release the delegate/observation and
-cancel work if this stream owns it. Serialize cleanup with delegate callbacks;
-termination may arrive on a different executor. Finish the stream on completion
-and handle its terminal result separately from progress.
-
-**Trade-off.** Dropping intermediate *events* can lose information, so do not
-reuse that buffering policy for bookmark commands. Multiple consumers of one
-AsyncStream are not automatically a multicast state publisher. Keep Combine
-where its current-value and multicast semantics are part of the contract, or
-explicitly design those semantics in the replacement.
-
-**Q. How would you test async behavior without arbitrary sleeps?**
-
-**A.** Inject a transport, clock, and storage boundary. Suspend a fake request
-until the test releases it; change the selection; complete the obsolete request;
-assert it cannot overwrite the new state. Cancel during a request and assert
-cleanup and the absence of a displayed cancellation error. For time-based
-metadata expiry, advance an injected clock instead of waiting ten minutes.
-Use async XCTest fulfillment when the producer needs the main actor; blocking
-that actor waiting for work scheduled on it can deadlock.
-
-**Project connection.** Existing tests inject engine and store protocols and
-use expectations for real AVPlayer behavior. Keep a small framework integration
-suite because a fake engine cannot prove seek semantics. Add a regression test
-that stops or replaces the player before an outstanding completion arrives.
-Use Thread Sanitizer and Instruments for additional evidence; passing a unit
-test is not proof that every callback is race-free.
-
-## 21. A three-to-five-minute project walkthrough
-
-**Q. Tell me about this project and the decisions you would defend.**
-
-**A.** AlarmDM is a radio and podcast client with live audio, downloaded
-listening, favorites, and bookmarks. The same product supports iPhone, iPad,
-Mac, and CarPlay. The engineering problem is making one listening session
-behave consistently across UI entry points and eventually across devices.
-
-The playback engine owns the active AVPlayer, audio-session interaction and
-Now Playing integration. The phone UI, CarPlay and remote commands all issue
-intents through it. The UI does not own the lifetime of playback. A separate
-ListeningRecorder observes the engine and persists progress even when CarPlay
-launches the application without a phone window. That boundary came from a
-real failure: audio worked in the car while nobody saved where it got to.
-
-SwiftUI uses view-owned observable presentation models and a shared player
-facade. Lists operate on value snapshots, with stable IDs rather than generated
-identities on every refresh. The scrubber temporarily owns a gesture draft so
-periodic playback observations cannot fight the user's drag. Wide layouts use
-a sidebar and persistent player area; phone layouts use tabs and an expanded
-player overlay. UI adaptation does not duplicate playback policy.
-
-SwiftData has two store configurations. Reproducible feed data and device-local
-file paths stay local; listening state and bookmarks sync through CloudKit.
-The repository folds duplicate state rows consistently for both list and
-single-episode reads. The current position selection uses timestamps; boolean
-flags are merged with OR. That is a deliberate but incomplete conflict policy:
-removing a favorite needs a more expressive versioned decision, and equal
-timestamps need a deterministic tie-breaker before claiming full convergence.
-CloudKit transport does not remove those domain decisions.
-
-Networking is still callback-based. The near-term correctness fix is creating
-a URLSession with its configured timeouts, rather than mutating the copy
-returned by an existing session. The next architectural step is explicit
-isolation and cancellation-aware request APIs, with DTOs crossing execution
-boundaries. I would keep framework ownership and domain behavior stable while
-migrating, rather than rewrite all layers at once.
-
-Testing follows those boundaries: fake engine/store tests cover playback and
-sync decisions; in-memory and two-container tests cover repository behavior;
-a small real-player test checks EOF and replay assumptions. These do not prove
-CloudKit delivery, device audio interruption behavior, or every UI layout, so
-release validation still includes devices and platform-specific interaction.
-For performance I would measure main-thread stalls and repeated observation
-updates while scrolling with audio active. For memory I would trace observer
-tokens, subscriptions and long-lived task ownership. My next improvements are
-compiler-enforced isolation, visible storage fallback, cancellation-aware
-networking, and a conflict policy for reversible user decisions.
-
-## 22. Interview cheat sheet
-
-| Topic | Answer to remember |
-|---|---|
-| View value | A description; identity-backed storage outlives many descriptions. |
-| Identity | Stable domain ID; changing identity intentionally resets local state. |
-| State / Binding | Owned storage versus access to another owner's storage. |
-| StateObject | Stable owner of a Combine observable model for one view identity. |
-| Observation | Tracks property reads; `@State` owns, `@Bindable` exposes bindings. |
-| Environment | Shared UI scope; explicit injection remains useful for services/tests. |
-| Lifecycle | `onAppear` repeats; `.task` requests cancellation; playback outlives views. |
-| Await | Possible suspension, not a blocking wait or automatic background thread. |
-| Structured work | Children are scoped and awaited; cancellation is cooperative. |
-| Task / detached | Unstructured; define ownership, retention and cancellation explicitly. |
-| MainActor | Isolation; CPU work can still block UI even inside an async method. |
-| Actors | Serialized state access; invariants spanning await must be rechecked. |
-| Sendable | Transfer safety, not scheduling; audit captured and stored references. |
-| Continuation | Exactly once; cancellation and callback races need a real design. |
-| AsyncStream | Lifetime, cleanup and buffering are part of the API contract. |
-| Persistence | Confine contexts; move snapshots/IDs across isolation boundaries. |
-| Networking | Validate HTTP, distinguish cancellation, bound retries, preserve cache. |
-| Memory | Trace owner to task/subscription to closure to owner; weak is not enough. |
-| Performance | Profile release builds; body counts alone are not frame-cost evidence. |
-| Testing | Control time/completions; supplement fakes with real framework tests. |
-| Architecture | Explain ownership, lifetime, failure policy and a concrete trade-off. |
-
-## Primary references
-
-Use these primary references to check platform claims against the SDK being
-used; the codebase's Swift language mode is not the same as the compiler version.
-
-- SwiftUI model data: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
-- Swift language concurrency: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency/
-- Swift SE-0461, async isolation semantics: https://github.com/swiftlang/swift-evolution/blob/main/proposals/0461-async-function-isolation.md
-- AVPlayer seek completion: https://developer.apple.com/documentation/avfoundation/avplayer/seek(to:completionhandler:)
-- App Tracking Transparency scope: https://developer.apple.com/app-store/user-privacy-and-data-use/
-
-The modern examples are alternatives, not excerpts from shipped production
-code. Existing historical excerpts document the behavior at the cited commit.
-The review corrects claims where those comments or narratives overstated what
-the implementation or a test actually proves.
-
-\newpage
-
 # Appendix A — File map
 
 Where to look when you want the real thing rather than the excerpt. Paths are
@@ -4653,11 +3940,10 @@ relative to `AlarmDM/AlarmDM/`.
 
 | | |
 |---|---|
-| Swift lines | ~11 000 |
-| Test lines | ~1 700, in 96 tests |
+| Swift lines | ~10 900 |
+| Test lines | ~1 600 |
 | Swift files | 53 |
 | Localized keys | 147, source `sr-Latn` |
-| Language mode | Swift 5 (`SWIFT_VERSION = 5.0`), strict concurrency off |
 | `#if targetEnvironment(macCatalyst)` | 6 files of 47 |
 | Deployment target | iOS 17.5 |
 | Third-party dependencies | 1 (Aptabase, optional at compile time) |
@@ -4708,20 +3994,15 @@ cd docs/interview-guide
 bash build.sh          # pandoc + xelatex → Senior_iOS_Interview_Guide.pdf
 ```
 
-`guide.md` is the single source. `header.tex` carries the LaTeX layout —
-code-block framing, line wrapping inside listings, running headers.
-`swift.xml` is a Swift syntax definition written for this document, because
-the pandoc on this machine predates Swift support and every code block was
-otherwise falling back to unhighlighted verbatim. `progress.md` records what
-is written and what is not.
+`guide.reviewed.md` is the reviewed source; `guide.md` is preserved as the
+parallel author's version. `modern-swift.md` contains the modern Q&A supplement.
+Use `python3 render_pdf.py --source guide.reviewed.md --output ../../output/pdf/Senior_iOS_Interview_Guide.pdf`
+with ReportLab and DejaVu fonts to reproduce the reviewed PDF. The older
+`build.sh` command above rebuilds only the original walkthrough. `header.tex` carries the LaTeX layout — code-block
+framing, line wrapping inside listings, running headers. `progress.md` records
+what is written and what is not.
 
-**Provenance.** Parts I–V were written against commit `0e5639d` and carried
-forward through `9af1db0` (the replay and carry-on work), `3b4735a` (the
-session-configuration and seek-threading review) and `e64c568` (the seek
-completion split). Part VI is a supplement rather than a walkthrough: its
-"alternative" designs are proposals, not code that shipped. Excerpts are
-sometimes abbreviated, and historical or proposed snippets say so where they
-appear.
-
-If an excerpt and the code disagree, **the code is right** and the guide is
-stale.
+The original walkthrough was based on `0e5639d`, with replay updates through
+`9af1db0` and corrections from this review. Excerpts are sometimes abbreviated;
+historical and proposed snippets are labelled. Consult the repository for
+complete implementations. The modern Q&A supplement is included by `render_pdf.py`.
