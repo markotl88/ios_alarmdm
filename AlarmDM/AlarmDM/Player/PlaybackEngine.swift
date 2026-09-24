@@ -520,7 +520,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         teardownPlayer()
 
-        let item = AVPlayerItem(url: fileURL)
+        let item = AVPlayerItem(url: url)
         let player = AVPlayer(playerItem: item)
         self.player = player
         attachObservers(to: player, item: item)
