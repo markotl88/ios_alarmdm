@@ -315,6 +315,111 @@ final class BookmarkCatalogTests: XCTestCase {
     }
 }
 
+// MARK: - The filter over the bookmark list
+
+/// A filter is over a category, and a category can stop having anything in
+/// it while you are looking at it - here, on another device, either way.
+final class BookmarkFilterTests: XCTestCase {
+
+    private var database: AppDatabase!
+    private var bookmarks: BookmarkRepository!
+    private var podcasts: PodcastRepository!
+    private var categories: BookmarkCategories!
+    private var library: BookmarkLibrary!
+
+    override func setUp() {
+        database = AppDatabase(inMemory: true)
+        bookmarks = BookmarkRepository(database: database)
+        podcasts = PodcastRepository(database: database)
+        categories = BookmarkCategories(database: database)
+        library = BookmarkLibrary(repository: bookmarks, podcasts: podcasts, database: database)
+    }
+
+    override func tearDown() {
+        library = nil
+        categories = nil
+        podcasts = nil
+        bookmarks = nil
+        database = nil
+    }
+
+    /// Filter by a category, then take that category off the last bookmark
+    /// that had it. The filter used to stay, so the list said there was
+    /// nothing in this category over a list that still had bookmarks in it -
+    /// and the menu that would have cleared it is only offered while some
+    /// category is in use, so it had gone too.
+    func testTheFilterGoesWhenNothingIsFiledUnderItAnyMore() {
+        let filed = makeBookmark(categoryId: BookmarkCategory.muzika.rawValue)
+        bookmarks.add(filed)
+        bookmarks.add(makeBookmark(categoryId: nil))
+
+        let player = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        player.activeCategoryId = BookmarkCategory.muzika.rawValue
+        XCTAssertEqual(player.visibleBookmarks.count, 1)
+
+        player.setCategory(nil, for: filed)
+        flush()
+
+        XCTAssertNil(player.activeCategoryId)
+        XCTAssertEqual(player.visibleBookmarks.count, 2)
+    }
+
+    /// The same hole from the other side: the bookmark goes rather than its
+    /// category.
+    func testDeletingTheLastOneInAFilterClearsIt() {
+        let filed = makeBookmark(categoryId: BookmarkCategory.film.rawValue)
+        bookmarks.add(filed)
+        bookmarks.add(makeBookmark(categoryId: nil))
+
+        let player = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        player.activeCategoryId = BookmarkCategory.film.rawValue
+
+        player.delete(filed)
+        flush()
+
+        XCTAssertNil(player.activeCategoryId)
+        XCTAssertEqual(player.visibleBookmarks.count, 1)
+    }
+
+    /// A filter that still has something under it is left alone.
+    func testAFilterWithSomethingInItStays() {
+        let one = makeBookmark(categoryId: BookmarkCategory.knjiga.rawValue)
+        bookmarks.add(one)
+        bookmarks.add(makeBookmark(categoryId: BookmarkCategory.knjiga.rawValue))
+
+        let player = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        player.activeCategoryId = BookmarkCategory.knjiga.rawValue
+
+        player.setCategory(nil, for: one)
+        flush()
+
+        XCTAssertEqual(player.activeCategoryId, BookmarkCategory.knjiga.rawValue)
+        XCTAssertEqual(player.visibleBookmarks.count, 1)
+    }
+
+    // MARK: Helpers
+
+    private func makeBookmark(categoryId: String?) -> Bookmark {
+        Bookmark(id: UUID(),
+                 createdAt: Date(),
+                 position: 60,
+                 categoryId: categoryId,
+                 note: "",
+                 episodeTitle: "Alarm",
+                 show: .alarmSaDaskomIMladjom,
+                 podcastId: nil,
+                 capturedLive: false)
+    }
+
+    /// The view model hears about a change on the main queue, a runloop
+    /// later. This lets that delivery land before the assertions.
+    private func flush() {
+        let delivered = expectation(description: "main queue drained")
+        DispatchQueue.main.async { delivered.fulfill() }
+        wait(for: [delivered], timeout: 1)
+    }
+}
+
 // MARK: - Something else wrote to the store
 
 /// What an import from iCloud looks like from inside the app: another writer
