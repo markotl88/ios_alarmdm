@@ -64,3 +64,10 @@ fastlane/test_output
 .DS_Store
 **/.DS_Store
 _assets_in/
+
+# Scratch from parallel review passes - guide.md is the single source.
+docs/interview-guide/guide.reviewed.md
+docs/interview-guide/modern-swift.md
+docs/interview-guide/render_pdf.py
+output/pdf/
+tmp/
