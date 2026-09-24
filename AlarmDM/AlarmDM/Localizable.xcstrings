@@ -398,7 +398,14 @@
       }
     },
     "Ime kategorije" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Category name"
+          }
+        }
+      }
     },
     "Instagram" : {
       "localizations" : {
@@ -536,6 +543,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Later"
+          }
+        }
+      }
+    },
+    "Kategorije" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categories"
+          }
+        }
+      }
+    },
+    "Kategorije koje aplikacija donosi ne mogu se obrisati, ali mogu se preurediti. Redosled i tvoje kategorije se sinhronizuju sa ostalim uređajima." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The categories the app ships with cannot be deleted, but they can be rearranged. The order and your own categories sync to your other devices."
           }
         }
       }
@@ -741,10 +768,24 @@
       }
     },
     "Nova" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        }
+      }
     },
     "Nova kategorija" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New category"
+          }
+        }
+      }
     },
     "O čemu se radi?" : {
       "localizations" : {
@@ -1066,6 +1107,16 @@
         }
       }
     },
+    "Preimenuj" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
+          }
+        }
+      }
+    },
     "Preuzeto" : {
       "localizations" : {
         "en" : {
@@ -1317,7 +1368,14 @@
       }
     },
     "Sačuvaj" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
     },
     "Serija" : {
       "localizations" : {
@@ -1466,6 +1524,16 @@
         }
       }
     },
+    "Ugrađena" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in"
+          }
+        }
+      }
+    },
     "Uživo" : {
       "localizations" : {
         "en" : {
@@ -1507,7 +1575,14 @@
       }
     },
     "Vidljiva je na svim tvojim uređajima." : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visible on all your devices."
+          }
+        }
+      }
     },
     "Zabeleženo" : {
       "localizations" : {
@@ -1580,7 +1655,14 @@
       }
     },
     "Znak" : {
-
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol"
+          }
+        }
+      }
     },
     "Zoli" : {
       "localizations" : {

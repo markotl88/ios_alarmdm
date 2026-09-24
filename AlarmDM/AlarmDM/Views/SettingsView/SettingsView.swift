@@ -200,6 +200,12 @@ struct SettingsView: View {
                         .foregroundColor(.secondary)
                 }
             }
+
+            NavigationLink {
+                CategorySettingsView()
+            } label: {
+                Label("Kategorije", systemImage: "tag")
+            }
         }
     }
 
