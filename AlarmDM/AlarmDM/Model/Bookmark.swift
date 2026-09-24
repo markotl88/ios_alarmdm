@@ -8,16 +8,17 @@
 import Foundation
 
 enum BookmarkCategory: String, CaseIterable, Identifiable {
+    // Declaration order is the order the picker offers them in - allCases
+    // follows it.
     case muzika
     case film
+    case serija
     case knjiga
-    case strip
     case urnebesno
-    // Declaration order is the order the picker offers them in - allCases
-    // follows it. The raw values are the stored ids and do not move.
     case rejdz
     case mladja
     case dasko
+    case strip
     case zoli
 
     var id: String { rawValue }
@@ -26,6 +27,7 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         switch self {
         case .muzika: return String(localized: "Muzika")
         case .film:   return String(localized: "Film")
+        case .serija: return String(localized: "Serija")
         case .knjiga: return String(localized: "Knjiga")
         case .strip:  return String(localized: "Strip")
         case .urnebesno: return String(localized: "Urnebesno")
@@ -38,6 +40,8 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
 
     var assetName: String? {
         switch self {
+        // Both of them, the way the app icon has them.
+        case .urnebesno: return "bookmark-dasko-mladja"
         case .rejdz, .dasko: return "bookmark-dasko"
         case .mladja: return "bookmark-mladja"
         default: return nil
@@ -48,6 +52,7 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
         switch self {
         case .muzika: return "music.note"
         case .film:   return "film"
+        case .serija: return "tv"
         case .knjiga: return "book"
         case .strip:  return "books.vertical"
         case .urnebesno: return "face.smiling"

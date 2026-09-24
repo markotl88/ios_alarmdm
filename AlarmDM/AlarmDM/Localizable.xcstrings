@@ -1324,6 +1324,16 @@
         }
       }
     },
+    "Serija" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Series"
+          }
+        }
+      }
+    },
     "Strip" : {
       "localizations" : {
         "en" : {
