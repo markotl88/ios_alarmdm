@@ -50,7 +50,10 @@ enum BookmarkCategory: String, CaseIterable, Identifiable {
 
     var systemImage: String {
         switch self {
-        case .muzika: return "music.note"
+        // A record rather than a note. The note is what a player button
+        // looks like, and half this list is about things you listen to -
+        // the disc says "a record" where the note said "audio".
+        case .muzika: return "opticaldisc"
         case .film:   return "film"
         case .serija: return "tv"
         case .knjiga: return "book"
@@ -73,7 +76,10 @@ struct Bookmark: Identifiable, Equatable {
 
     /// Nil until someone says what it was. The whole point of the button is
     /// that it does not ask at the moment you press it.
-    var category: BookmarkCategory?
+    /// Which category, as the id the catalog knows it by: a built-in's raw
+    /// value, or the UUID of one they made. A string rather than the enum,
+    /// because a category they made has no case to be.
+    var categoryId: String?
     var note: String
 
     /// A copy of what was playing, not a lookup. The episode row can be

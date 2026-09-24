@@ -28,8 +28,8 @@ final class BookmarkRepository {
         fetch().map(Bookmark.init(from:))
     }
 
-    func bookmarks(for category: BookmarkCategory) -> [Bookmark] {
-        let raw = category.rawValue
+    func bookmarks(for categoryId: String) -> [Bookmark] {
+        let raw = categoryId
         return fetch(matching: #Predicate { $0.category == raw }).map(Bookmark.init(from:))
     }
 
@@ -67,9 +67,9 @@ final class BookmarkRepository {
         commit("moving bookmark")
     }
 
-    func setCategory(_ category: BookmarkCategory?, for id: UUID) {
+    func setCategory(_ categoryId: String?, for id: UUID) {
         guard let entity = entity(with: id) else { return }
-        entity.category = category?.rawValue
+        entity.category = categoryId
         commit("updating bookmark category")
     }
 
@@ -83,6 +83,18 @@ final class BookmarkRepository {
         guard let entity = entity(with: id) else { return }
         context.delete(entity)
         commit("deleting bookmark")
+    }
+
+    /// Every one of them, in a single transaction.
+    ///
+    /// Bookmarks are the half that syncs, so this reaches the other devices
+    /// too - which is the whole point, and which is why the screen asking for
+    /// it says so before it is pressed.
+    func deleteAll() {
+        let all = fetch()
+        guard !all.isEmpty else { return }
+        for entity in all { context.delete(entity) }
+        commit("deleting every bookmark")
     }
 
     // MARK: - Store access

@@ -143,16 +143,6 @@
         }
       }
     },
-    "Rejdž" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rage"
-          }
-        }
-      }
-    },
     "Bez muzike" : {
       "localizations" : {
         "en" : {
@@ -407,6 +397,16 @@
         }
       }
     },
+    "Ime kategorije" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Category name"
+          }
+        }
+      }
+    },
     "Instagram" : {
       "localizations" : {
         "en" : {
@@ -543,6 +543,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Later"
+          }
+        }
+      }
+    },
+    "Kategorije" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Categories"
+          }
+        }
+      }
+    },
+    "Kategorije koje aplikacija donosi ne mogu se obrisati, ali mogu se preurediti. Redosled i tvoje kategorije se sinhronizuju sa ostalim uređajima." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The categories the app ships with cannot be deleted, but they can be rearranged. The order and your own categories sync to your other devices."
           }
         }
       }
@@ -747,6 +767,26 @@
         }
       }
     },
+    "Nova" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        }
+      }
+    },
+    "Nova kategorija" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New category"
+          }
+        }
+      }
+    },
     "O čemu se radi?" : {
       "localizations" : {
         "en" : {
@@ -793,6 +833,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete all downloaded episodes?"
+          }
+        }
+      }
+    },
+    "Obriši sve zabeleške" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all bookmarks"
+          }
+        }
+      }
+    },
+    "Obrisati sve zabeleške?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all bookmarks?"
           }
         }
       }
@@ -1067,6 +1127,16 @@
         }
       }
     },
+    "Preimenuj" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rename"
+          }
+        }
+      }
+    },
     "Preuzeto" : {
       "localizations" : {
         "en" : {
@@ -1277,6 +1347,16 @@
         }
       }
     },
+    "Rejdž" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rage"
+          }
+        }
+      }
+    },
     "Reprodukcija nije uspela." : {
       "localizations" : {
         "en" : {
@@ -1307,6 +1387,26 @@
         }
       }
     },
+    "Sačuvaj" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save"
+          }
+        }
+      }
+    },
+    "Serija" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Series"
+          }
+        }
+      }
+    },
     "show.other" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1320,16 +1420,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ostalo"
-          }
-        }
-      }
-    },
-    "Serija" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Series"
           }
         }
       }
@@ -1454,6 +1544,16 @@
         }
       }
     },
+    "Ugrađena" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in"
+          }
+        }
+      }
+    },
     "Uživo" : {
       "localizations" : {
         "en" : {
@@ -1490,6 +1590,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Version"
+          }
+        }
+      }
+    },
+    "Vidljiva je na svim tvojim uređajima." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visible on all your devices."
           }
         }
       }
@@ -1560,6 +1670,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stop"
+          }
+        }
+      }
+    },
+    "Znak" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Symbol"
+          }
+        }
+      }
+    },
+    "Zabeleške se sinhronizuju, pa će nestati i sa ostalih tvojih uređaja. Kategorije ostaju." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks sync, so they will disappear from your other devices too. The categories stay."
           }
         }
       }

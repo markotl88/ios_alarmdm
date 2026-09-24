@@ -19,8 +19,10 @@ final class BookmarkEntity {
     /// Seconds into the episode; zero for a live capture.
     var position: Double = 0
 
-    /// The raw value of BookmarkCategory, stored as a string so a category
-    /// added later does not make an older row unreadable.
+    /// The category's id: a built-in's raw value, or the UUID of one the
+    /// person made. Stored as a string so a category added later - or one
+    /// this device has not heard of yet - does not make an older row
+    /// unreadable.
     var category: String?
     var note: String = ""
 
@@ -45,7 +47,7 @@ final class BookmarkEntity {
         id = bookmark.id
         createdAt = bookmark.createdAt
         position = bookmark.position
-        category = bookmark.category?.rawValue
+        category = bookmark.categoryId
         note = bookmark.note
         episodeTitle = bookmark.episodeTitle
         show = bookmark.show?.rawValue
@@ -59,7 +61,7 @@ extension Bookmark {
         self.id = entity.id
         self.createdAt = entity.createdAt
         self.position = entity.position
-        self.category = entity.category.flatMap(BookmarkCategory.init(rawValue:))
+        self.categoryId = entity.category
         self.note = entity.note
         self.episodeTitle = entity.episodeTitle
         self.show = entity.show.flatMap(Show.init(rawValue:))

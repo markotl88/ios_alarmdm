@@ -82,7 +82,7 @@ final class AppDatabase {
     /// What a person made: bookmarks, favourites, how far they got. Small,
     /// irreplaceable, and worth carrying between their devices.
     static let syncedModels: [any PersistentModel.Type] =
-        [BookmarkEntity.self, EpisodeStateEntity.self]
+        [BookmarkEntity.self, EpisodeStateEntity.self, BookmarkCategoryEntity.self]
 
     /// What this device happens to hold: the feed cache and the downloaded
     /// files. Both are reproducible - one from the API, the other from the

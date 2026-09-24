@@ -65,8 +65,8 @@ struct RootView: View {
                     BookmarkToastView(
                         bookmark: bookmark,
                         asksForNote: capturedFromPhone,
-                        onCategory: { category in
-                            BookmarkLibrary.shared.setCategory(category, for: bookmark.id)
+                        onCategory: { categoryId in
+                            BookmarkLibrary.shared.setCategory(categoryId, for: bookmark.id)
                             dismissToast()
                         },
                         onNote: { note in
