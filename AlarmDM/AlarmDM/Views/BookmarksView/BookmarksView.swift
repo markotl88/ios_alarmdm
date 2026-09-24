@@ -171,6 +171,16 @@ struct BookmarkRowView: View {
                     .lineLimit(2)
 
                 HStack(spacing: 6) {
+                    // On the line that already says what this bookmark is,
+                    // rather than out at the trailing edge. Out there it had
+                    // nothing to sit beside on a short row and read as an
+                    // afterthought; here it is one more fact about the
+                    // bookmark, next to the second it points at.
+                    if let category {
+                        BookmarkCategoryIcon(category, size: 15)
+                            .help(Text(category.title))
+                            .accessibilityLabel(Text(category.title))
+                    }
                     Text(bookmark.positionText)
                         .monospacedDigit()
                     if let subtitle = bookmark.displaySubtitle {
@@ -183,17 +193,6 @@ struct BookmarkRowView: View {
             }
 
             Spacer(minLength: 0)
-
-            // On the trailing edge rather than in the badge. The badge says
-            // what a tap does - play something, or nothing yet - and the
-            // category is a different fact about the row; putting them in one
-            // place meant every bookmark you could actually play showed no
-            // category at all.
-            if let category {
-                BookmarkCategoryIcon(category, size: 22)
-                    .help(Text(category.title))
-                    .accessibilityLabel(Text(category.title))
-            }
 
             if !canPlay {
                 // "UŽIVO" said where it came from, next to a broadcast symbol,
