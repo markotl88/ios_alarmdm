@@ -49,7 +49,7 @@ struct SupportView: View {
             .padding(20)
         }
         .background(Color("background").ignoresSafeArea())
-        .navigationTitle(widthClass == .regular ? "" : "Podrži")
+        .navigationTitle(widthClass == .regular ? Text(verbatim: "") : Text("Podrži"))
         .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
     }
 

@@ -12,7 +12,7 @@ struct ShowView: View {
 
     var body: some View {
         ShowListView()
-            .navigationTitle(widthClass == .regular ? "" : "Emisije")
+            .navigationTitle(widthClass == .regular ? Text(verbatim: "") : Text("Emisije"))
             .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
     }
 }

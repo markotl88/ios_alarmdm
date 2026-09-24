@@ -138,7 +138,7 @@ struct SettingsView: View {
             appSection
         }
         .listStyle(.insetGrouped)
-        .navigationTitle(widthClass == .regular ? "" : "Ostalo")
+        .navigationTitle(widthClass == .regular ? Text(verbatim: "") : Text("Ostalo"))
         .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
         .onAppear { viewModel.refresh() }
         .confirmationDialog(
