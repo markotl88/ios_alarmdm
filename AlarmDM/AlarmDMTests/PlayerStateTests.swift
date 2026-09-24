@@ -877,7 +877,8 @@ private final class FakePlaybackEngine: PlaybackEngineType {
         movedSubject.send(max(0, time))
     }
 
-    func switchToLocalFile(_ fileURL: URL) {}
+    private(set) var localFileSwitches: [URL] = []
+    func switchToLocalFile(_ fileURL: URL) { localFileSwitches.append(fileURL) }
 
     // Driving it from a test
 
@@ -901,6 +902,143 @@ private final class EpisodeStore: EpisodeLookup {
 
     func podcast(with id: UUID) -> Podcast? { rows[id] }
     func lastListened() -> Podcast? { latest }
+}
+
+// MARK: - The file that just finished downloading
+
+/// Whoever started the download, the episode that is playing should carry on
+/// from the file rather than the network. The swap used to live on the
+/// player's own download button, which is one of five ways in.
+final class DownloadHandoverTests: XCTestCase {
+
+    private var engine: FakePlaybackEngine!
+    private var service: FakeDownloadService!
+    private var database: AppDatabase!
+    private var repository: PodcastRepository!
+    private var library: EpisodeLibrary!
+
+    private var alarm: Podcast!
+    private var second: Podcast!
+
+    override func setUpWithError() throws {
+        engine = FakePlaybackEngine()
+        service = FakeDownloadService()
+        database = AppDatabase(inMemory: true)
+        repository = PodcastRepository(database: database)
+        library = EpisodeLibrary(podcastService: service,
+                                 database: database,
+                                 engine: engine,
+                                 repository: repository)
+
+        alarm = makeEpisode(title: "Alarm")
+        second = makeEpisode(title: "Emigracija")
+        repository.save([alarm, second])
+    }
+
+    override func tearDownWithError() throws {
+        library = nil
+        repository = nil
+        database = nil
+        service = nil
+        engine = nil
+    }
+
+    /// The case the fix is for: started from a row, not from the player.
+    func testTheEpisodeBeingPlayedTakesTheFileItJustDownloaded() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        library.download(alarm, force: true)
+        let file = service.finish()
+
+        XCTAssertEqual(engine.localFileSwitches, [file])
+    }
+
+    /// Downloading one thing while listening to another is ordinary, and the
+    /// listen must not be interrupted by it.
+    func testDownloadingSomethingElseLeavesTheListenAlone() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        library.download(second, force: true)
+        service.finish()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    func testNothingPlayingIsNothingToHandOver() {
+        library.download(alarm, force: true)
+        service.finish()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    /// Live radio is not an episode, whatever is being fetched in the
+    /// background.
+    func testTheRadioIsNotSwappedForAFile() throws {
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+        engine.play(.radio(url: stream), startingAt: nil)
+
+        library.download(alarm, force: true)
+        service.finish()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    /// A download that fails hands over nothing, and says so by leaving the
+    /// engine where it was.
+    func testAFailedDownloadChangesNothing() {
+        engine.play(.podcast(alarm), startingAt: 600)
+
+        library.download(alarm, force: true)
+        service.fail()
+
+        XCTAssertTrue(engine.localFileSwitches.isEmpty)
+    }
+
+    // MARK: Helpers
+
+    private func makeEpisode(title: String) -> Podcast {
+        var podcast = Podcast(show: .alarmSaDaskomIMladjom)
+        podcast.id = UUID()
+        podcast.title = title
+        podcast.itunesDuration = "3:00:00"
+        podcast.podcastUrl = "https://example.com/\(title).mp3"
+        podcast.createdDate = Date()
+        return podcast
+    }
+}
+
+/// A download that finishes when the test says so, and never touches the
+/// network or the disk.
+private final class FakeDownloadService: PodcastServiceProtocol {
+
+    private var pending: ((Result<URL, Error>) -> Void)?
+    private(set) var requested: [URL] = []
+
+    func downloadPodcasts(from url: URL,
+                          completion: @escaping (Result<URL, Error>) -> Void,
+                          progressHandler: @escaping (Double) -> Void) {
+        requested.append(url)
+        pending = completion
+    }
+
+    /// Lands the file and hands back where it landed.
+    @discardableResult
+    func finish(at name: String = "episode.mp3") -> URL {
+        let location = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+        pending?(.success(location))
+        pending = nil
+        return location
+    }
+
+    func fail() {
+        pending?(.failure(NSError(domain: "test", code: 1)))
+        pending = nil
+    }
+
+    // Not what these tests are about.
+    func getPodcasts(for show: String?, page: Int?, date: String?, isBefore: Bool?,
+                     completion: @escaping (Result<PaginationDataResponse<PodcastResponse>, Error>) -> Void) {}
+    func getLivestream(completion: @escaping (Result<URL, Error>) -> Void) {}
 }
 
 // MARK: - What the stream announces

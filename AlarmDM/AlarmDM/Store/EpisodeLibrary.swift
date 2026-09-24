@@ -34,7 +34,7 @@ final class EpisodeLibrary: ProgressRecording {
     /// deciding for the person - it has no way to ask.
     let downloadBlocked = PassthroughSubject<Podcast, Never>()
 
-    private let repository = PodcastRepository.shared
+    private let repository: PodcastRepository
     private let fileService: FileServiceProtocol
     private let podcastService: PodcastServiceProtocol
     private let settings = AppSettings.shared
@@ -65,10 +65,12 @@ final class EpisodeLibrary: ProgressRecording {
     init(fileService: FileServiceProtocol = FileService(),
          podcastService: PodcastServiceProtocol = PodcastService(),
          database: AppDatabase = .shared,
-         engine: PlaybackEngineType = PlaybackEngine.shared) {
+         engine: PlaybackEngineType = PlaybackEngine.shared,
+         repository: PodcastRepository = .shared) {
         self.fileService = fileService
         self.podcastService = podcastService
         self.engine = engine
+        self.repository = repository
 
         // A favourite marked on another device is a change to this list like
         // any other, and the screens already know what to do with didChange.
