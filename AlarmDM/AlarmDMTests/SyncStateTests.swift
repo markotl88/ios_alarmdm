@@ -353,15 +353,15 @@ final class BookmarkFilterTests: XCTestCase {
         bookmarks.add(filed)
         bookmarks.add(makeBookmark(categoryId: nil))
 
-        let player = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
-        player.activeCategoryId = BookmarkCategory.muzika.rawValue
-        XCTAssertEqual(player.visibleBookmarks.count, 1)
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = BookmarkCategory.muzika.rawValue
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
 
-        player.setCategory(nil, for: filed)
+        list.setCategory(nil, for: filed)
         flush()
 
-        XCTAssertNil(player.activeCategoryId)
-        XCTAssertEqual(player.visibleBookmarks.count, 2)
+        XCTAssertNil(list.activeCategoryId)
+        XCTAssertEqual(list.visibleBookmarks.count, 2)
     }
 
     /// The same hole from the other side: the bookmark goes rather than its
@@ -371,14 +371,14 @@ final class BookmarkFilterTests: XCTestCase {
         bookmarks.add(filed)
         bookmarks.add(makeBookmark(categoryId: nil))
 
-        let player = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
-        player.activeCategoryId = BookmarkCategory.film.rawValue
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = BookmarkCategory.film.rawValue
 
-        player.delete(filed)
+        list.delete(filed)
         flush()
 
-        XCTAssertNil(player.activeCategoryId)
-        XCTAssertEqual(player.visibleBookmarks.count, 1)
+        XCTAssertNil(list.activeCategoryId)
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
     }
 
     /// A filter that still has something under it is left alone.
@@ -387,14 +387,36 @@ final class BookmarkFilterTests: XCTestCase {
         bookmarks.add(one)
         bookmarks.add(makeBookmark(categoryId: BookmarkCategory.knjiga.rawValue))
 
-        let player = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
-        player.activeCategoryId = BookmarkCategory.knjiga.rawValue
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = BookmarkCategory.knjiga.rawValue
 
-        player.setCategory(nil, for: one)
+        list.setCategory(nil, for: one)
         flush()
 
-        XCTAssertEqual(player.activeCategoryId, BookmarkCategory.knjiga.rawValue)
-        XCTAssertEqual(player.visibleBookmarks.count, 1)
+        XCTAssertEqual(list.activeCategoryId, BookmarkCategory.knjiga.rawValue)
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
+    }
+
+    /// The category itself goes, rather than the bookmarks under it - deleted
+    /// here, or arriving deleted from another device. Nothing about the
+    /// bookmarks changes, so only the catalog can say so.
+    func testDeletingTheCategoryBeingFilteredOnClearsTheFilter() {
+        guard let mine = categories.add(name: "Recepti",
+                                        iconName: BookmarkCatalog.customIcons[0]) else {
+            return XCTFail("the category was not created")
+        }
+        bookmarks.add(makeBookmark(categoryId: mine))
+        bookmarks.add(makeBookmark(categoryId: nil))
+
+        let list = BookmarksViewModel(library: library, podcasts: podcasts, categories: categories)
+        list.activeCategoryId = mine
+        XCTAssertEqual(list.visibleBookmarks.count, 1)
+
+        categories.delete(mine)
+        flush()
+
+        XCTAssertNil(list.activeCategoryId)
+        XCTAssertEqual(list.visibleBookmarks.count, 2)
     }
 
     // MARK: Helpers

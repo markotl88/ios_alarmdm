@@ -33,11 +33,19 @@ final class BookmarksViewModel: ObservableObject {
             .sink { [weak self] in self?.reload() }
             .store(in: &cancellables)
 
-        // A category made on another device changes what these rows say
-        // about themselves, without any bookmark having changed.
+        // A category made, renamed or deleted on another device changes what
+        // these rows say about themselves, without any bookmark having
+        // changed - so the filter has to be looked at here too. The bookmarks
+        // and the categories arrive on their own schedules, and if the
+        // category the list is filtering on is the thing that went, nothing
+        // about the bookmarks will say so.
         categories.objectWillChange
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.objectWillChange.send() }
+            .sink { [weak self] in
+                guard let self else { return }
+                self.dropFilterIfNothingIsFiledUnderIt()
+                self.objectWillChange.send()
+            }
             .store(in: &cancellables)
     }
 

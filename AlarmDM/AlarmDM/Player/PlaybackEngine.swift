@@ -233,6 +233,12 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// at a position must not be heard from the beginning first, even for the
     /// half second it takes the seek to arrive.
     private var playAfterPendingSeek = false
+    /// The pause count this pending play was asked for under.
+    ///
+    /// Taken when play() is called and not when the item becomes ready: the
+    /// wait for a stream to open is where a pause is most likely to arrive,
+    /// and the whole point is to notice one that landed in between.
+    private var pendingPlayIntent = 0
     /// Raised while a seek is in flight. The periodic observer keeps reporting
     /// the old position until the seek lands, and letting that through drags
     /// the slider back to where it was before the gesture.
@@ -306,6 +312,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         pendingSeek = position
         playAfterPendingSeek = position != nil
+        pendingPlayIntent = pauseGeneration
 
         guard let url = resolveURL(for: source) else {
             lastErrorMessage = String(localized: "Nije moguće pronaći audio za \(source.title).")
@@ -494,9 +501,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         self.player = player
         attachObservers(to: player, item: item)
 
+        // What was true when the swap started, and whether it still is. The
+        // file lands mid-listen, so a pause during the handover is ordinary
+        // rather than exotic.
+        let intent = pauseGeneration
+
         seek(to: resumeAt) { [weak self, weak player] in
             guard let self, let player, self.player === player else { return }
-            if wasPlaying {
+            if wasPlaying, intent == self.pauseGeneration {
                 self.activateSession()
                 player.play()
             }
@@ -548,6 +560,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 if item.status == .readyToPlay, let target = self.pendingSeek {
                     self.pendingSeek = nil
                     let resumeAfterwards = self.playAfterPendingSeek
+                    let intent = self.pendingPlayIntent
                     self.playAfterPendingSeek = false
 
                     self.seek(to: target) {
@@ -555,6 +568,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                         // what let the opening seconds of an episode out of
                         // the speaker before it jumped to where it was left.
                         guard resumeAfterwards else { return }
+                        // And only if nobody has pressed pause since it was
+                        // asked for. Opening a stream is the longest wait in
+                        // here, which makes it the likeliest place for one to
+                        // arrive - from the lock screen, or a phone call.
+                        guard intent == self.pauseGeneration else { return }
                         self.player?.play()
                         self.updateNowPlayingPlaybackState()
                     }
