@@ -417,14 +417,15 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         isSeeking = true
 
         player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
-            guard let self, generation == self.seekGeneration else { return }
-            self.isSeeking = false
-            if finished {
-                self.updateNowPlayingInfo()
+            DispatchQueue.main.async {
+                guard let self, generation == self.seekGeneration else { return }
+                self.isSeeking = false
+                if finished {
+                    self.updateNowPlayingInfo()
+                }
+                // A superseded seek must not restart a replacement player.
+                completion?()
             }
-            // Even an unfinished seek has to hand back control, or an episode
-            // that was told to start here would sit silent forever.
-            completion?()
         }
     }
 
@@ -455,9 +456,8 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         self.player = player
         attachObservers(to: player, item: item)
 
-        player.seek(to: CMTime(seconds: resumeAt, preferredTimescale: 600)) { [weak self] _ in
-            guard let self else { return }
-            self.currentTime = resumeAt
+        seek(to: resumeAt) { [weak self, weak player] in
+            guard let self, let player, self.player === player else { return }
             if wasPlaying {
                 self.activateSession()
                 player.play()
@@ -602,6 +602,9 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     #endif
 
     private func teardownPlayer() {
+        // Invalidate completions already queued by AVFoundation, even if no
+        // subsequent seek occurs (stop or switching to live radio).
+        seekGeneration += 1
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
             timeObserverToken = nil

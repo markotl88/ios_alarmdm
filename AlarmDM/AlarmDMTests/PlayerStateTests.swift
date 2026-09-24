@@ -459,22 +459,23 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(player.currentTime, 600)
     }
 
-    /// Ninety-five percent in counts as heard, and the row goes grey. It is
+    /// The final ten seconds are past the show-end threshold. It is
     /// still a pause: pressing play again carries on, it does not rewind.
     func testPausingInTheClosingCreditsCarriesOn() {
         let player = makePlayer()
         player.mode = .podcast(podcast: alarm)
         player.togglePlayPause()
         flush()
-        engine.advance(to: 10_500)
+        engine.advance(to: 10_790)
         engine.stopPlaying()
         flush()
 
+        XCTAssertTrue(alarm.hasReachedEnd(at: 10_790))
         XCTAssertFalse(player.offersReplay)
         XCTAssertEqual(player.playButtonSymbol, "play.fill")
         player.togglePlayPause()
         flush()
-        XCTAssertEqual(player.currentTime, 10_500, accuracy: 0.5)
+        XCTAssertEqual(player.currentTime, 10_790, accuracy: 0.5)
     }
 
     func testSeekingBackFromEndRemovesReplayOffer() {
@@ -1004,7 +1005,10 @@ final class PlaybackReplayTests: XCTestCase {
         engine.pause()
 
         let positioned = expectation(description: "Seek back to EOF")
-        engine.seek(to: engine.duration) { positioned.fulfill() }
+        engine.seek(to: engine.duration) {
+            XCTAssertTrue(Thread.isMainThread)
+            positioned.fulfill()
+        }
         wait(for: [positioned], timeout: 10)
 
         let replayed = expectation(description: "Explicit replay starts at zero")
@@ -1015,5 +1019,13 @@ final class PlaybackReplayTests: XCTestCase {
             .store(in: &subscriptions)
         engine.play(.podcast(episode), startingAt: 0)
         wait(for: [replayed], timeout: 10)
+
+        let obsolete = expectation(description: "A stopped player's seek cannot resume playback")
+        obsolete.isInverted = true
+        engine.seek(to: 2) { obsolete.fulfill() }
+        engine.stop()
+        wait(for: [obsolete], timeout: 0.5)
+        XCTAssertNil(engine.source)
+        XCTAssertFalse(engine.isPlaying)
     }
 }

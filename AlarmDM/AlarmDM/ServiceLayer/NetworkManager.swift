@@ -41,10 +41,16 @@ final class NetworkManager: NetworkManaging {
         static let timeoutIntervalForResource: TimeInterval = 180
     }
 
-    init(session: URLSession = URLSession.shared) {
-        self.session = session
-        self.session.configuration.timeoutIntervalForRequest = Constants.timeoutIntervalForRequest
-        self.session.configuration.timeoutIntervalForResource = Constants.timeoutIntervalForResource
+    init(session: URLSession? = nil) {
+        if let session {
+            self.session = session
+        } else {
+            // URLSession.configuration returns a copy; configure before creation.
+            let configuration = URLSessionConfiguration.default
+            configuration.timeoutIntervalForRequest = Constants.timeoutIntervalForRequest
+            configuration.timeoutIntervalForResource = Constants.timeoutIntervalForResource
+            self.session = URLSession(configuration: configuration)
+        }
     }
     
     func performRequest(url: String, httpMethod: HTTPMethod, completion: @escaping (Result<Data, any Error>) -> Void) {
@@ -291,4 +297,3 @@ extension URLRequest {
         return self
     }
 }
-
