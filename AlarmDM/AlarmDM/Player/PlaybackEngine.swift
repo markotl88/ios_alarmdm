@@ -416,14 +416,39 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         let generation = seekGeneration
         isSeeking = true
 
-        player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self] finished in
+        // Which player this seek belongs to. Two different questions hang on
+        // it, and answering both with the generation counter is what left an
+        // episode loaded and silent: a seek superseded by a newer one on the
+        // same player is stale, but a seek whose player has since been torn
+        // down is gone.
+        let seekingPlayer = player
+
+        player.seek(to: target, toleranceBefore: tolerance, toleranceAfter: tolerance) { [weak self, weak seekingPlayer] finished in
+            // AVFoundation calls this on a queue of its own choosing, and
+            // everything below is main-thread state.
             DispatchQueue.main.async {
-                guard let self, generation == self.seekGeneration else { return }
-                self.isSeeking = false
-                if finished {
-                    self.updateNowPlayingInfo()
+                // The player is gone - stopped, or swapped for the downloaded
+                // file. Nothing it was asked to do afterwards applies.
+                guard let self, let seekingPlayer, self.player === seekingPlayer else { return }
+
+                // Only the newest seek owns the state the seeks left behind.
+                // An older one clearing this would open the stale-position
+                // guard while a newer seek is still in flight, which is the
+                // scrubber snapping back mid-drag.
+                if generation == self.seekGeneration {
+                    self.isSeeking = false
+                    if finished {
+                        self.updateNowPlayingInfo()
+                    }
                 }
-                // A superseded seek must not restart a replacement player.
+
+                // Control comes back whichever seek was last, and outside
+                // that guard on purpose. This is how an episode opened at a
+                // position starts playing, and a newer seek replacing the
+                // target does not make the press of play obsolete - it only
+                // moves where it starts. Dropping it here left a tap on skip
+                // during a stream's first second with a loaded, silent
+                // player.
                 completion?()
             }
         }

@@ -1020,6 +1020,17 @@ final class PlaybackReplayTests: XCTestCase {
         engine.play(.podcast(episode), startingAt: 0)
         wait(for: [replayed], timeout: 10)
 
+        // A newer seek replaces where the older one was going. It does not
+        // replace the fact that somebody asked to start playing on arrival,
+        // and the player it was asked of is still the one that is loaded -
+        // so control still comes back. Dropping this left a tap on skip
+        // during a stream's first second with a loaded, silent player.
+        engine.pause()
+        let superseded = expectation(description: "A superseded seek still hands control back")
+        engine.seek(to: 1) { superseded.fulfill() }
+        engine.seek(to: 2)
+        wait(for: [superseded], timeout: 10)
+
         let obsolete = expectation(description: "A stopped player's seek cannot resume playback")
         obsolete.isInverted = true
         engine.seek(to: 2) { obsolete.fulfill() }
