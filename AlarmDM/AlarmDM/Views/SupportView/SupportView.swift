@@ -221,7 +221,7 @@ struct SupportView: View {
                         title: "Patreon",
                         detail: String(localized: "Redovna mesečna ili godišnja donacija")
                     ) {
-                        patreonMark(diameter: 30)
+                        brandMark("logo_patreon", diameter: 30)
                     }
                 }
                 .accessibilityLabel("Podrži preko Patreona")
@@ -233,7 +233,7 @@ struct SupportView: View {
                         title: "PayPal",
                         detail: String(localized: "Jednokratna uplata")
                     ) {
-                        paypalMark(diameter: 30)
+                        brandMark("logo_paypal", diameter: 30)
                     }
                 }
                 .accessibilityLabel("Podrži preko PayPala")
@@ -274,7 +274,7 @@ struct SupportView: View {
                     if let url = target.patreon {
                         Link(destination: url) {
                             HStack(spacing: 10) {
-                                patreonMark(diameter: 24)
+                                brandMark("logo_patreon", diameter: 24)
                                     .frame(width: 24)
                                 Text("Patreon")
                                     .font(.subheadline.weight(.medium))
@@ -383,48 +383,29 @@ struct SupportView: View {
         }
     }
 
-    /// Patreon's own mark instead of a heart, on a disc of ours.
+    /// A brand's own mark on a disc of ours.
     ///
-    /// The mark is shipped as a template - the shape, and nothing behind it -
-    /// so what it is drawn on is a decision rather than whatever came with the
-    /// file. It came on a black tile, which on this screen in the dark is a
-    /// black square on a black card. The disc is the app's blue, the same
-    /// circle the symbols beside it are drawn in, and the mark stays white
-    /// on it either way up.
-    private func patreonMark(diameter: CGFloat) -> some View {
+    /// Both marks ship as templates - the shape, with nothing behind it - so
+    /// what they are drawn on is a decision rather than whatever came with
+    /// the file. What came with the files were tiles: Patreon's black,
+    /// PayPal's charcoal, and on this screen in the dark that is a dark
+    /// square on a dark card. They sit on the app's blue instead, the same
+    /// circle the symbols beside them are drawn in.
+    ///
+    /// White, and one colour, for both. PayPal's is their reversed monogram -
+    /// the one they publish for dark backgrounds - rather than the two-tone
+    /// one flattened, which would have been a different mark and not theirs.
+    private func brandMark(_ asset: String, diameter: CGFloat) -> some View {
         Circle()
             .fill(Color("primaryLink"))
             .frame(width: diameter, height: diameter)
             .overlay {
-                Image("logo_patreon")
+                Image(asset)
                     .renderingMode(.template)
                     .resizable()
                     .scaledToFit()
                     .frame(width: diameter, height: diameter)
                     .foregroundColor(.white)
-            }
-            .accessibilityHidden(true)
-    }
-
-    /// PayPal's monogram, which keeps its own two blues.
-    ///
-    /// Unlike Patreon's it is not one shape, and flattening it to one colour
-    /// would not be a recolouring but a different mark - the two letters are
-    /// told apart by being two blues. So it is not a template.
-    ///
-    /// The disc is ours, the same one Patreon's mark sits on, which costs
-    /// something: the lighter of the two letters is close enough in
-    /// brightness to this blue that it reads faintly. White under it is the
-    /// treatment PayPal asks for and the one that keeps both letters legible.
-    private func paypalMark(diameter: CGFloat) -> some View {
-        Circle()
-            .fill(Color("primaryLink"))
-            .frame(width: diameter, height: diameter)
-            .overlay {
-                Image("logo_paypal")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: diameter, height: diameter)
             }
             .accessibilityHidden(true)
     }
