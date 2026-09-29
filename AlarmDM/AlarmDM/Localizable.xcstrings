@@ -231,6 +231,7 @@
       }
     },
     "Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!" : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -837,16 +838,6 @@
         }
       }
     },
-    "Obriši sve zabeleške" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete all bookmarks"
-          }
-        }
-      }
-    },
     "Obrisati sve zabeleške?" : {
       "localizations" : {
         "en" : {
@@ -903,6 +894,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Delete all downloaded episodes"
+          }
+        }
+      }
+    },
+    "Obriši sve zabeleške" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete all bookmarks"
           }
         }
       }
@@ -1057,6 +1058,16 @@
         }
       }
     },
+    "Podrži %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Support %@"
+          }
+        }
+      }
+    },
     "Podrži %@ na Patreonu" : {
       "localizations" : {
         "en" : {
@@ -1097,6 +1108,16 @@
         }
       }
     },
+    "Pon–čet 8–10 h · Varnju radnim danima 11–14 h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mon–Thu 8–10 AM · Varnju weekdays 11 AM–2 PM"
+          }
+        }
+      }
+    },
     "Pošalji log na mejl" : {
       "localizations" : {
         "en" : {
@@ -1117,22 +1138,22 @@
         }
       }
     },
-    "Prenosi sa Festivala alternative i ljevice u Šibeniku, 2024." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Recordings from the Festival of the Alternative and the Left in Šibenik, 2024."
-          }
-        }
-      }
-    },
     "Preimenuj" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rename"
+          }
+        }
+      }
+    },
+    "Prenosi sa Festivala alternative i ljevice u Šibeniku, 2024." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recordings from the Festival of the Alternative and the Left in Šibenik, 2024."
           }
         }
       }
@@ -1464,6 +1485,16 @@
         }
       }
     },
+    "U kôd je unapred upisan iznos od %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The code has a preset amount of %@."
+          }
+        }
+      }
+    },
     "U kôd je unapred upisan iznos od 500 RSD." : {
       "localizations" : {
         "en" : {
@@ -1504,6 +1535,16 @@
         }
       }
     },
+    "Ugrađena" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Built-in"
+          }
+        }
+      }
+    },
     "Ukloni" : {
       "localizations" : {
         "en" : {
@@ -1534,22 +1575,22 @@
         }
       }
     },
+    "uplata na račun" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "bank transfer"
+          }
+        }
+      }
+    },
     "Urnebesno" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hilarious"
-          }
-        }
-      }
-    },
-    "Ugrađena" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Built-in"
           }
         }
       }
@@ -1600,6 +1641,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Visible on all your devices."
+          }
+        }
+      }
+    },
+    "Zabeleške se sinhronizuju, pa će nestati i sa ostalih tvojih uređaja. Kategorije ostaju." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bookmarks sync, so they will disappear from your other devices too. The categories stay."
           }
         }
       }
@@ -1680,16 +1731,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Symbol"
-          }
-        }
-      }
-    },
-    "Zabeleške se sinhronizuju, pa će nestati i sa ostalih tvojih uređaja. Kategorije ostaju." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bookmarks sync, so they will disappear from your other devices too. The categories stay."
           }
         }
       }
