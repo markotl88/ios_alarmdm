@@ -123,67 +123,121 @@ struct RadioView: View {
     /// what survives of a drawing cropped that hard is not worth the space it
     /// takes. Beside the text it is shown at its own proportions instead, and
     /// the card stops being a poster and becomes a row.
+    ///
+    /// The poster used to be three bands - the picture, a block of text on the
+    /// list background, then a blue bar - and none of the three shared an edge
+    /// with the others. The middle one was only that tall because the
+    /// description ran to three lines. The text sits on the picture now, over
+    /// a gradient, and the bar is gone: the mark in the corner says what it
+    /// said, in the space of a letter.
     @ViewBuilder
     private var liveCard: some View {
         if isWide {
-            HStack(alignment: .top, spacing: 0) {
+            HStack(alignment: .center, spacing: 0) {
                 Image("img_radio_wide")
                     .resizable()
                     .aspectRatio(3 / 2, contentMode: .fill)
                     .frame(width: 300, height: 200)
                     .clipped()
 
-                VStack(alignment: .leading, spacing: 12) {
-                    liveText
-                    Spacer(minLength: 0)
-                    liveBar
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                liveText(onArtwork: false)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                transportMark
+                    .foregroundStyle(Color("primary"))
+                    .padding(.trailing, 24)
             }
             .frame(height: 200)
         } else {
-            VStack(alignment: .leading, spacing: 0) {
-                Image("img_radio_wide")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 180)
-                    .clipped()
-
-                liveText
-                    .padding(16)
-
-                liveBar
-            }
+            Image("img_radio_wide")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(height: 230)
+                .clipped()
+                .overlay { artworkScrim }
+                .overlay(alignment: .bottom) {
+                    HStack(alignment: .bottom, spacing: 12) {
+                        liveText(onArtwork: true)
+                        Spacer(minLength: 0)
+                        transportMark
+                            .foregroundStyle(.white)
+                            // The drawing is mostly light blue, and the mark
+                            // has no plate of its own to sit on.
+                            .shadow(color: .black.opacity(0.55), radius: 8, y: 2)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 14)
+                }
         }
     }
 
-    private var liveText: some View {
-        VStack(alignment: .leading, spacing: 6) {
+    /// Dark enough at the bottom to read white text on a light drawing, and
+    /// gone by halfway up so what is underneath is still a picture.
+    private var artworkScrim: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .black.opacity(0), location: 0.40),
+                .init(color: .black.opacity(0.55), location: 0.72),
+                .init(color: .black.opacity(0.88), location: 1.0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .allowsHitTesting(false)
+    }
+
+    /// The title, and under it either what the station is for or what is
+    /// coming out of it.
+    ///
+    /// A chyron rather than a subtitle once it is playing. The schedule is
+    /// worth reading once; the song is worth reading now, and the app already
+    /// knows it - the same announcement that goes to the lock screen and to
+    /// the car, and which this screen was the only one not to show.
+    @ViewBuilder
+    private func liveText(onArtwork: Bool) -> some View {
+        let heading: Color = onArtwork ? .white : Color("primaryText")
+        let supporting: Color = onArtwork ? .white.opacity(0.88) : Color("secondaryText")
+
+        VStack(alignment: .leading, spacing: 5) {
             Text("Internet radio Daško i Mlađa")
                 .font(.headline)
-            Text("Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(heading)
+
+            if isLivePlaying {
+                HStack(spacing: 6) {
+                    PulsingLiveDot(size: 7)
+                    Text("UŽIVO")
+                        .font(.caption.weight(.bold))
+                    if let track = playerViewModel.liveTrack {
+                        // Long enough to need it, often enough to be worth it:
+                        // an announcement is an artist and a title, and the
+                        // column here is what is left beside the mark.
+                        MarqueeText(text: track.display, font: .subheadline)
+                    }
+                }
+                .foregroundStyle(supporting)
+            } else {
+                Text("Pon–čet 8–10 h · Varnju radnim danima 11–14 h")
+                    .font(.subheadline)
+                    .foregroundStyle(supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: isLivePlaying)
+        .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
-    /// Not a button any more - the card itself is the target. It still says
-    /// what a press will do and which way the radio is currently pointing,
-    /// which is the only reason it was ever a button.
-    private var liveBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
-            Text(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
-                .font(.headline)
-        }
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color("primary"))
-        .accessibilityHidden(true)
+    /// Which way the radio is pointing, and nothing else.
+    ///
+    /// No circle behind it and no words beside it: the card is the button, and
+    /// a filled disc would read as a second, smaller one - the part you are
+    /// meant to hit - on a card where anywhere means the same press.
+    private var transportMark: some View {
+        Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
+            .font(.system(size: 38, weight: .semibold))
+            .contentTransition(.symbolEffect(.replace))
+            .accessibilityHidden(true)
     }
 
     private func toggleLive() {
