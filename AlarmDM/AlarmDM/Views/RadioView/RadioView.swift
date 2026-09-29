@@ -29,16 +29,23 @@ struct RadioView: View {
 
             // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
-                liveCard
-                    .listRowInsets(EdgeInsets())
-                    // The whole card, not only the bar along its bottom. The
-                    // card is about one thing and the bar says what that is,
-                    // so anywhere on it means the same press.
-                    .contentShape(Rectangle())
-                    .onTapGesture { toggleLive() }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
+                // The whole card, not only the mark in its corner. The card is
+                // about one thing and the mark says what that is, so anywhere
+                // on it means the same press.
+                //
+                // A button rather than onTapGesture, which the list eats once
+                // it has been scrolled: the first press afterwards went to
+                // settling the scroll and never reached the card, and the
+                // second one worked. A button is wired into the row itself and
+                // does not lose that race - and it says it is a button to
+                // VoiceOver without being told.
+                Button { toggleLive() } label: {
+                    liveCard
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets())
+                .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
             }
 
             // MARK: - Podkasti
