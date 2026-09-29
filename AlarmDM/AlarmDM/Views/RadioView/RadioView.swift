@@ -12,6 +12,7 @@ struct RadioView: View {
     @StateObject private var viewModel = RadioViewModel()
     @EnvironmentObject private var playerViewModel: PlayerViewModel
     @Environment(\.horizontalSizeClass) private var widthClass
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
         List {
@@ -123,59 +124,107 @@ struct RadioView: View {
 
     // MARK: - Radio uživo
 
-    /// Stacked on a phone, side by side once there is room.
+    /// Three arrangements of the same card, and which one is used is decided
+    /// by how much room the words need before anything else is considered.
     ///
+    /// It used to be three bands with nothing in common - the picture, a block
+    /// of text on the list background, then a blue bar - and the middle one
+    /// was that tall only because the description ran to three lines of copy
+    /// worth reading once. The text sits on the picture now and the bar is
+    /// gone: what it said is said by a play or pause mark in the corner.
+    ///
+    /// Except when the words will not fit on a picture at all, which at the
+    /// accessibility sizes they will not.
+    @ViewBuilder
+    private var liveCard: some View {
+        if textSize.isAccessibilitySize {
+            stackedCard
+        } else if isWide {
+            sideBySideCard
+        } else {
+            posterCard
+        }
+    }
+
+    /// The picture is the card, and the words sit on it.
+    ///
+    /// Sized by the words rather than cropped to the picture: overlay content
+    /// adds nothing to a row's height, so with the height pinned at 230 the
+    /// schedule grew downwards from a title that had already been pushed off
+    /// the top and clipped away. The picture now fills whatever height the
+    /// words ask for, and 230 is only the least it may be.
+    private var posterCard: some View {
+        HStack(alignment: .bottom, spacing: 12) {
+            liveText(onArtwork: true)
+            Spacer(minLength: 0)
+            transportMark
+                .foregroundStyle(.white)
+                // The drawing is mostly light blue, and the mark has no plate
+                // of its own to sit on.
+                .shadow(color: .black.opacity(0.55), radius: 8, y: 2)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 24)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, minHeight: 230, alignment: .bottomLeading)
+        .background {
+            Image("img_radio_wide")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .overlay { artworkScrim }
+        }
+        .clipped()
+    }
+
     /// The artwork is 3:2. Across the full width of an iPad or a window it
     /// would have to be cropped to a band to keep any sensible height, and
     /// what survives of a drawing cropped that hard is not worth the space it
     /// takes. Beside the text it is shown at its own proportions instead, and
     /// the card stops being a poster and becomes a row.
-    ///
-    /// The poster used to be three bands - the picture, a block of text on the
-    /// list background, then a blue bar - and none of the three shared an edge
-    /// with the others. The middle one was only that tall because the
-    /// description ran to three lines. The text sits on the picture now, over
-    /// a gradient, and the bar is gone: the mark in the corner says what it
-    /// said, in the space of a letter.
-    @ViewBuilder
-    private var liveCard: some View {
-        if isWide {
-            HStack(alignment: .center, spacing: 0) {
-                Image("img_radio_wide")
-                    .resizable()
-                    .aspectRatio(3 / 2, contentMode: .fill)
-                    .frame(width: 300, height: 200)
-                    .clipped()
+    private var sideBySideCard: some View {
+        HStack(alignment: .center, spacing: 0) {
+            // Flexible in height so the picture fills the row when the words
+            // make it taller than 200, rather than leaving a band under it.
+            Color.clear
+                .frame(width: 300)
+                .overlay {
+                    Image("img_radio_wide")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                }
+                .clipped()
 
-                liveText(onArtwork: false)
-                    .padding(.horizontal, 20)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            liveText(onArtwork: false)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                transportMark
-                    .foregroundStyle(Color("primary"))
-                    .padding(.trailing, 24)
-            }
-            .frame(height: 200)
-        } else {
+            transportMark
+                .foregroundStyle(Color("primary"))
+                .padding(.trailing, 24)
+        }
+        .frame(minHeight: 200)
+    }
+
+    /// At the accessibility sizes the words need more room than a picture can
+    /// spare, so they stop sharing one: the drawing keeps its height and the
+    /// text goes underneath it, where it can be as tall as it needs to be and
+    /// is read off the card's own background rather than off a gradient.
+    private var stackedCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
             Image("img_radio_wide")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(height: 230)
+                .frame(height: 180)
                 .clipped()
-                .overlay { artworkScrim }
-                .overlay(alignment: .bottom) {
-                    HStack(alignment: .bottom, spacing: 12) {
-                        liveText(onArtwork: true)
-                        Spacer(minLength: 0)
-                        transportMark
-                            .foregroundStyle(.white)
-                            // The drawing is mostly light blue, and the mark
-                            // has no plate of its own to sit on.
-                            .shadow(color: .black.opacity(0.55), radius: 8, y: 2)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 14)
-                }
+
+            HStack(alignment: .top, spacing: 12) {
+                liveText(onArtwork: false)
+                Spacer(minLength: 0)
+                transportMark
+                    .foregroundStyle(Color("primary"))
+            }
+            .padding(16)
         }
     }
 

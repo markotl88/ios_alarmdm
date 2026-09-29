@@ -415,7 +415,13 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// opening the app started the sound again: the one place the borrowed
     /// session works.
     private func startPlaying() {
-        activateSession()
+        if !activateSession() {
+            // Play anyway - a frontmost app is lent a session it could not
+            // claim, and the sound does come out. What it will not do is
+            // survive the app leaving the screen, which is the one thing
+            // nothing on screen will say. So it is said here.
+            AppLog.write(.player, "starting playback without the audio session - it will stop when the app leaves the screen")
+        }
         player?.play()
     }
 
