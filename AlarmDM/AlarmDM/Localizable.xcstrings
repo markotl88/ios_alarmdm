@@ -281,6 +281,26 @@
         }
       }
     },
+    "Dodirni da otvoriš" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to open"
+          }
+        }
+      }
+    },
+    "Dodirni da zatvoriš" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tap to close"
+          }
+        }
+      }
+    },
     "Dodirni kôd za uvećani prikaz" : {
       "localizations" : {
         "en" : {
@@ -1496,6 +1516,7 @@
       }
     },
     "U kôd je unapred upisan iznos od 500 RSD." : {
+      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1565,22 +1586,22 @@
         }
       }
     },
-    "Uplata na račun" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bank transfer"
-          }
-        }
-      }
-    },
     "uplata na račun" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "bank transfer"
+          }
+        }
+      }
+    },
+    "Uplata na račun" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bank transfer"
           }
         }
       }
