@@ -275,6 +275,7 @@ struct SupportView: View {
                         Link(destination: url) {
                             HStack(spacing: 10) {
                                 patreonMark(diameter: 24)
+                                    .frame(width: 24)
                                 Text("Patreon")
                                     .font(.subheadline.weight(.medium))
                                     .foregroundColor(Color("primaryText"))
@@ -358,6 +359,7 @@ struct SupportView: View {
                 Image(systemName: "building.columns.circle.fill")
                     .font(.title)
                     .foregroundColor(Color("primaryLink"))
+                    .frame(width: Self.iconColumn)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Uplata na račun")
                         .font(.headline)
@@ -486,6 +488,14 @@ struct SupportView: View {
         .frame(maxWidth: .infinity)
     }
 
+    /// How wide the icon is allowed to be, everywhere on this screen.
+    ///
+    /// The discs are drawn to a size and the symbols to a font, and those two
+    /// do not land on the same number - so the text beside them started a
+    /// point or two further along in one card than in the next. A column
+    /// they all sit in the middle of gives every line one left edge.
+    private static let iconColumn: CGFloat = 30
+
     private func donationCard<Icon: View>(
         title: String,
         detail: String,
@@ -493,6 +503,7 @@ struct SupportView: View {
     ) -> some View {
         HStack(spacing: 14) {
             icon()
+                .frame(width: Self.iconColumn)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: title)
