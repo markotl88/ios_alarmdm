@@ -232,9 +232,7 @@ struct SupportView: View {
                         title: "PayPal",
                         detail: String(localized: "Jednokratna uplata")
                     ) {
-                        Image(systemName: "creditcard.circle.fill")
-                            .font(.title)
-                            .foregroundColor(Color("primaryLink"))
+                        paypalMark(diameter: 30)
                     }
                 }
                 .accessibilityLabel("Podrži preko PayPala")
@@ -396,6 +394,26 @@ struct SupportView: View {
                     .scaledToFit()
                     .frame(width: diameter, height: diameter)
                     .foregroundColor(.white)
+            }
+            .accessibilityHidden(true)
+    }
+
+    /// PayPal's monogram, which keeps its own two blues.
+    ///
+    /// Unlike Patreon's it is not one shape, and flattening it to one colour
+    /// would not be a recolouring but a different mark - the two letters are
+    /// told apart by being two blues. So it is not a template, and the disc
+    /// under it is white, which is where PayPal asks for it to be put and
+    /// what keeps a dark blue mark off a dark card.
+    private func paypalMark(diameter: CGFloat) -> some View {
+        Circle()
+            .fill(Color.white)
+            .frame(width: diameter, height: diameter)
+            .overlay {
+                Image("logo_paypal")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: diameter, height: diameter)
             }
             .accessibilityHidden(true)
     }
