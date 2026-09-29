@@ -382,7 +382,14 @@ final class PlayerViewModel: ObservableObject {
         // press that decides where the audio actually starts.
         refreshFromStoreIfIdle()
 
-        guard let source = currentSource else { return }
+        // A press that does nothing is the hardest thing to report: nothing
+        // appears on screen, nothing is written down, and whoever it
+        // happened to can only say that the button did not work. This is the
+        // one place a press is dropped, so it says so.
+        guard let source = currentSource else {
+            AppLog.write(.player, "play pressed with nothing to play - mode: \(mode)")
+            return
+        }
 
         // Before the engine is touched. Building a player and claiming the
         // audio session both block, and for a streamed episode that is long
