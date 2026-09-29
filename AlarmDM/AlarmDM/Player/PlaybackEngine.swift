@@ -826,25 +826,36 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
               let rawType = info[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
 
-        #if DEBUG
-        AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(currentTime), item: \(String(describing: player?.currentItem?.status.rawValue))")
-        #endif
+        let options = (info[AVAudioSessionInterruptionOptionKey] as? UInt)
+            .map(AVAudioSession.InterruptionOptions.init(rawValue:))
 
-        switch type {
-        case .began:
-            pause()
-        case .ended:
-            // Nothing is claimed here when the system does not ask for the
-            // listen back: taking the session at the end of every
-            // interruption would cut off whatever the other application
-            // started playing in the meantime. resume() claims it, and now
-            // says so when it cannot.
-            guard let rawOptions = info[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
-            if AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume) {
-                resume()
+        // This arrives on whichever thread the audio system happens to be on.
+        // Stopping the player from there is safe; the generation counter that
+        // carries the intent to play is not, and it is the one thing every
+        // resume after this is decided by. A turn of the runloop costs
+        // nothing here - the system has already silenced us.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            #if DEBUG
+            AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(self.currentTime), item: \(String(describing: self.player?.currentItem?.status.rawValue))")
+            #endif
+
+            switch type {
+            case .began:
+                self.pause()
+            case .ended:
+                // Nothing is claimed here when the system does not ask for
+                // the listen back: taking the session at the end of every
+                // interruption would cut off whatever the other application
+                // started playing in the meantime. resume() claims it, and
+                // says so when it cannot.
+                if options?.contains(.shouldResume) == true {
+                    self.resume()
+                }
+            @unknown default:
+                break
             }
-        @unknown default:
-            break
         }
     }
     #endif
