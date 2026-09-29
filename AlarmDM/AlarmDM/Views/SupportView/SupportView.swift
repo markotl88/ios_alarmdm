@@ -336,7 +336,9 @@ struct SupportView: View {
                 Text(verbatim: target.tagline ?? target.waysOfPaying)
                     .font(.caption)
                     .foregroundColor(Color("secondaryText"))
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .multilineTextAlignment(.leading)
 
             Spacer(minLength: 0)
 
@@ -367,7 +369,10 @@ struct SupportView: View {
                     Text(verbatim: bank.subtitle)
                         .font(.subheadline)
                         .foregroundColor(Color("secondaryText"))
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             copyRow(bank.account)
@@ -512,7 +517,14 @@ struct SupportView: View {
                 Text(verbatim: detail)
                     .font(.subheadline)
                     .foregroundColor(Color("secondaryText"))
+                    // A detail long enough to wrap was setting its second
+                    // line centred under the first, which read as a paragraph
+                    // that had lost its left edge. Said here rather than
+                    // inherited from whatever is above it.
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .multilineTextAlignment(.leading)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer(minLength: 0)
 
