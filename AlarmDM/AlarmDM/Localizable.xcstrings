@@ -1358,16 +1358,6 @@
         }
       }
     },
-    "Radio i sve emisije" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The radio and every show"
-          }
-        }
-      }
-    },
     "Radio uživo" : {
       "localizations" : {
         "en" : {

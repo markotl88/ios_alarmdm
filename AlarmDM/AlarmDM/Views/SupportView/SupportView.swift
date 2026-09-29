@@ -84,7 +84,8 @@ extension SupportTarget {
         id: "daskoimladja",
         name: String(localized: "Daško i Mlađa"),
         artwork: "iTunesArtwork",
-        tagline: String(localized: "Radio i sve emisije"),
+        // A name, so it is not translated and not put through the catalogue.
+        tagline: "Alarm",
         patreon: URL(string: "https://www.patreon.com/daskoimladja"),
         payPal: URL(string: "https://www.paypal.com/paypalme/daskoimladja"),
         bank: BankDetails(
