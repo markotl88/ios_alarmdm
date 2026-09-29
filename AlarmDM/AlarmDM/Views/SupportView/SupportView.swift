@@ -11,19 +11,140 @@
 import SwiftUI
 import UIKit
 
+// MARK: - Who the money goes to
+
+/// Somebody who can be given money, and the ways there are of doing it.
+///
+/// The screen used to be sorted two ways at once: the top by method - Patreon,
+/// PayPal, the account - and the bottom by recipient, a row per show. That held
+/// only while a show had exactly one way to be paid, and it stopped holding the
+/// day a show had a code of its own. Giving every show the full treatment would
+/// have buried the station under five of them.
+///
+/// So everybody is the same shape now, and what says who comes first is how
+/// much of it is already open: the station asks for no taps, a show asks for
+/// one.
+struct SupportTarget: Identifiable {
+    let id: String
+    let name: String
+    /// The picture beside the name in a list of several. The station has the
+    /// top of the page to itself and needs none.
+    var artwork: String?
+    var patreon: URL?
+    var payPal: URL?
+    var bank: BankDetails?
+
+    var isWorthShowing: Bool { patreon != nil || payPal != nil || bank != nil }
+
+    /// What the folded row says it holds, so the page still lists what is
+    /// there without being as long as it would be with everything open.
+    var waysOfPaying: String {
+        var ways: [String] = []
+        if patreon != nil { ways.append("Patreon") }
+        if payPal != nil { ways.append("PayPal") }
+        if bank != nil { ways.append(String(localized: "uplata na račun")) }
+        return ways.joined(separator: " · ")
+    }
+
+    /// What it takes to pay somebody here: the account, whose it is, and the
+    /// code that fills a banking app in on your behalf.
+    struct BankDetails {
+        let bankName: String
+        /// Given when the account is a person's rather than the station's -
+        /// which is what a banking app will show, and what somebody about to
+        /// send money to a stranger's number will want to see first.
+        var holder: String?
+        let account: String
+        var qrAsset: String?
+        /// Written into the code when the code carries an amount.
+        var qrAmount: String?
+
+        /// The line under a code held up to somebody else's camera.
+        var caption: String {
+            guard let qrAmount else { return bankName }
+            return "\(bankName) · \(qrAmount)"
+        }
+
+        /// The bank, and whose account it is when that is worth saying.
+        var subtitle: String {
+            guard let holder else { return bankName }
+            return "\(bankName) · \(holder)"
+        }
+    }
+}
+
+extension SupportTarget {
+
+    static let station = SupportTarget(
+        id: "daskoimladja",
+        name: String(localized: "Daško i Mlađa"),
+        patreon: URL(string: "https://www.patreon.com/daskoimladja"),
+        payPal: URL(string: "https://www.paypal.com/paypalme/daskoimladja"),
+        bank: BankDetails(
+            bankName: "OTP banka",
+            account: "325-9300600398707-66",
+            qrAsset: "img_qr_donacije",
+            qrAmount: "500 RSD"
+        )
+    )
+
+    /// The shows that raise money of their own, in the order the Shows tab
+    /// lists them - so this page reads the same way.
+    static var shows: [SupportTarget] {
+        Show.listed.compactMap { show in
+            let target = SupportTarget(
+                id: show.rawValue,
+                name: show.displayName,
+                artwork: show.imageName,
+                patreon: show.patreonURL,
+                bank: show.supportBank
+            )
+            return target.isWorthShowing ? target : nil
+        }
+    }
+}
+
+private extension Show {
+    /// A show collecting on an account of its own. The station's account is
+    /// not repeated here - it belongs to SupportTarget.station.
+    var supportBank: SupportTarget.BankDetails? {
+        switch self {
+        case .unutrasnjaEmigracija:
+            return SupportTarget.BankDetails(
+                bankName: "Raiffeisen banka",
+                holder: "Ivan Varnju",
+                account: "265000000101112710",
+                qrAsset: "img_qr_unutrasnja",
+                qrAmount: "500 RSD"
+            )
+        default:
+            return nil
+        }
+    }
+}
+
+/// A code opened over the whole screen. The asset name identifies it, which is
+/// what keeps one cover from being asked to show two different codes.
+private struct ZoomedCode: Identifiable {
+    let id: String
+    let image: UIImage
+    let account: String
+    let caption: String
+}
+
+// MARK: - The screen
+
 struct SupportView: View {
     @Environment(\.horizontalSizeClass) private var widthClass
 
+    /// Which account was copied, not whether one was: there is more than one
+    /// on the page now, and only the one that was pressed should say so.
+    @State private var copiedAccount: String?
+    @State private var zoomed: ZoomedCode?
+    @State private var opened: Set<String> = []
 
-    @State private var didCopyAccount = false
-    @State private var isShowingFullscreenQR = false
-
-    private enum Donation {
-        static let patreon = URL(string: "https://www.patreon.com/daskoimladja")!
-        static let payPal = URL(string: "https://www.paypal.com/paypalme/daskoimladja")!
-        static let bankName = "OTP banka"
-        static let accountNumber = "325-9300600398707-66"
-    }
+    private let station = SupportTarget.station
+    private let shows = SupportTarget.shows
 
     var body: some View {
         ScrollView {
@@ -36,14 +157,14 @@ struct SupportView: View {
 
                 intro
 
-                sectionHeader(String(localized: "Daško i Mlađa"))
-                patreonRow
-                payPalRow
-                bankSection
+                sectionHeader(station.name)
+                stationBlock
 
-                if !Show.withOwnPatreon.isEmpty {
+                if !shows.isEmpty {
                     sectionHeader(String(localized: "Emisije"))
-                    showPatreonSection
+                    VStack(spacing: 12) {
+                        ForEach(shows) { showRow($0) }
+                    }
                 }
             }
             .padding(20)
@@ -51,6 +172,9 @@ struct SupportView: View {
         .background(Color("background").ignoresSafeArea())
         .navigationTitle(widthClass == .regular ? Text(verbatim: "") : Text("Podrži"))
         .navigationBarTitleDisplayMode(widthClass == .regular ? .inline : .automatic)
+        .fullScreenCover(item: $zoomed) { code in
+            FullscreenQRView(image: code.image, account: code.account, caption: code.caption)
+        }
     }
 
     // MARK: - Sections
@@ -74,70 +198,132 @@ struct SupportView: View {
             .padding(.top, 4)
     }
 
-    /// Several shows raise money separately from the station.
-    private var showPatreonSection: some View {
+    /// Open, always, and first. Nothing about it is behind a tap.
+    private var stationBlock: some View {
         VStack(spacing: 12) {
-            ForEach(Show.withOwnPatreon, id: \.self) { show in
-                if let url = show.patreonURL {
-                    Link(destination: url) {
-                        HStack(spacing: 14) {
-                            Image(show.imageName)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 44, height: 44)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(show.displayName)
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundColor(Color("primaryText"))
-                                    .lineLimit(1)
-                                Text("Patreon")
-                                    .font(.caption)
-                                    .foregroundColor(Color("secondaryText"))
-                            }
-
-                            Spacer(minLength: 0)
-
-                            Image(systemName: "arrow.up.right")
-                                .font(.footnote.weight(.semibold))
-                                .foregroundColor(Color("secondaryText"))
-                        }
-                        .padding(12)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14)
-                                .fill(Color(.secondarySystemBackground))
-                        )
-                    }
-                    .accessibilityLabel("Podrži \(show.displayName) na Patreonu")
+            if let url = station.patreon {
+                Link(destination: url) {
+                    donationCard(
+                        title: "Patreon",
+                        detail: String(localized: "Redovna mesečna ili godišnja donacija"),
+                        systemImage: "heart.circle.fill"
+                    )
                 }
+                .accessibilityLabel("Podrži preko Patreona")
+            }
+
+            if let url = station.payPal {
+                Link(destination: url) {
+                    donationCard(
+                        title: "PayPal",
+                        detail: String(localized: "Jednokratna uplata"),
+                        systemImage: "creditcard.circle.fill"
+                    )
+                }
+                .accessibilityLabel("Podrži preko PayPala")
+            }
+
+            if let bank = station.bank {
+                bankDetails(bank)
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color(.secondarySystemBackground))
+                    )
             }
         }
     }
 
-    private var patreonRow: some View {
-        Link(destination: Donation.patreon) {
-            donationCard(
-                title: "Patreon",
-                detail: String(localized: "Redovna mesečna ili godišnja donacija"),
-                systemImage: "heart.circle.fill"
-            )
+    /// A show, folded shut.
+    private func showRow(_ target: SupportTarget) -> some View {
+        let isOpen = opened.contains(target.id)
+
+        return VStack(alignment: .leading, spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    if isOpen { opened.remove(target.id) } else { opened.insert(target.id) }
+                }
+            } label: {
+                HStack(spacing: 14) {
+                    if let artwork = target.artwork {
+                        Image(artwork)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 44, height: 44)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(verbatim: target.name)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundColor(Color("primaryText"))
+                            .lineLimit(1)
+                        Text(verbatim: target.waysOfPaying)
+                            .font(.caption)
+                            .foregroundColor(Color("secondaryText"))
+                    }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "chevron.down")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundColor(Color("secondaryText"))
+                        .rotationEffect(.degrees(isOpen ? 180 : 0))
+                }
+                .padding(12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Podrži \(target.name)")
+            .accessibilityValue(target.waysOfPaying)
+            .accessibilityHint(isOpen ? "Dodirni da zatvoriš" : "Dodirni da otvoriš")
+
+            if isOpen {
+                VStack(spacing: 14) {
+                    if let url = target.patreon {
+                        Link(destination: url) {
+                            HStack(spacing: 10) {
+                                Image(systemName: "heart.circle.fill")
+                                    .font(.title3)
+                                    .foregroundColor(Color("primaryLink"))
+                                Text("Patreon")
+                                    .font(.subheadline.weight(.medium))
+                                    .foregroundColor(Color("primaryText"))
+                                Spacer(minLength: 0)
+                                Image(systemName: "arrow.up.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundColor(Color("secondaryText"))
+                            }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color(.tertiarySystemFill))
+                            )
+                        }
+                        .accessibilityLabel("Podrži \(target.name) na Patreonu")
+                    }
+
+                    if let bank = target.bank {
+                        bankDetails(bank)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.bottom, 14)
+            }
         }
-        .accessibilityLabel("Podrži preko Patreona")
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(.secondarySystemBackground))
+        )
     }
 
-    private var payPalRow: some View {
-        Link(destination: Donation.payPal) {
-            donationCard(
-                title: "PayPal",
-                detail: String(localized: "Jednokratna uplata"),
-                systemImage: "creditcard.circle.fill"
-            )
-        }
-        .accessibilityLabel("Podrži preko PayPala")
-    }
+    // MARK: - Building blocks
 
-    private var bankSection: some View {
+    /// The account and its code. In a card of its own under the station, and
+    /// inside the row when a show is opened - the same thing either way, which
+    /// is the point of the shape.
+    @ViewBuilder
+    private func bankDetails(_ bank: SupportTarget.BankDetails) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 14) {
                 Image(systemName: "building.columns.circle.fill")
@@ -147,76 +333,83 @@ struct SupportView: View {
                     Text("Uplata na račun")
                         .font(.headline)
                         .foregroundColor(Color("primaryText"))
-                    Text(Donation.bankName)
+                    Text(verbatim: bank.subtitle)
                         .font(.subheadline)
                         .foregroundColor(Color("secondaryText"))
                 }
             }
 
+            copyRow(bank.account)
+
+            if let assetName = bank.qrAsset, let qr = UIImage(named: assetName) {
+                codeBlock(qr, assetName: assetName, bank: bank)
+            }
+        }
+    }
+
+    private func copyRow(_ account: String) -> some View {
+        let isCopied = copiedAccount == account
+
+        return Button {
+            UIPasteboard.general.string = account
+            withAnimation { copiedAccount = account }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation {
+                    // Only if nothing else has been copied since.
+                    if copiedAccount == account { copiedAccount = nil }
+                }
+            }
+        } label: {
+            HStack {
+                Text(verbatim: account)
+                    .font(.body.monospacedDigit())
+                    .foregroundColor(Color("primaryText"))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Spacer()
+                Image(systemName: isCopied ? "checkmark" : "doc.on.doc")
+                    .foregroundColor(Color("primaryLink"))
+            }
+            .padding(14)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.tertiarySystemFill))
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isCopied ? "Broj računa je kopiran" : "Kopiraj broj računa")
+    }
+
+    private func codeBlock(_ qr: UIImage, assetName: String, bank: SupportTarget.BankDetails) -> some View {
+        VStack(spacing: 8) {
             Button {
-                UIPasteboard.general.string = Donation.accountNumber
-                withAnimation { didCopyAccount = true }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                    withAnimation { didCopyAccount = false }
-                }
+                zoomed = ZoomedCode(id: assetName, image: qr, account: bank.account, caption: bank.caption)
             } label: {
-                HStack {
-                    Text(Donation.accountNumber)
-                        .font(.body.monospacedDigit())
-                        .foregroundColor(Color("primaryText"))
-                    Spacer()
-                    Image(systemName: didCopyAccount ? "checkmark" : "doc.on.doc")
-                        .foregroundColor(Color("primaryLink"))
-                }
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.tertiarySystemFill))
-                )
+                Image(uiImage: qr)
+                    .resizable()
+                    .interpolation(.none)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(maxWidth: 220)
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(didCopyAccount ? "Broj računa je kopiran" : "Kopiraj broj računa")
+            .accessibilityLabel("Prikaži kôd preko celog ekrana")
 
-            if let qr = UIImage(named: "img_qr_donacije") {
-                VStack(spacing: 8) {
-                    Button {
-                        isShowingFullscreenQR = true
-                    } label: {
-                        Image(uiImage: qr)
-                            .resizable()
-                            .interpolation(.none)
-                            .aspectRatio(contentMode: .fit)
-                            .frame(maxWidth: 220)
-                            .padding(12)
-                            .background(RoundedRectangle(cornerRadius: 12).fill(Color.white))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Prikaži kôd preko celog ekrana")
-
-                    VStack(spacing: 3) {
-                        Label("Dodirni kôd za uvećani prikaz", systemImage: "arrow.up.left.and.arrow.down.right")
-                            .font(.caption.weight(.medium))
-                            .foregroundColor(Color("primaryLink"))
-                        Text("U kôd je unapred upisan iznos od 500 RSD.")
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                            .foregroundColor(Color("secondaryText"))
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .fullScreenCover(isPresented: $isShowingFullscreenQR) {
-                    FullscreenQRView(image: qr)
+            VStack(spacing: 3) {
+                Label("Dodirni kôd za uvećani prikaz", systemImage: "arrow.up.left.and.arrow.down.right")
+                    .font(.caption.weight(.medium))
+                    .foregroundColor(Color("primaryLink"))
+                if let amount = bank.qrAmount {
+                    Text("U kôd je unapred upisan iznos od \(amount).")
+                        .font(.caption)
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(Color("secondaryText"))
                 }
             }
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.secondarySystemBackground))
-        )
+        .frame(maxWidth: .infinity)
     }
-
-    // MARK: - Building blocks
 
     private func donationCard(title: String, detail: String, systemImage: String) -> some View {
         HStack(spacing: 14) {
@@ -225,10 +418,10 @@ struct SupportView: View {
                 .foregroundColor(Color("primaryLink"))
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(verbatim: title)
                     .font(.headline)
                     .foregroundColor(Color("primaryText"))
-                Text(detail)
+                Text(verbatim: detail)
                     .font(.subheadline)
                     .foregroundColor(Color("secondaryText"))
             }
@@ -257,6 +450,9 @@ struct SupportView: View {
 /// themselves and a dim screen is the usual reason a scan fails.
 private struct FullscreenQRView: View {
     let image: UIImage
+    let account: String
+    /// The bank, and the amount when the code carries one.
+    let caption: String
 
     @Environment(\.dismiss) private var dismiss
     @State private var previousBrightness = FullscreenQRView.screenBrightness
@@ -283,9 +479,9 @@ private struct FullscreenQRView: View {
                     .padding(.horizontal, 32)
 
                 VStack(spacing: 4) {
-                    Text(verbatim: "325-9300600398707-66")
+                    Text(verbatim: account)
                         .font(.callout.monospacedDigit())
-                    Text(verbatim: "OTP banka · 500 RSD")
+                    Text(verbatim: caption)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
