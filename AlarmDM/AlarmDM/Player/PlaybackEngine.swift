@@ -302,8 +302,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 let intent = pauseGeneration
                 seek(to: position) { [weak self] in
                     guard let self, intent == self.pauseGeneration else { return }
-                    self.activateSession()
-                    self.player?.play()
+                    self.startPlaying()
                     self.updateNowPlayingPlaybackState()
                 }
                 movedByHand.send(max(0, position))
@@ -340,14 +339,13 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         setLiveTrack(nil)
 
         attachObservers(to: player, item: item)
-        activateSession()
         // Not when there is a position to go to first. The status observer
         // plays once the seek has landed; playing here as well let the
         // opening second of the file out of the speaker before the seek
         // arrived - the blip from the beginning that the observer's own
         // comment says is fixed, and was not.
         if pendingSeek == nil {
-            player.play()
+            startPlaying()
         }
         updateNowPlayingInfo()
     }
@@ -384,20 +382,41 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             return
         }
 
-        activateSession()
         if case .podcast(let podcast) = source,
            podcast.isAtVeryEnd(at: currentTime, duration: duration) {
             let intent = pauseGeneration
             seek(to: 0) { [weak self] in
                 guard let self, intent == self.pauseGeneration else { return }
-                self.player?.play()
+                self.startPlaying()
                 self.updateNowPlayingPlaybackState()
             }
             movedByHand.send(0)
         } else {
-            player?.play()
+            startPlaying()
         }
         updateNowPlayingPlaybackState()
+    }
+
+    /// Starts the player, having claimed the audio session first.
+    ///
+    /// Every start goes through here, because the session has to be held at
+    /// the moment the audio begins rather than at the moment somebody asked
+    /// for it. Those are the same instant for a file that is already open and
+    /// several seconds apart for a stream that has to be opened first, and in
+    /// between the app can have been put in a pocket.
+    ///
+    /// The one that was missing is the one at the end of a rebuild: another
+    /// app taking the session leaves the item failed, resume() builds it
+    /// again, and the play that follows the seek claimed nothing. In the
+    /// foreground it played anyway - the system grants a frontmost app a
+    /// session it did not ask for - and then paused the moment the screen was
+    /// locked, because that grant does not survive the app leaving the
+    /// screen. From the lock screen play then did nothing at all, and only
+    /// opening the app started the sound again: the one place the borrowed
+    /// session works.
+    private func startPlaying() {
+        activateSession()
+        player?.play()
     }
 
     func stop() {
@@ -551,8 +570,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         seek(to: resumeAt) { [weak self, weak player] in
             guard let self, let player, self.player === player else { return }
             if wasPlaying, intent == self.pauseGeneration {
-                self.activateSession()
-                player.play()
+                self.startPlaying()
             }
             self.updateNowPlayingInfo()
         }
@@ -615,7 +633,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                         // here, which makes it the likeliest place for one to
                         // arrive - from the lock screen, or a phone call.
                         guard intent == self.pauseGeneration else { return }
-                        self.player?.play()
+                        self.startPlaying()
                         self.updateNowPlayingPlaybackState()
                     }
                 }
@@ -742,12 +760,33 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         #endif
     }
 
-    private func activateSession() {
-        #if !targetEnvironment(macCatalyst)
+    /// Claims the session, and says again what it is for when the claim is
+    /// refused.
+    ///
+    /// A refusal is not rare: it is what comes back while another application
+    /// still holds the session it was interrupted by, and the app carries the
+    /// consequence silently until the next time the screen locks. Declaring
+    /// the category again is what re-establishes the claim - it is the one
+    /// call that tells the system this app plays audio, and a session that
+    /// has been through an interruption sometimes needs telling twice.
+    @discardableResult
+    private func activateSession() -> Bool {
+        #if targetEnvironment(macCatalyst)
+        return true
+        #else
         do {
             try AVAudioSession.sharedInstance().setActive(true)
+            return true
         } catch {
-            AppLog.write(.player, "Audio session activation failed: \(error.localizedDescription)")
+            AppLog.write(.player, "Audio session activation failed: \(error.localizedDescription) - declaring the category again")
+            configureAudioSession()
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+                return true
+            } catch {
+                AppLog.write(.player, "Audio session activation failed twice: \(error.localizedDescription)")
+                return false
+            }
         }
         #endif
     }
@@ -783,6 +822,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         case .began:
             pause()
         case .ended:
+            // Nothing is claimed here when the system does not ask for the
+            // listen back: taking the session at the end of every
+            // interruption would cut off whatever the other application
+            // started playing in the meantime. resume() claims it, and now
+            // says so when it cannot.
             guard let rawOptions = info[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
             if AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume) {
                 resume()
