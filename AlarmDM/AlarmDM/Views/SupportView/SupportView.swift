@@ -218,9 +218,10 @@ struct SupportView: View {
                 Link(destination: url) {
                     donationCard(
                         title: "Patreon",
-                        detail: String(localized: "Redovna mesečna ili godišnja donacija"),
-                        systemImage: "heart.circle.fill"
-                    )
+                        detail: String(localized: "Redovna mesečna ili godišnja donacija")
+                    ) {
+                        patreonMark(diameter: 30)
+                    }
                 }
                 .accessibilityLabel("Podrži preko Patreona")
             }
@@ -229,9 +230,12 @@ struct SupportView: View {
                 Link(destination: url) {
                     donationCard(
                         title: "PayPal",
-                        detail: String(localized: "Jednokratna uplata"),
-                        systemImage: "creditcard.circle.fill"
-                    )
+                        detail: String(localized: "Jednokratna uplata")
+                    ) {
+                        Image(systemName: "creditcard.circle.fill")
+                            .font(.title)
+                            .foregroundColor(Color("primaryLink"))
+                    }
                 }
                 .accessibilityLabel("Podrži preko PayPala")
             }
@@ -271,9 +275,7 @@ struct SupportView: View {
                     if let url = target.patreon {
                         Link(destination: url) {
                             HStack(spacing: 10) {
-                                Image(systemName: "heart.circle.fill")
-                                    .font(.title3)
-                                    .foregroundColor(Color("primaryLink"))
+                                patreonMark(diameter: 24)
                                 Text("Patreon")
                                     .font(.subheadline.weight(.medium))
                                     .foregroundColor(Color("primaryText"))
@@ -375,6 +377,29 @@ struct SupportView: View {
         }
     }
 
+    /// Patreon's own mark instead of a heart, on a disc of ours.
+    ///
+    /// The mark is shipped as a template - the shape, and nothing behind it -
+    /// so what it is drawn on is a decision rather than whatever came with the
+    /// file. It came on a black tile, which on this screen in the dark is a
+    /// black square on a black card. The disc is the app's blue, the same
+    /// circle the symbols beside it are drawn in, and the mark stays white
+    /// on it either way up.
+    private func patreonMark(diameter: CGFloat) -> some View {
+        Circle()
+            .fill(Color("primaryLink"))
+            .frame(width: diameter, height: diameter)
+            .overlay {
+                Image("logo_patreon")
+                    .renderingMode(.template)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: diameter, height: diameter)
+                    .foregroundColor(.white)
+            }
+            .accessibilityHidden(true)
+    }
+
     private func copyRow(_ account: String) -> some View {
         let isCopied = copiedAccount == account
 
@@ -439,11 +464,13 @@ struct SupportView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func donationCard(title: String, detail: String, systemImage: String) -> some View {
+    private func donationCard<Icon: View>(
+        title: String,
+        detail: String,
+        @ViewBuilder icon: () -> Icon
+    ) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: systemImage)
-                .font(.title)
-                .foregroundColor(Color("primaryLink"))
+            icon()
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: title)
