@@ -12,6 +12,7 @@ struct RadioView: View {
     @StateObject private var viewModel = RadioViewModel()
     @EnvironmentObject private var playerViewModel: PlayerViewModel
     @Environment(\.horizontalSizeClass) private var widthClass
+    @Environment(\.dynamicTypeSize) private var textSize
 
     var body: some View {
         List {
@@ -29,16 +30,23 @@ struct RadioView: View {
 
             // MARK: - Radio uživo
             Section(header: Text("Radio uživo")) {
-                liveCard
-                    .listRowInsets(EdgeInsets())
-                    // The whole card, not only the bar along its bottom. The
-                    // card is about one thing and the bar says what that is,
-                    // so anywhere on it means the same press.
-                    .contentShape(Rectangle())
-                    .onTapGesture { toggleLive() }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
+                // The whole card, not only the mark in its corner. The card is
+                // about one thing and the mark says what that is, so anywhere
+                // on it means the same press.
+                //
+                // A button rather than onTapGesture, which the list eats once
+                // it has been scrolled: the first press afterwards went to
+                // settling the scroll and never reached the card, and the
+                // second one worked. A button is wired into the row itself and
+                // does not lose that race - and it says it is a button to
+                // VoiceOver without being told.
+                Button { toggleLive() } label: {
+                    liveCard
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .listRowInsets(EdgeInsets())
+                .accessibilityLabel(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
             }
 
             // MARK: - Podkasti
@@ -116,74 +124,176 @@ struct RadioView: View {
 
     // MARK: - Radio uživo
 
-    /// Stacked on a phone, side by side once there is room.
+    /// Three arrangements of the same card, and which one is used is decided
+    /// by how much room the words need before anything else is considered.
     ///
+    /// It used to be three bands with nothing in common - the picture, a block
+    /// of text on the list background, then a blue bar - and the middle one
+    /// was that tall only because the description ran to three lines of copy
+    /// worth reading once. The text sits on the picture now and the bar is
+    /// gone: what it said is said by a play or pause mark in the corner.
+    ///
+    /// Except when the words will not fit on a picture at all, which at the
+    /// accessibility sizes they will not.
+    @ViewBuilder
+    private var liveCard: some View {
+        if textSize.isAccessibilitySize {
+            stackedCard
+        } else if isWide {
+            sideBySideCard
+        } else {
+            posterCard
+        }
+    }
+
+    /// The picture is the card, and the words sit on it.
+    ///
+    /// Sized by the words rather than cropped to the picture: overlay content
+    /// adds nothing to a row's height, so with the height pinned at 230 the
+    /// schedule grew downwards from a title that had already been pushed off
+    /// the top and clipped away. The picture now fills whatever height the
+    /// words ask for, and 230 is only the least it may be.
+    private var posterCard: some View {
+        HStack(alignment: .bottom, spacing: 12) {
+            liveText(onArtwork: true)
+            Spacer(minLength: 0)
+            transportMark
+                .foregroundStyle(.white)
+                // The drawing is mostly light blue, and the mark has no plate
+                // of its own to sit on.
+                .shadow(color: .black.opacity(0.55), radius: 8, y: 2)
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 24)
+        .padding(.bottom, 14)
+        .frame(maxWidth: .infinity, minHeight: 230, alignment: .bottomLeading)
+        .background {
+            Image("img_radio_wide")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .overlay { artworkScrim }
+        }
+        .clipped()
+    }
+
     /// The artwork is 3:2. Across the full width of an iPad or a window it
     /// would have to be cropped to a band to keep any sensible height, and
     /// what survives of a drawing cropped that hard is not worth the space it
     /// takes. Beside the text it is shown at its own proportions instead, and
     /// the card stops being a poster and becomes a row.
-    @ViewBuilder
-    private var liveCard: some View {
-        if isWide {
-            HStack(alignment: .top, spacing: 0) {
-                Image("img_radio_wide")
-                    .resizable()
-                    .aspectRatio(3 / 2, contentMode: .fill)
-                    .frame(width: 300, height: 200)
-                    .clipped()
-
-                VStack(alignment: .leading, spacing: 12) {
-                    liveText
-                    Spacer(minLength: 0)
-                    liveBar
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    private var sideBySideCard: some View {
+        HStack(alignment: .center, spacing: 0) {
+            // Flexible in height so the picture fills the row when the words
+            // make it taller than 200, rather than leaving a band under it.
+            Color.clear
+                .frame(width: 300)
+                .overlay {
+                    Image("img_radio_wide")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
                 }
-                .padding(20)
+                .clipped()
+
+            liveText(onArtwork: false)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(height: 200)
-        } else {
-            VStack(alignment: .leading, spacing: 0) {
-                Image("img_radio_wide")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(height: 180)
-                    .clipped()
 
-                liveText
-                    .padding(16)
+            transportMark
+                .foregroundStyle(Color("primary"))
+                .padding(.trailing, 24)
+        }
+        .frame(minHeight: 200)
+    }
 
-                liveBar
+    /// At the accessibility sizes the words need more room than a picture can
+    /// spare, so they stop sharing one: the drawing keeps its height and the
+    /// text goes underneath it, where it can be as tall as it needs to be and
+    /// is read off the card's own background rather than off a gradient.
+    private var stackedCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Image("img_radio_wide")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(height: 180)
+                .clipped()
+
+            HStack(alignment: .top, spacing: 12) {
+                liveText(onArtwork: false)
+                Spacer(minLength: 0)
+                transportMark
+                    .foregroundStyle(Color("primary"))
             }
+            .padding(16)
         }
     }
 
-    private var liveText: some View {
-        VStack(alignment: .leading, spacing: 6) {
+    /// Dark enough at the bottom to read white text on a light drawing, and
+    /// gone by halfway up so what is underneath is still a picture.
+    private var artworkScrim: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .black.opacity(0), location: 0.40),
+                .init(color: .black.opacity(0.55), location: 0.72),
+                .init(color: .black.opacity(0.88), location: 1.0)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .allowsHitTesting(false)
+    }
+
+    /// The title, and under it either what the station is for or what is
+    /// coming out of it.
+    ///
+    /// A chyron rather than a subtitle once it is playing. The schedule is
+    /// worth reading once; the song is worth reading now, and the app already
+    /// knows it - the same announcement that goes to the lock screen and to
+    /// the car, and which this screen was the only one not to show.
+    @ViewBuilder
+    private func liveText(onArtwork: Bool) -> some View {
+        let heading: Color = onArtwork ? .white : Color("primaryText")
+        let supporting: Color = onArtwork ? .white.opacity(0.88) : Color("secondaryText")
+
+        VStack(alignment: .leading, spacing: 5) {
             Text("Internet radio Daško i Mlađa")
                 .font(.headline)
-            Text("Daško i Mlađa od ponedeljka do četvrtka, od 8 do 10 h. Varnju radnim danima od 11 do 14 h. Dobra muzika non-stop!")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+                .foregroundStyle(heading)
+
+            if isLivePlaying {
+                HStack(spacing: 6) {
+                    PulsingLiveDot(size: 7)
+                    Text("UŽIVO")
+                        .font(.caption.weight(.bold))
+                    if let track = playerViewModel.liveTrack {
+                        // Long enough to need it, often enough to be worth it:
+                        // an announcement is an artist and a title, and the
+                        // column here is what is left beside the mark.
+                        MarqueeText(text: track.display, font: .subheadline)
+                    }
+                }
+                .foregroundStyle(supporting)
+            } else {
+                Text("Pon–čet 8–10 h · Varnju radnim danima 11–14 h")
+                    .font(.subheadline)
+                    .foregroundStyle(supporting)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .animation(.easeInOut(duration: 0.25), value: isLivePlaying)
+        .animation(.easeInOut(duration: 0.25), value: playerViewModel.liveTrack)
     }
 
-    /// Not a button any more - the card itself is the target. It still says
-    /// what a press will do and which way the radio is currently pointing,
-    /// which is the only reason it was ever a button.
-    private var liveBar: some View {
-        HStack(spacing: 8) {
-            Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
-            Text(isLivePlaying ? "Pauziraj radio uživo" : "Pusti radio uživo")
-                .font(.headline)
-        }
-        .foregroundColor(.white)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color("primary"))
-        .accessibilityHidden(true)
+    /// Which way the radio is pointing, and nothing else.
+    ///
+    /// No circle behind it and no words beside it: the card is the button, and
+    /// a filled disc would read as a second, smaller one - the part you are
+    /// meant to hit - on a card where anywhere means the same press.
+    private var transportMark: some View {
+        Image(systemName: isLivePlaying ? "pause.fill" : "play.fill")
+            .font(.system(size: 38, weight: .semibold))
+            .contentTransition(.symbolEffect(.replace))
+            .accessibilityHidden(true)
     }
 
     private func toggleLive() {

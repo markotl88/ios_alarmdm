@@ -103,11 +103,6 @@ enum Show: String, CaseIterable, Identifiable {
         }
     }
 
-    /// In the Shows tab's order, so the Podrži screen reads the same way.
-    static var withOwnPatreon: [Show] {
-        listed.filter { $0.patreonURL != nil }
-    }
-
     /// How long this show's closing credits run. The backend sends the same
     /// number per episode and that one wins; this is what an episode
     /// downloaded before the field existed, or fetched with the function

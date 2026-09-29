@@ -9,11 +9,19 @@ import AVFoundation
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // The Mac has no audio session to claim - the system mixes
-        // applications on its own, and AVAudioSession does not exist there.
+        // A Catalyst build has no audio session to claim - the system mixes
+        // applications on its own. This target is not Catalyst, so the Mac
+        // runs the phone binary under Designed for iPad and does take this
+        // line; the guard is for a Catalyst build, should there ever be one.
+        //
+        // The category says what this app is for, which is worth saying
+        // before anything can be played. The session itself is not claimed
+        // here: claiming it at launch takes the sound away from whatever the
+        // person was already listening to, before they have pressed anything
+        // in this app. PlaybackEngine claims it when something starts, and
+        // this mode is the one it uses.
         #if !targetEnvironment(macCatalyst)
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-        try? AVAudioSession.sharedInstance().setActive(true)
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
         #endif
 
         // Here and not in a view: when the car starts the app there is no
