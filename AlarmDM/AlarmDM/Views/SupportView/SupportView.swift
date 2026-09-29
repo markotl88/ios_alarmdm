@@ -30,6 +30,11 @@ struct SupportTarget: Identifiable {
     /// The picture beside the name in a list of several. The station has the
     /// top of the page to itself and needs none.
     var artwork: String?
+    /// What to say under the name instead of listing the ways of paying,
+    /// which for the station would only name what is spread out underneath it
+    /// anyway. What a show's row needs to say is what it holds; what the
+    /// station's needs to say is who it is for.
+    var tagline: String?
     var patreon: URL?
     var payPal: URL?
     var bank: BankDetails?
@@ -78,6 +83,8 @@ extension SupportTarget {
     static let station = SupportTarget(
         id: "daskoimladja",
         name: String(localized: "Daško i Mlađa"),
+        artwork: "iTunesArtwork",
+        tagline: String(localized: "Radio i sve emisije"),
         patreon: URL(string: "https://www.patreon.com/daskoimladja"),
         payPal: URL(string: "https://www.paypal.com/paypalme/daskoimladja"),
         bank: BankDetails(
@@ -113,7 +120,10 @@ private extension Show {
             return SupportTarget.BankDetails(
                 bankName: "Raiffeisen banka",
                 holder: "Ivan Varnju",
-                account: "265000000101112710",
+                // Written out the way a bank does, in threes and thirteens
+                // and twos. The code carries the plain digits - that is for a
+                // machine, and this is not.
+                account: "265-0000001011127-10",
                 qrAsset: "img_qr_unutrasnja",
                 qrAmount: "500 RSD"
             )
@@ -157,7 +167,6 @@ struct SupportView: View {
 
                 intro
 
-                sectionHeader(station.name)
                 stationBlock
 
                 if !shows.isEmpty {
@@ -201,6 +210,10 @@ struct SupportView: View {
     /// Open, always, and first. Nothing about it is behind a tap.
     private var stationBlock: some View {
         VStack(spacing: 12) {
+            identityRow(station, isOpen: nil)
+                .accessibilityElement(children: .combine)
+                .padding(.bottom, 2)
+
             if let url = station.patreon {
                 Link(destination: url) {
                     donationCard(
@@ -244,34 +257,9 @@ struct SupportView: View {
                     if isOpen { opened.remove(target.id) } else { opened.insert(target.id) }
                 }
             } label: {
-                HStack(spacing: 14) {
-                    if let artwork = target.artwork {
-                        Image(artwork)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 44, height: 44)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: target.name)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundColor(Color("primaryText"))
-                            .lineLimit(1)
-                        Text(verbatim: target.waysOfPaying)
-                            .font(.caption)
-                            .foregroundColor(Color("secondaryText"))
-                    }
-
-                    Spacer(minLength: 0)
-
-                    Image(systemName: "chevron.down")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundColor(Color("secondaryText"))
-                        .rotationEffect(.degrees(isOpen ? 180 : 0))
-                }
-                .padding(12)
-                .contentShape(Rectangle())
+                identityRow(target, isOpen: isOpen)
+                    .padding(12)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Podrži \(target.name)")
@@ -318,6 +306,46 @@ struct SupportView: View {
     }
 
     // MARK: - Building blocks
+
+    /// Who this is: the same picture and name for the station as for a show.
+    ///
+    /// The station used to be a line of small capitals while every show had a
+    /// face - the one recipient this page is mostly about, and the only one
+    /// without a picture. `isOpen` is nil for the station, which does not fold
+    /// and so has no arrow to turn.
+    private func identityRow(_ target: SupportTarget, isOpen: Bool?) -> some View {
+        let isStation = isOpen == nil
+        let side: CGFloat = isStation ? 52 : 44
+
+        return HStack(spacing: 14) {
+            if let artwork = target.artwork {
+                Image(artwork)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: side, height: side)
+                    .clipShape(RoundedRectangle(cornerRadius: isStation ? 12 : 8, style: .continuous))
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(verbatim: target.name)
+                    .font(isStation ? .title3.weight(.semibold) : .subheadline.weight(.semibold))
+                    .foregroundColor(Color("primaryText"))
+                    .lineLimit(1)
+                Text(verbatim: target.tagline ?? target.waysOfPaying)
+                    .font(.caption)
+                    .foregroundColor(Color("secondaryText"))
+            }
+
+            Spacer(minLength: 0)
+
+            if let isOpen {
+                Image(systemName: "chevron.down")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundColor(Color("secondaryText"))
+                    .rotationEffect(.degrees(isOpen ? 180 : 0))
+            }
+        }
+    }
 
     /// The account and its code. In a card of its own under the station, and
     /// inside the row when a show is opened - the same thing either way, which
