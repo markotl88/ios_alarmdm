@@ -744,11 +744,17 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     // MARK: - Audio session
 
-    // AVAudioSession is an iOS idea. On the Mac there is no single session to
+    // AVAudioSession is an iOS idea. A Catalyst build has no single session to
     // claim, no category to declare and nothing to be interrupted by - the
     // system mixes applications itself. So the three calls that matter are
-    // wrapped here rather than guarded at each of their call sites, and on the
-    // Mac they simply do nothing.
+    // wrapped here rather than guarded at each of their call sites, and in a
+    // Catalyst build they simply do nothing.
+    //
+    // Which is not the same as "on the Mac". This target is not Catalyst -
+    // TARGETED_DEVICE_FAMILY is 1,2 - so what runs on a Mac is the iPhone
+    // binary under Designed for iPad, where this condition is false and every
+    // line below runs exactly as it does on a phone. Whatever the session
+    // does there, it is not skipped.
 
     private func configureAudioSession() {
         #if !targetEnvironment(macCatalyst)

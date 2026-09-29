@@ -9,8 +9,10 @@ import AVFoundation
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
-        // The Mac has no audio session to claim - the system mixes
-        // applications on its own, and AVAudioSession does not exist there.
+        // A Catalyst build has no audio session to claim - the system mixes
+        // applications on its own. This target is not Catalyst, so the Mac
+        // runs the phone binary under Designed for iPad and does take this
+        // line; the guard is for a Catalyst build, should there ever be one.
         //
         // The category says what this app is for, which is worth saying
         // before anything can be played. The session itself is not claimed
