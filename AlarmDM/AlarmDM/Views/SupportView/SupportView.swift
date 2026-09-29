@@ -402,12 +402,15 @@ struct SupportView: View {
     ///
     /// Unlike Patreon's it is not one shape, and flattening it to one colour
     /// would not be a recolouring but a different mark - the two letters are
-    /// told apart by being two blues. So it is not a template, and the disc
-    /// under it is white, which is where PayPal asks for it to be put and
-    /// what keeps a dark blue mark off a dark card.
+    /// told apart by being two blues. So it is not a template.
+    ///
+    /// The disc is ours, the same one Patreon's mark sits on, which costs
+    /// something: the lighter of the two letters is close enough in
+    /// brightness to this blue that it reads faintly. White under it is the
+    /// treatment PayPal asks for and the one that keeps both letters legible.
     private func paypalMark(diameter: CGFloat) -> some View {
         Circle()
-            .fill(Color.white)
+            .fill(Color("primaryLink"))
             .frame(width: diameter, height: diameter)
             .overlay {
                 Image("logo_paypal")
