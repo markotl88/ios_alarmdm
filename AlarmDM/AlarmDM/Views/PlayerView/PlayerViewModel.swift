@@ -360,6 +360,19 @@ final class PlayerViewModel: ObservableObject {
         }
     }
 
+    /// What the buttons on this screen are for.
+    ///
+    /// `mode` is what somebody chose here, and it is empty when nobody chose
+    /// anything here - which includes the case where the car started the app
+    /// and did the choosing. The phone's window is then built fresh with
+    /// nothing selected while the engine is already playing, and the mini
+    /// player shows the episode anyway, because the title and the artwork are
+    /// mirrored from the engine rather than taken from `mode`.
+    ///
+    /// So the screen showed the right episode and its play button did
+    /// nothing: the press reached togglePlayPause, found no source, and was
+    /// dropped. Falling back to what the engine holds is the whole fix - when
+    /// nobody here has chosen, whatever is playing is what these buttons mean.
     private var currentSource: PlaybackSource? {
         switch mode {
         case .radio:
@@ -369,7 +382,7 @@ final class PlayerViewModel: ObservableObject {
             guard let podcast else { return nil }
             return .podcast(podcast)
         case .none:
-            return nil
+            return engine.source
         }
     }
 

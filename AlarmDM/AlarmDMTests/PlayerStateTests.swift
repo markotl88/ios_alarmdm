@@ -492,6 +492,48 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertFalse(player.offersReplay)
     }
 
+    // MARK: - Started somewhere else
+
+    /// The car starts the app, so the phone's window is built with nothing
+    /// chosen in it while the engine is already playing. The bar shows the
+    /// episode anyway - its title comes from the engine, not from what was
+    /// chosen here - and that is exactly what made this hard to see: the
+    /// screen was right and only the button was dead.
+    func testPlayPauseWorksForAnEpisodeTheCarStarted() {
+        let player = makePlayer()
+        XCTAssertNil(player.mode, "nobody chose anything on the phone")
+
+        // What CarPlaySceneDelegate does: straight to the engine.
+        engine.play(.podcast(alarm), startingAt: 600)
+        flush()
+
+        XCTAssertEqual(player.title, alarm.title)
+        XCTAssertTrue(player.isPlaying)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(engine.playCalls.count, 1, "and it is not opened a second time")
+    }
+
+    /// The same for the radio, which is the other thing the car can start.
+    func testPlayPauseWorksForTheRadioTheCarStarted() throws {
+        let player = makePlayer()
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+
+        engine.play(.radio(url: stream), startingAt: nil)
+        flush()
+
+        XCTAssertTrue(player.isLive)
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+    }
+
     // MARK: - Helpers
 
     private func makePlayer(recorder: ListeningRecorder? = nil) -> PlayerViewModel {
