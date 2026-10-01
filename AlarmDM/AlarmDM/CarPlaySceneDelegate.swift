@@ -47,9 +47,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     ) {
         self.interfaceController = interfaceController
 
-        #if DEBUG
         AppLog.write(.carplay, "carplay connected")
-        #endif
 
         setupRootTemplates()
         observeEngine()
@@ -96,9 +94,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let interfaceController else { return }
 
         interfaceController.setRootTemplate(template, animated: true) { [weak self] done, error in
-            #if DEBUG
             AppLog.write(.carplay, "carplay root template: \(done ? "shown" : "refused")\(error.map { " - \($0.localizedDescription)" } ?? "")")
-            #endif
 
             guard !done, retriesLeft > 0 else { return }
 

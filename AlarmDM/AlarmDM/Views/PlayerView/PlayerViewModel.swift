@@ -541,9 +541,7 @@ final class PlayerViewModel: ObservableObject {
         // to what was listened to last, not to what was listened to last here.
         if let fromAccount = newerListenFromAccount(),
            fromAccount.id != playbackState.saved?.podcastId {
-            #if DEBUG
             AppLog.write(.player, "restoring from the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
-            #endif
             showIdle(fromAccount, at: fromAccount.resumePosition ?? 0)
             return
         }
@@ -567,9 +565,7 @@ final class PlayerViewModel: ObservableObject {
             position = saved.position
         }
 
-        #if DEBUG
         AppLog.write(.player, "restoring \(Int(position))s for \(saved.podcastId) - slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
-        #endif
 
         showIdle(podcast, at: position)
     }
@@ -632,9 +628,7 @@ final class PlayerViewModel: ObservableObject {
         if case .radio = mode { return }
         guard let fromAccount = newerListenFromAccount(), fromAccount.id != podcastId else { return }
 
-        #if DEBUG
         AppLog.write(.player, "following the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
-        #endif
         // A paused episode still loaded here is let go first, so the lock
         // screen does not go on offering the one that was left. What it got
         // to is already written down, and letting go does not write it again.
@@ -680,6 +674,8 @@ final class PlayerViewModel: ObservableObject {
         guard let syncedAt = podcast.playedAt, syncedAt > lastSaidHere else { return }
         guard let synced = podcast.hasReachedEnd ? podcast.playedPosition : podcast.resumePosition else { return }
         guard abs(synced - currentTime) > 1 else { return }
+
+        AppLog.write(.player, "adopting \(Int(synced))s from the account for \(podcast.title), was at \(Int(currentTime))s")
 
         if engineHolds(podcast.id) {
             engine.seek(to: synced)

@@ -321,6 +321,13 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             return
         }
 
+        // Every episode that starts from somewhere, and where that was. An
+        // episode reported as having started over leaves exactly one line
+        // here, and it is the only place that can say who asked for it: a
+        // carry-on row in the car, a bookmark, a restore, a rebuild after
+        // another app took the session.
+        AppLog.write(.player, "opening \(source.title) at \(Int(pendingSeek ?? 0))s")
+
         teardownPlayer()
 
         let item = AVPlayerItem(url: url)
@@ -614,9 +621,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 guard let self else { return }
                 if item.status == .failed {
                     self.lastErrorMessage = item.error?.localizedDescription ?? String(localized: "Reprodukcija nije uspela.")
-                    #if DEBUG
                     AppLog.write(.player, "item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
-                    #endif
                 }
                 if let itemDuration = self.player?.currentItem?.duration,
                    itemDuration.isNumeric, !itemDuration.isIndefinite {
@@ -837,9 +842,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
 
-            #if DEBUG
             AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(self.currentTime), item: \(String(describing: self.player?.currentItem?.status.rawValue))")
-            #endif
 
             switch type {
             case .began:
