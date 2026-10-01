@@ -154,7 +154,6 @@
       }
     },
     "Biće obrisane zabeleške, omiljene epizode, napredak slušanja, preuzete epizode i podešavanja, uključujući podatke u iCloudu koji se sinhronizuju sa ostalim uređajima. Obriši podatke na svim uređajima pre nego što ponovo pokreneš aplikaciju na bilo kom od njih. U suprotnom, uređaj na kom su podaci ostali može ih ponovo poslati u iCloud." : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -470,7 +469,6 @@
       }
     },
     "Izvezi log" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -561,7 +559,6 @@
       }
     },
     "Kasnije" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -832,7 +829,6 @@
       }
     },
     "Obrisano" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -843,7 +839,6 @@
       }
     },
     "Obrisati baš sve?" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -904,7 +899,6 @@
       }
     },
     "Obriši sve podatke, uključujući iCloud" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1145,7 +1139,6 @@
       }
     },
     "Pošalji log na mejl" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1724,7 +1717,6 @@
       }
     },
     "Zatvori aplikaciju" : {
-      "extractionState" : "stale",
       "localizations" : {
         "en" : {
           "stringUnit" : {
