@@ -238,23 +238,44 @@ final class PlayerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// When playback is started elsewhere (CarPlay), adopt it as this view model's selection.
+    /// When playback is started elsewhere - CarPlay, the lock screen - adopt
+    /// it as this view model's selection. Including what kind of thing it is.
+    ///
+    /// Adopting the episode but not the kind left `mode` describing something
+    /// that is no longer loaded, and `mode` is what the buttons read. A phone
+    /// that had chosen an episode, with the car then starting the radio, was
+    /// left holding `.podcast` with no podcast behind it and dropped every
+    /// press. The other way round was worse: it kept `.radio`, and a press
+    /// meant to pause the episode that was playing started the radio instead.
+    ///
+    /// Only when it has actually changed. A press on this screen sets `mode`
+    /// first and the engine follows, and the announcement that comes back
+    /// must not overwrite the choice that caused it.
     private func syncSelection(with source: PlaybackSource) {
         switch source {
         case .radio(let url):
-            if case .radio = mode { return }
             onlineStream = url
+            if case .radio = mode { return }
             podcastId = nil
             podcast = nil
             isDownloaded = false
+            mode = .radio(stream: url)
+
         case .podcast(let playing):
-            if let podcastId, podcastId == playing.id { return }
-            self.podcastId = playing.id
-            self.podcast = storedPodcast(with: playing.id) ?? playing
-            self.onlineStream = nil
-            self.isDownloaded = self.podcast?.isDownloaded ?? false
-            self.isFavorite = self.podcast?.isFavorite ?? false
-            self.showDeleteButton = self.isDownloaded
+            if podcastId != playing.id {
+                self.podcastId = playing.id
+                self.podcast = storedPodcast(with: playing.id) ?? playing
+                self.onlineStream = nil
+                self.isDownloaded = self.podcast?.isDownloaded ?? false
+                self.isFavorite = self.podcast?.isFavorite ?? false
+                self.showDeleteButton = self.isDownloaded
+            }
+            // True only for `.podcast` carrying this very episode, which is
+            // what makes this the test for a mode that has gone stale - it
+            // catches an empty one and a radio one alike.
+            if !engineIsAlreadyOn(mode) {
+                mode = .podcast(podcast: podcast ?? playing)
+            }
         }
     }
 
@@ -371,8 +392,10 @@ final class PlayerViewModel: ObservableObject {
     ///
     /// So the screen showed the right episode and its play button did
     /// nothing: the press reached togglePlayPause, found no source, and was
-    /// dropped. Falling back to what the engine holds is the whole fix - when
-    /// nobody here has chosen, whatever is playing is what these buttons mean.
+    /// dropped. `syncSelection` fills `mode` in now, the moment the engine
+    /// says what it is playing; this is what answers for the instant before
+    /// that announcement arrives, and it says the same thing - when nobody
+    /// here has chosen, whatever is playing is what these buttons mean.
     private var currentSource: PlaybackSource? {
         switch mode {
         case .radio:

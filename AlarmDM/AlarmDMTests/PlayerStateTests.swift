@@ -534,6 +534,74 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertFalse(player.isPlaying)
     }
 
+    /// The phone had chosen an episode and the car then started the radio.
+    /// The screen followed, but what the buttons read did not: `.podcast`
+    /// with no podcast left behind it, and every press dropped.
+    func testPlayPauseFollowsTheCarFromAnEpisodeToTheRadio() throws {
+        let player = makePlayer()
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+
+        player.mode = .podcast(podcast: alarm)
+        flush()
+
+        engine.play(.radio(url: stream), startingAt: nil)
+        flush()
+
+        XCTAssertTrue(player.isLive)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(engine.playCalls.count, 1, "nothing was opened again")
+    }
+
+    /// The same the other way round, which was the worse of the two: the
+    /// press did not merely do nothing, it started the radio over an episode
+    /// that was playing.
+    func testPlayPauseFollowsTheCarFromTheRadioToAnEpisode() throws {
+        let player = makePlayer()
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+
+        player.mode = .radio(stream: stream)
+        flush()
+
+        engine.play(.podcast(alarm), startingAt: 600)
+        flush()
+
+        XCTAssertFalse(player.isLive)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(engine.playCalls.count, 1, "the radio was not started instead")
+        XCTAssertEqual(player.currentTime, 600, accuracy: 1)
+    }
+
+    /// Pausing is half the job; the press after it has to start the same
+    /// thing again rather than open anything.
+    func testPausingAndResumingWhatTheCarStartedStaysOnIt() {
+        let player = makePlayer()
+
+        engine.play(.podcast(alarm), startingAt: 600)
+        flush()
+
+        player.togglePlayPause()
+        flush()
+        XCTAssertFalse(player.isPlaying)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertTrue(player.isPlaying)
+        XCTAssertEqual(engine.toggleCount, 2)
+        XCTAssertEqual(engine.playCalls.count, 1)
+        XCTAssertEqual(player.currentTime, 600, accuracy: 1)
+    }
+
     // MARK: - Helpers
 
     private func makePlayer(recorder: ListeningRecorder? = nil) -> PlayerViewModel {
