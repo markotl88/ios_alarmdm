@@ -501,6 +501,91 @@ final class StoreChangeTests: XCTestCase {
     }
 }
 
+// MARK: - Two records of one listen
+
+/// The episode's own record syncs and can fail to be written; the slot beside
+/// it belongs to this device and does not. The car reads only the first,
+/// which is how a listen the phone remembers can start over in the car.
+final class ResumePositionTests: XCTestCase {
+
+    private var directory: URL!
+    private var defaults: UserDefaults!
+    private var slot: PlaybackStateStore!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ResumePositionTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        defaults = UserDefaults(suiteName: "ResumePositionTests")
+        defaults.removePersistentDomain(forName: "ResumePositionTests")
+        slot = PlaybackStateStore(defaults: defaults)
+    }
+
+    override func tearDownWithError() throws {
+        defaults.removePersistentDomain(forName: "ResumePositionTests")
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    /// The case the reports describe: the write to the store did not land,
+    /// the one beside it did.
+    func testTheSlotAnswersWhenTheEpisodeRecordWasNeverWritten() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: episode.id, position: 1_500))
+
+        XCTAssertEqual(repository.resumePosition(for: episode.id) ?? 0, 1_497, accuracy: 0.5)
+    }
+
+    /// The ordinary way round, and the one that must not regress: the
+    /// episode's record is newer, including when it arrived from another
+    /// device, and the slot is this device's stale opinion.
+    func testTheEpisodeRecordWinsWhenItIsTheNewerOfTheTwo() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: episode.id,
+                                position: 600,
+                                savedAt: Date().addingTimeInterval(-600)))
+        repository.recordProgress(position: 5_400, hasFinished: false, for: episode.id)
+
+        XCTAssertEqual(repository.resumePosition(for: episode.id) ?? 0, 5_397, accuracy: 0.5)
+    }
+
+    /// Three hours less twenty seconds of credits is where an episode counts
+    /// as heard, and heard means it starts over. The slot does not get to
+    /// undo that.
+    func testAnEpisodeHeardThroughStillStartsOverWhateverTheSlotSays() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: episode.id, position: 10_790))
+
+        XCTAssertNil(repository.resumePosition(for: episode.id))
+    }
+
+    /// The slot holds one episode - whatever this device played last. It says
+    /// nothing about any other.
+    func testASlotAboutAnotherEpisodeIsIgnored() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        let other = makeEpisode(title: "Emigracija")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: other.id, position: 1_500))
+
+        XCTAssertNil(repository.resumePosition(for: episode.id))
+    }
+
+    private func makeRepository() -> PodcastRepository {
+        PodcastRepository(database: AppDatabase(storeDirectory: directory), playbackState: slot)
+    }
+}
+
 // MARK: - What iCloud will accept
 
 /// iCloud refuses a model with a unique constraint, or with a required value
