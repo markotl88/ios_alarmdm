@@ -238,23 +238,44 @@ final class PlayerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    /// When playback is started elsewhere (CarPlay), adopt it as this view model's selection.
+    /// When playback is started elsewhere - CarPlay, the lock screen - adopt
+    /// it as this view model's selection. Including what kind of thing it is.
+    ///
+    /// Adopting the episode but not the kind left `mode` describing something
+    /// that is no longer loaded, and `mode` is what the buttons read. A phone
+    /// that had chosen an episode, with the car then starting the radio, was
+    /// left holding `.podcast` with no podcast behind it and dropped every
+    /// press. The other way round was worse: it kept `.radio`, and a press
+    /// meant to pause the episode that was playing started the radio instead.
+    ///
+    /// Only when it has actually changed. A press on this screen sets `mode`
+    /// first and the engine follows, and the announcement that comes back
+    /// must not overwrite the choice that caused it.
     private func syncSelection(with source: PlaybackSource) {
         switch source {
         case .radio(let url):
-            if case .radio = mode { return }
             onlineStream = url
+            if case .radio = mode { return }
             podcastId = nil
             podcast = nil
             isDownloaded = false
+            mode = .radio(stream: url)
+
         case .podcast(let playing):
-            if let podcastId, podcastId == playing.id { return }
-            self.podcastId = playing.id
-            self.podcast = storedPodcast(with: playing.id) ?? playing
-            self.onlineStream = nil
-            self.isDownloaded = self.podcast?.isDownloaded ?? false
-            self.isFavorite = self.podcast?.isFavorite ?? false
-            self.showDeleteButton = self.isDownloaded
+            if podcastId != playing.id {
+                self.podcastId = playing.id
+                self.podcast = storedPodcast(with: playing.id) ?? playing
+                self.onlineStream = nil
+                self.isDownloaded = self.podcast?.isDownloaded ?? false
+                self.isFavorite = self.podcast?.isFavorite ?? false
+                self.showDeleteButton = self.isDownloaded
+            }
+            // True only for `.podcast` carrying this very episode, which is
+            // what makes this the test for a mode that has gone stale - it
+            // catches an empty one and a radio one alike.
+            if !engineIsAlreadyOn(mode) {
+                mode = .podcast(podcast: podcast ?? playing)
+            }
         }
     }
 
@@ -360,6 +381,21 @@ final class PlayerViewModel: ObservableObject {
         }
     }
 
+    /// What the buttons on this screen are for.
+    ///
+    /// `mode` is what somebody chose here, and it is empty when nobody chose
+    /// anything here - which includes the case where the car started the app
+    /// and did the choosing. The phone's window is then built fresh with
+    /// nothing selected while the engine is already playing, and the mini
+    /// player shows the episode anyway, because the title and the artwork are
+    /// mirrored from the engine rather than taken from `mode`.
+    ///
+    /// So the screen showed the right episode and its play button did
+    /// nothing: the press reached togglePlayPause, found no source, and was
+    /// dropped. `syncSelection` fills `mode` in now, the moment the engine
+    /// says what it is playing; this is what answers for the instant before
+    /// that announcement arrives, and it says the same thing - when nobody
+    /// here has chosen, whatever is playing is what these buttons mean.
     private var currentSource: PlaybackSource? {
         switch mode {
         case .radio:
@@ -369,7 +405,7 @@ final class PlayerViewModel: ObservableObject {
             guard let podcast else { return nil }
             return .podcast(podcast)
         case .none:
-            return nil
+            return engine.source
         }
     }
 
@@ -528,9 +564,7 @@ final class PlayerViewModel: ObservableObject {
         // to what was listened to last, not to what was listened to last here.
         if let fromAccount = newerListenFromAccount(),
            fromAccount.id != playbackState.saved?.podcastId {
-            #if DEBUG
             AppLog.write(.player, "restoring from the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
-            #endif
             showIdle(fromAccount, at: fromAccount.resumePosition ?? 0)
             return
         }
@@ -554,9 +588,7 @@ final class PlayerViewModel: ObservableObject {
             position = saved.position
         }
 
-        #if DEBUG
         AppLog.write(.player, "restoring \(Int(position))s for \(saved.podcastId) - slot \(Int(saved.position))s at \(saved.savedAt), synced \(Int(podcast.playedPosition))s at \(String(describing: podcast.playedAt))")
-        #endif
 
         showIdle(podcast, at: position)
     }
@@ -619,9 +651,7 @@ final class PlayerViewModel: ObservableObject {
         if case .radio = mode { return }
         guard let fromAccount = newerListenFromAccount(), fromAccount.id != podcastId else { return }
 
-        #if DEBUG
         AppLog.write(.player, "following the account: \(fromAccount.title) at \(Int(fromAccount.playedPosition))s")
-        #endif
         // A paused episode still loaded here is let go first, so the lock
         // screen does not go on offering the one that was left. What it got
         // to is already written down, and letting go does not write it again.
@@ -667,6 +697,8 @@ final class PlayerViewModel: ObservableObject {
         guard let syncedAt = podcast.playedAt, syncedAt > lastSaidHere else { return }
         guard let synced = podcast.hasReachedEnd ? podcast.playedPosition : podcast.resumePosition else { return }
         guard abs(synced - currentTime) > 1 else { return }
+
+        AppLog.write(.player, "adopting \(Int(synced))s from the account for \(podcast.title), was at \(Int(currentTime))s")
 
         if engineHolds(podcast.id) {
             engine.seek(to: synced)

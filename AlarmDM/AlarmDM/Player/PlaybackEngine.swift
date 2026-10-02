@@ -249,6 +249,10 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// Distinguishes a seek that finished from one a newer seek replaced, so
     /// the older one cannot declare the newer one over.
     private var seekGeneration = 0
+    // Retained after a failed seek so Play retries the intended position.
+    private var seekTarget: TimeInterval?
+    // A newer seek inherits the continuation, but may run it only on success.
+    private var seekCompletions: [() -> Void] = []
     /// Bumped every time somebody asks for the audio to stop.
     ///
     /// A seek that was told to start playing when it lands checks this on the
@@ -257,6 +261,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// player - and the completion would start the audio again under someone
     /// who had just stopped it.
     private var pauseGeneration = 0
+    private var interruptionResumeIntent: Int?
     private var metadataOutput: AVPlayerItemMetadataOutput?
     /// How long a song announced by the station stands on its own.
     ///
@@ -280,6 +285,16 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         observeInterruptions()
         configureRemoteCommands()
     }
+
+    #if DEBUG
+    /// Controlled AVPlayer for engine regression tests, without remote handlers.
+    init(testPlayer: AVPlayer, source: PlaybackSource) {
+        self.fileService = FileService()
+        super.init()
+        self.player = testPlayer
+        self.source = source
+    }
+    #endif
 
     // MARK: - Public API
 
@@ -321,6 +336,13 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             return
         }
 
+        // Every episode that starts from somewhere, and where that was. An
+        // episode reported as having started over leaves exactly one line
+        // here, and it is the only place that can say who asked for it: a
+        // carry-on row in the car, a bookmark, a restore, a rebuild after
+        // another app took the session.
+        AppLog.write(.player, "opening \(source.title) at \(Int(pendingSeek ?? 0))s")
+
         teardownPlayer()
 
         let item = AVPlayerItem(url: url)
@@ -361,7 +383,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     func pause() {
         pauseGeneration += 1
         player?.pause()
-        updateNowPlayingPlaybackState()
+        // Publish synchronously: progress must be saved before suspension.
+        if pendingSeek == nil, seekTarget == nil,
+           let time = player?.currentTime().seconds, time.isFinite, time > 0 {
+            currentTime = time
+        }
+        isPlaying = false
+        isBuffering = false
+        updateNowPlayingInfo()
     }
 
     func resume() {
@@ -379,6 +408,21 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 resumeAt = nil
             }
             play(source, startingAt: resumeAt)
+            return
+        }
+
+        if pendingSeek != nil {
+            playAfterPendingSeek = true
+            pendingPlayIntent = pauseGeneration
+            return
+        }
+        if let target = seekTarget {
+            let intent = pauseGeneration
+            seek(to: target) { [weak self] in
+                guard let self, intent == self.pauseGeneration else { return }
+                self.startPlaying()
+                self.updateNowPlayingPlaybackState()
+            }
             return
         }
 
@@ -438,15 +482,22 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         deactivateSession()
     }
 
-    /// `completion` runs once this seek is over and no newer one has replaced
-    /// it - which is how an episode opened at a position starts playing only
-    /// after it has arrived there.
+    /// Continuations run only after the latest seek succeeds. A superseding
+    /// seek inherits them; failure preserves the target for the next Play.
     func seek(to time: TimeInterval, completion: (() -> Void)? = nil) {
         guard !isLive, let player else {
             completion?()
             return
         }
 
+        guard time.isFinite else { return }
+        seekTarget = max(0, time)
+        if let completion { seekCompletions.append(completion) }
+        if pendingSeek != nil {
+            pendingSeek = max(0, time)
+            currentTime = max(0, time)
+            return
+        }
         let target = CMTime(seconds: max(0, time), preferredTimescale: 600)
         // A second either way rather than an exact frame. Zero tolerance makes
         // AVPlayer land precisely, which over a stream means waiting for data
@@ -479,25 +530,22 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                 // file. Nothing it was asked to do afterwards applies.
                 guard let self, let seekingPlayer, self.player === seekingPlayer else { return }
 
-                // Only the newest seek owns the state the seeks left behind.
-                // An older one clearing this would open the stale-position
-                // guard while a newer seek is still in flight, which is the
-                // scrubber snapping back mid-drag.
-                if generation == self.seekGeneration {
-                    self.isSeeking = false
-                    if finished {
-                        self.updateNowPlayingInfo()
-                    }
+                guard generation == self.seekGeneration else { return }
+                self.isSeeking = false
+                let continuations = self.seekCompletions
+                self.seekCompletions.removeAll()
+                guard finished else {
+                    // Do not expose the old/zero player position or start there.
+                    self.player?.pause()
+                    self.isPlaying = false
+                    self.isBuffering = false
+                    self.updateNowPlayingInfo()
+                    AppLog.write(.player, "seek failed at target \(target.seconds); preserving position for retry")
+                    return
                 }
-
-                // Control comes back whichever seek was last, and outside
-                // that guard on purpose. This is how an episode opened at a
-                // position starts playing, and a newer seek replacing the
-                // target does not make the press of play obsolete - it only
-                // moves where it starts. Dropping it here left a tap on skip
-                // during a stream's first second with a loaded, silent
-                // player.
-                completion?()
+                self.seekTarget = nil
+                self.updateNowPlayingInfo()
+                continuations.forEach { $0() }
             }
         }
     }
@@ -602,7 +650,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     private func attachObservers(to player: AVPlayer, item: AVPlayerItem) {
         timeControlObservation = player.observe(\.timeControlStatus, options: [.initial, .new]) { [weak self] player, _ in
             DispatchQueue.main.async {
-                guard let self else { return }
+                guard let self, self.player === player else { return }
                 self.isPlaying = player.timeControlStatus == .playing
                 self.isBuffering = player.timeControlStatus == .waitingToPlayAtSpecifiedRate
                 self.updateNowPlayingPlaybackState()
@@ -611,12 +659,10 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
         itemStatusObservation = item.observe(\.status, options: [.new]) { [weak self] item, _ in
             DispatchQueue.main.async {
-                guard let self else { return }
+                guard let self, self.player?.currentItem === item else { return }
                 if item.status == .failed {
                     self.lastErrorMessage = item.error?.localizedDescription ?? String(localized: "Reprodukcija nije uspela.")
-                    #if DEBUG
                     AppLog.write(.player, "item failed at \(self.currentTime): \(item.error?.localizedDescription ?? "-")")
-                    #endif
                 }
                 if let itemDuration = self.player?.currentItem?.duration,
                    itemDuration.isNumeric, !itemDuration.isIndefinite {
@@ -629,7 +675,8 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                     let intent = self.pendingPlayIntent
                     self.playAfterPendingSeek = false
 
-                    self.seek(to: target) {
+                    self.seek(to: target) { [weak self] in
+                        guard let self else { return }
                         // Only now. Playing first and seeking afterwards is
                         // what let the opening seconds of an episode out of
                         // the speaker before it jumped to where it was left.
@@ -647,15 +694,16 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         }
 
         let interval = CMTime(seconds: 0.5, preferredTimescale: 600)
-        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self] time in
-            guard let self else { return }
+        timeObserverToken = player.addPeriodicTimeObserver(forInterval: interval, queue: .main) { [weak self, weak player] time in
+            guard let self, let player, self.player === player else { return }
             // Duration still updates: only the position is stale mid-seek.
             //
             // A non-finite time is not a position of zero, it is no position at
             // all - what a player reports once its item has failed or been torn
             // down. Writing it as zero threw away the one number needed to carry
             // on from where the interruption happened.
-            if !self.isSeeking, time.seconds.isFinite {
+            if !self.isSeeking, self.pendingSeek == nil, self.seekTarget == nil,
+               time.seconds.isFinite {
                 self.currentTime = time.seconds
             }
             #if DEBUG
@@ -727,6 +775,8 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         // Invalidate completions already queued by AVFoundation, even if no
         // subsequent seek occurs (stop or switching to live radio).
         seekGeneration += 1
+        seekTarget = nil
+        seekCompletions.removeAll()
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
             timeObserverToken = nil
@@ -817,34 +867,71 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             name: AVAudioSession.interruptionNotification,
             object: AVAudioSession.sharedInstance()
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleRouteChange(_:)),
+            name: AVAudioSession.routeChangeNotification,
+            object: AVAudioSession.sharedInstance()
+        )
         #endif
     }
 
     #if !targetEnvironment(macCatalyst)
-    @objc private func handleInterruption(_ notification: Notification) {
+    @objc func handleRouteChange(_ notification: Notification) {
+        guard let raw = notification.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt,
+              let reason = AVAudioSession.RouteChangeReason(rawValue: raw) else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.hasContent else { return }
+            AppLog.write(.player, "audio route changed (\(raw)) at \(self.currentTime)")
+            if reason == .oldDeviceUnavailable {
+                // Keep the episode and Now Playing metadata. Do not deactivate
+                // the session or start sound on the speaker after unplugging.
+                self.pause()
+            }
+        }
+    }
+
+    @objc func handleInterruption(_ notification: Notification) {
         guard let info = notification.userInfo,
               let rawType = info[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: rawType) else { return }
 
-        #if DEBUG
-        AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(currentTime), item: \(String(describing: player?.currentItem?.status.rawValue))")
-        #endif
+        let options = (info[AVAudioSessionInterruptionOptionKey] as? UInt)
+            .map(AVAudioSession.InterruptionOptions.init(rawValue:))
 
-        switch type {
-        case .began:
-            pause()
-        case .ended:
-            // Nothing is claimed here when the system does not ask for the
-            // listen back: taking the session at the end of every
-            // interruption would cut off whatever the other application
-            // started playing in the meantime. resume() claims it, and now
-            // says so when it cannot.
-            guard let rawOptions = info[AVAudioSessionInterruptionOptionKey] as? UInt else { return }
-            if AVAudioSession.InterruptionOptions(rawValue: rawOptions).contains(.shouldResume) {
-                resume()
+        // This arrives on whichever thread the audio system happens to be on.
+        // Stopping the player from there is safe; the generation counter that
+        // carries the intent to play is not, and it is the one thing every
+        // resume after this is decided by. A turn of the runloop costs
+        // nothing here - the system has already silenced us.
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+
+            AppLog.write(.player, "interruption \(type == .began ? "began" : "ended") at \(self.currentTime), item: \(String(describing: self.player?.currentItem?.status.rawValue))")
+
+            switch type {
+            case .began:
+                let shouldResume = self.isPlaying || self.isBuffering ||
+                    (self.player?.rate ?? 0) != 0 ||
+                    self.playAfterPendingSeek && self.pendingSeek != nil &&
+                    self.pendingPlayIntent == self.pauseGeneration
+                self.pause()
+                self.interruptionResumeIntent = shouldResume ? self.pauseGeneration : nil
+            case .ended:
+                // Nothing is claimed here when the system does not ask for
+                // the listen back: taking the session at the end of every
+                // interruption would cut off whatever the other application
+                // started playing in the meantime. resume() claims it, and
+                // says so when it cannot.
+                let intent = self.interruptionResumeIntent
+                self.interruptionResumeIntent = nil
+                if options?.contains(.shouldResume) == true,
+                   intent == self.pauseGeneration {
+                    self.resume()
+                }
+            @unknown default:
+                break
             }
-        @unknown default:
-            break
         }
     }
     #endif
