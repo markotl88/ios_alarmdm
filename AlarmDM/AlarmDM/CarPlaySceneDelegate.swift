@@ -31,6 +31,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// template instead would throw away wherever the person had navigated
     /// to, which in a car is worse than a stale row.
     private var radioTemplate: CPListTemplate?
+    private var episodeTemplate: CPListTemplate?
+    private var episodeShow: Show?
     private var engine: PlaybackEngine { .shared }
 
     /// The bookmark button briefly fills in after a capture. CPNowPlayingButton
@@ -74,6 +76,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.continueItem = nil
         self.continuePodcast = nil
         self.radioTemplate = nil
+        self.episodeTemplate = nil
+        self.episodeShow = nil
     }
 
     // MARK: - Templates
@@ -203,23 +207,24 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func pushEpisodes(for show: Show) {
-        let episodes = PodcastRepository.shared.latestPodcasts(limit: 100).filter { $0.show == show }
+        let template = CPListTemplate(title: show.displayName, sections: episodeSections(for: show))
+        episodeTemplate = template
+        episodeShow = show
+        interfaceController?.pushTemplate(template, animated: true, completion: nil)
+    }
 
-        let template: CPListTemplate
+    /// Used both when opening a show and when its feed arrives afterwards.
+    private func episodeSections(for show: Show) -> [CPListSection] {
+        let episodes = PodcastRepository.shared.latestPodcasts(limit: 100).filter { $0.show == show }
         if episodes.isEmpty {
             let empty = CPListItem(text: String(localized: "Nema učitanih epizoda"),
                                    detailText: String(localized: "Otvori aplikaciju na telefonu da osvežiš listu."))
-            template = CPListTemplate(title: show.displayName, sections: [CPListSection(items: [empty])])
-        } else {
-            template = CPListTemplate(
-                title: show.displayName,
-                sections: [CPListSection(items: episodes.map {
-                    listItem(for: $0, marksCut: episodes.showsInBothCuts.contains($0.show))
-                })]
-            )
+            return [CPListSection(items: [empty])]
         }
-
-        interfaceController?.pushTemplate(template, animated: true, completion: nil)
+        let bothCuts = episodes.showsInBothCuts
+        return [CPListSection(items: episodes.map {
+            listItem(for: $0, marksCut: bothCuts.contains($0.show))
+        })]
     }
 
     /// One tap plays the episode - no intermediate menu. CarPlay guidelines want
@@ -372,6 +377,9 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             .sink { [weak self] in
                 guard let self else { return }
                 self.radioTemplate?.updateSections(self.radioSections())
+                if let show = self.episodeShow {
+                    self.episodeTemplate?.updateSections(self.episodeSections(for: show))
+                }
             }
             .store(in: &cancellables)
     }
