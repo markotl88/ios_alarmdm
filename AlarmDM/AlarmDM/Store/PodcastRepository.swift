@@ -7,6 +7,7 @@
 //  preserved downloads - live in a single place.
 //
 
+import Combine
 import Foundation
 import SwiftData
 
@@ -35,6 +36,22 @@ final class PodcastRepository: EpisodeLookup {
     /// as the episode's record and read here as a second opinion - see
     /// resumePosition.
     private let playbackState: PlaybackStateStore
+
+    /// Fires when a feed refresh has brought in an episode this device did
+    /// not have.
+    ///
+    /// The listen syncs and the feed does not: `EpisodeStateEntity` comes
+    /// down from iCloud, `PodcastEntity` is fetched from the API by each
+    /// device for itself. So a listen on one device can arrive here before
+    /// the episode it is about, and until the episode lands there is nothing
+    /// to attach it to - `lastListened` has to skip it, because without the
+    /// feed's copy there is no title, no length and above all no URL to play.
+    ///
+    /// The moment the feed lands is the moment that listen becomes readable,
+    /// and nobody was watching for it. It is the same moment a bookmark
+    /// caught off the live radio finds its episode - see
+    /// RadioViewModel.refresh.
+    let didSaveEpisodes = PassthroughSubject<Void, Never>()
 
     init(database: AppDatabase = .shared, playbackState: PlaybackStateStore = .shared) {
         self.database = database
@@ -228,15 +245,21 @@ final class PodcastRepository: EpisodeLookup {
             uniquingKeysWith: { first, _ in first }
         )
 
+        var arrived = false
         for podcast in podcasts {
             if let entity = existing[podcast.id] {
                 entity.apply(podcast)
             } else {
                 context.insert(PodcastEntity(from: podcast))
+                arrived = true
             }
         }
 
         commit("saving episodes")
+
+        // Only for episodes that were not here before. Every pull to refresh
+        // rewrites the same thirty rows, and that is not news.
+        if arrived { didSaveEpisodes.send() }
     }
 
     func save(_ podcast: Podcast) {

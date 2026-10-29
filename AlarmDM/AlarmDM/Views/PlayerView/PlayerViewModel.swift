@@ -122,12 +122,22 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Init
 
+    /// The two ways something this player should know about can arrive: the
+    /// store hearing from iCloud, and the feed bringing in an episode this
+    /// device did not have. The second one matters because the listen syncs
+    /// and the feed does not - see PodcastRepository.didSaveEpisodes.
+    static var storeNews: AnyPublisher<Void, Never> {
+        AppDatabase.shared.didChangeRemotely
+            .merge(with: PodcastRepository.shared.didSaveEpisodes)
+            .eraseToAnyPublisher()
+    }
+
     init(mode: PlayerMode? = nil,
          engine: PlaybackEngineType = PlaybackEngine.shared,
          playbackState: PlaybackStateStore = .shared,
          episodes: EpisodeLookup = PodcastRepository.shared,
          recorder: ListeningRecorder = .shared,
-         storeChanges: AnyPublisher<Void, Never> = AppDatabase.shared.didChangeRemotely) {
+         storeChanges: AnyPublisher<Void, Never> = PlayerViewModel.storeNews) {
         self.engine = engine
         self.playbackState = playbackState
         self.episodes = episodes

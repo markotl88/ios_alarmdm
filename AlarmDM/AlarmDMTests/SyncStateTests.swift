@@ -586,6 +586,72 @@ final class ResumePositionTests: XCTestCase {
     }
 }
 
+// MARK: - When the feed catches up with the listen
+
+/// The listen syncs and the feed does not: the episode's own record comes
+/// down from iCloud, while the list of episodes is fetched from the API by
+/// each device for itself. So a listen made on the Mac can be in the phone's
+/// store before the episode it is about, and until the episode lands there is
+/// nothing to attach it to - no title, no length, and no URL to play.
+///
+/// The moment it lands is the moment that listen becomes readable, and it has
+/// to be announced or nobody finds out until the next launch.
+final class FeedArrivalTests: XCTestCase {
+
+    private var directory: URL!
+    private var cancellables: Set<AnyCancellable> = []
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FeedArrivalTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        cancellables.removeAll()
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    func testAnEpisodeThisDeviceDidNotHaveIsAnnounced() {
+        let repository = PodcastRepository(database: AppDatabase(storeDirectory: directory))
+
+        var announcements = 0
+        repository.didSaveEpisodes.sink { announcements += 1 }.store(in: &cancellables)
+
+        repository.save([makeEpisode(title: "Alarm")])
+
+        XCTAssertEqual(announcements, 1)
+    }
+
+    /// Every pull to refresh rewrites the same rows, and that is not news.
+    func testRefreshingTheSameEpisodesAnnouncesNothing() {
+        let repository = PodcastRepository(database: AppDatabase(storeDirectory: directory))
+        let episode = makeEpisode(title: "Alarm")
+        repository.save([episode])
+
+        var announcements = 0
+        repository.didSaveEpisodes.sink { announcements += 1 }.store(in: &cancellables)
+
+        repository.save([episode])
+
+        XCTAssertEqual(announcements, 0)
+    }
+
+    /// A page with one new episode among thirty known ones is news.
+    func testOneNewEpisodeAmongKnownOnesIsAnnounced() {
+        let repository = PodcastRepository(database: AppDatabase(storeDirectory: directory))
+        let known = makeEpisode(title: "Alarm")
+        repository.save([known])
+
+        var announcements = 0
+        repository.didSaveEpisodes.sink { announcements += 1 }.store(in: &cancellables)
+
+        repository.save([known, makeEpisode(title: "Emigracija")])
+
+        XCTAssertEqual(announcements, 1)
+    }
+}
+
 // MARK: - What iCloud will accept
 
 /// iCloud refuses a model with a unique constraint, or with a required value

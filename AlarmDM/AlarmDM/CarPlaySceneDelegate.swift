@@ -51,8 +51,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
         setupRootTemplates()
         observeEngine()
+        observeStore()
         CPNowPlayingTemplate.shared.add(self)
         refreshNowPlayingButtons()
+
+        // Nobody pulled this list down - in a car there is no list to pull.
+        // What another device has said, and what the feed has published since
+        // this phone last looked, are asked for here or not at all.
+        PodcastRepository.shared.refreshFromStore()
+        EpisodeLibrary.shared.refreshLatest()
     }
 
     func templateApplicationScene(
@@ -346,6 +353,27 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             self?.justBookmarked = false
             self?.refreshNowPlayingButtons()
         }
+    }
+
+    // MARK: - Store observation
+
+    /// Two things can change what belongs on this list after it has been
+    /// built, and neither of them is the engine: an episode arriving from the
+    /// feed, and a listen arriving from another device.
+    ///
+    /// They are one subscription because they are one question - what is
+    /// there to carry on with - and because the answer needs both halves. A
+    /// listen syncs and an episode does not, so the one that arrives second
+    /// is what makes the first readable.
+    private func observeStore() {
+        PodcastRepository.shared.didSaveEpisodes
+            .merge(with: AppDatabase.shared.didChangeRemotely)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.radioTemplate?.updateSections(self.radioSections())
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Engine observation
