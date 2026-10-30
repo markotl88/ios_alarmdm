@@ -107,6 +107,54 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(transport.currentTime().seconds, 120)
     }
 
+    /// The other side of the same guard: the account moving again while the
+    /// adopter's own seek is in the air.
+    ///
+    /// That news is refused, because from the engine's side an adoption looks
+    /// exactly like somebody pressing a bookmark - and nothing came back for
+    /// it afterwards, so the player sat at the position before last with no
+    /// reason ever to ask again.
+    func testTheAccountMovingAgainDuringAnAdoptionIsNotLost() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+
+        let adopter = ListeningAdopter(
+            engine: actual,
+            episodes: episodes,
+            playbackState: PlaybackStateStore(defaults: defaults),
+            recorder: ListeningRecorder(engine: actual,
+                                        progressStore: ProgressSpy(),
+                                        playbackState: PlaybackStateStore(defaults: defaults),
+                                        notifications: NotificationCenter()),
+            news: storeChanges.eraseToAnyPublisher()
+        )
+        adopter.start()
+        adopters.append(adopter)
+
+        // Standing still at fifty minutes.
+        actual.seek(to: 3_000)
+        transport.finishSeek(0, success: true)
+        flush()
+        actual.pause()
+
+        listened(alarm, at: 5_400, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+        XCTAssertEqual(transport.targets, [3_000, 5_397])
+
+        // The Mac carries on while that seek is still in the air.
+        listened(alarm, at: 6_000, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+        XCTAssertEqual(transport.targets, [3_000, 5_397], "refused while the first move is unfinished")
+
+        transport.finishSeek(1, success: true)
+        flush()
+
+        XCTAssertEqual(transport.targets.last ?? -1, 5_997, accuracy: 0.5)
+    }
+
     func testSupersededSeekWaitsForLatestSuccessBeforePlaying() {
         let transport = ControlledSeekPlayer()
         let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))

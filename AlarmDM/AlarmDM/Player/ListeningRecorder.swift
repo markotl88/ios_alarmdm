@@ -267,6 +267,16 @@ final class ListeningAdopter {
     /// standing still, and an account that has moved on since.
     @discardableResult
     func catchUp() -> TimeInterval? {
+        adopt(standingAt: engine.currentTime)
+    }
+
+    /// `standing` rather than the engine's own clock, because the one caller
+    /// that passes something else is this function's own continuation: a seek
+    /// that has only just landed may not be in the clock yet, and asking the
+    /// clock there would answer with where the player was before the move and
+    /// ask for the same move again, for ever.
+    @discardableResult
+    private func adopt(standingAt standing: TimeInterval) -> TimeInterval? {
         guard case .podcast(let loaded)? = engine.source else { return nil }
         // Playing is this device listening, and this device is then the truth.
         // Buffering is about to be.
@@ -281,11 +291,19 @@ final class ListeningAdopter {
         episodes.refreshFromStore()
         guard let stored = episodes.podcast(with: loaded.id),
               let there = stored.positionFromAccount(newerThan: lastSaidHere,
-                                                     standingAt: engine.currentTime) else { return nil }
+                                                     standingAt: standing) else { return nil }
 
-        AppLog.write(.player, "adopting \(Int(there))s from the account for \(stored.title), the player stood at \(Int(engine.currentTime))s")
+        AppLog.write(.player, "adopting \(Int(there))s from the account for \(stored.title), the player stood at \(Int(standing))s")
 
-        engine.seek(to: there)
+        engine.seek(to: there) { [weak self] in
+            // The account can have moved again while this was in the air, and
+            // news that arrived then was refused by the guard above - it
+            // could not tell this move from somebody pressing a bookmark.
+            // Everything is asked again from the top: the same episode, a
+            // date still newer than anything said here, and nobody having
+            // started playing in the meantime.
+            self?.adopt(standingAt: there)
+        }
         // Not a listen. Without this the move is written down at the next
         // opportunity with this moment's date, and this device claims a
         // listen that happened on another one.
