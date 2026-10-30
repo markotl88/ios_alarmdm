@@ -122,22 +122,12 @@ final class PlayerViewModel: ObservableObject {
 
     // MARK: - Init
 
-    /// The two ways something this player should know about can arrive: the
-    /// store hearing from iCloud, and the feed bringing in an episode this
-    /// device did not have. The second one matters because the listen syncs
-    /// and the feed does not - see PodcastRepository.didSaveEpisodes.
-    static var storeNews: AnyPublisher<Void, Never> {
-        AppDatabase.shared.didChangeRemotely
-            .merge(with: PodcastRepository.shared.didSaveEpisodes)
-            .eraseToAnyPublisher()
-    }
-
     init(mode: PlayerMode? = nil,
          engine: PlaybackEngineType = PlaybackEngine.shared,
          playbackState: PlaybackStateStore = .shared,
          episodes: EpisodeLookup = PodcastRepository.shared,
          recorder: ListeningRecorder = .shared,
-         storeChanges: AnyPublisher<Void, Never> = PlayerViewModel.storeNews) {
+         storeChanges: AnyPublisher<Void, Never> = PodcastRepository.shared.news) {
         self.engine = engine
         self.playbackState = playbackState
         self.episodes = episodes
@@ -704,23 +694,25 @@ final class PlayerViewModel: ObservableObject {
     /// stands and would ignore anything written only on screen.
     private func adoptSyncedPosition(from podcast: Podcast) {
         guard isIdle, !isLive else { return }
-        guard let syncedAt = podcast.playedAt, syncedAt > lastSaidHere else { return }
-        guard let synced = podcast.hasReachedEnd ? podcast.playedPosition : podcast.resumePosition else { return }
-        guard abs(synced - currentTime) > 1 else { return }
+        guard let synced = podcast.positionFromAccount(newerThan: lastSaidHere,
+                                                       standingAt: currentTime) else { return }
 
-        AppLog.write(.player, "adopting \(Int(synced))s from the account for \(podcast.title), was at \(Int(currentTime))s")
-
-        if engineHolds(podcast.id) {
-            engine.seek(to: synced)
-            // Not a listen. Without this the move is written down at the next
-            // opportunity with this moment's date, and this device claims a
-            // listen that happened on another one.
-            recorder.noteAdopted(position: synced)
+        guard !engineHolds(podcast.id) else {
+            // Moving the player itself is ListeningAdopter's, because it has
+            // to happen where there is no screen at all - and the position
+            // this screen was going to start from must not outlive the move.
+            //
+            // The scrubber still goes there now rather than a runloop later,
+            // when the engine's own clock catches up: the two agree about
+            // where it is going, and waiting only makes the bar lag a jump
+            // the person can see.
             restoredPosition = nil
-        } else {
-            restoredPosition = synced
-            duration = podcast.durationInSeconds
+            currentTime = synced
+            return
         }
+
+        restoredPosition = synced
+        duration = podcast.durationInSeconds
         currentTime = synced
     }
 

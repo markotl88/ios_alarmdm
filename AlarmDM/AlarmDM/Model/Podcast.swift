@@ -206,6 +206,27 @@ extension Podcast {
         return max(0, playedPosition - 3)
     }
 
+    /// Where the account says this episode now is, when that is newer than
+    /// anything this device has said and is somewhere other than where the
+    /// player stands.
+    ///
+    /// The one statement of a rule two places need: the screen, which has to
+    /// show it, and ListeningAdopter, which has to move the player to it when
+    /// there is no screen. They disagreed about it for exactly as long as the
+    /// second one did not exist.
+    ///
+    /// A finished episode answers with the end it was left at rather than
+    /// nothing. Finished is still a position, and the player offers to start
+    /// it again from there.
+    func positionFromAccount(newerThan lastSaidHere: Date,
+                             standingAt standing: TimeInterval) -> TimeInterval? {
+        guard let playedAt, playedAt > lastSaidHere else { return nil }
+        guard let there = hasReachedEnd ? playedPosition : resumePosition else { return nil }
+        // A second either way is the seek landing, not somebody listening.
+        guard abs(there - standing) > 1 else { return nil }
+        return there
+    }
+
     /// How far through the show a listen got, as a fraction - for the line
     /// under an episode in a list.
     ///

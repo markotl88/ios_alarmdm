@@ -31,6 +31,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         AppLanguage.applyDefaultOnFirstLaunch()
 
         ListeningRecorder.shared.start()
+        ListeningAdopter.shared.start()
         Analytics.start()
         return true
     }

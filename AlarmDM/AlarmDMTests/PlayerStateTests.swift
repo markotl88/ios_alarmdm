@@ -24,6 +24,9 @@ final class PlayerStateTests: XCTestCase {
     private var storeChanges: PassthroughSubject<Void, Never>!
     private var progress: ProgressSpy!
     private var notifications: NotificationCenter!
+    /// Held, because an adopter that goes out of scope takes its
+    /// subscriptions with it.
+    private var adopters: [ListeningAdopter] = []
 
     /// Three hours, so the credits settle where it ends: 3:00:00 minus twenty
     /// seconds is 10 780, comfortably past ninety-five percent.
@@ -46,6 +49,7 @@ final class PlayerStateTests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        adopters.removeAll()
         defaults.removePersistentDomain(forName: "PlayerStateTests")
     }
 
@@ -411,6 +415,7 @@ final class PlayerStateTests: XCTestCase {
                                          playbackState: PlaybackStateStore(defaults: defaults),
                                          notifications: notifications)
         recorder.start()
+        startAdopter(recorder: recorder)
 
         let player = makePlayer(recorder: recorder)
         player.mode = .podcast(podcast: alarm)
@@ -452,6 +457,7 @@ final class PlayerStateTests: XCTestCase {
     /// on: the paused phone moves to where the Mac got, and moves the engine
     /// with it, so play picks up there and not where the phone stopped.
     func testAPausedPlayerFollowsALaterPositionOnTheSameEpisode() {
+        startAdopter()
         let player = makePlayer()
         player.mode = .podcast(podcast: alarm)
         player.togglePlayPause()
@@ -727,6 +733,26 @@ final class PlayerStateTests: XCTestCase {
 
     // MARK: - Helpers
 
+    /// The screenless half of following another device, wired to the same
+    /// fakes. In the app it is started from the app delegate; here it is
+    /// started by whichever test is about the engine actually moving.
+    @discardableResult
+    private func startAdopter(recorder: ListeningRecorder? = nil) -> ListeningAdopter {
+        let adopter = ListeningAdopter(
+            engine: engine,
+            episodes: episodes,
+            playbackState: PlaybackStateStore(defaults: defaults),
+            recorder: recorder ?? ListeningRecorder(engine: engine,
+                                                    progressStore: ProgressSpy(),
+                                                    playbackState: PlaybackStateStore(defaults: defaults),
+                                                    notifications: NotificationCenter()),
+            news: storeChanges.eraseToAnyPublisher()
+        )
+        adopter.start()
+        adopters.append(adopter)
+        return adopter
+    }
+
     private func makePlayer(recorder: ListeningRecorder? = nil) -> PlayerViewModel {
         PlayerViewModel(
             engine: engine,
@@ -765,6 +791,214 @@ final class PlayerStateTests: XCTestCase {
         let delivered = expectation(description: "main queue drained")
         DispatchQueue.main.async { delivered.fulfill() }
         wait(for: [delivered], timeout: 1)
+    }
+}
+
+// MARK: - Following another device with nobody watching
+
+/// The other half of the same job, and for the same reason: the car starts
+/// the app with no phone window, so the thing that accepts a position from
+/// another device cannot be a screen either.
+///
+/// Nothing here builds a view model. What is under test is an engine holding
+/// an episode, a listen arriving for it, and whether the player is moved.
+final class ListeningAdopterTests: XCTestCase {
+
+    private var engine: FakePlaybackEngine!
+    private var episodes: EpisodeStore!
+    private var progress: ProgressSpy!
+    private var defaults: UserDefaults!
+    private var notifications: NotificationCenter!
+    private var news: PassthroughSubject<Void, Never>!
+    private var recorder: ListeningRecorder!
+    private var adopter: ListeningAdopter!
+
+    private var alarm: Podcast!
+
+    override func setUpWithError() throws {
+        engine = FakePlaybackEngine()
+        episodes = EpisodeStore()
+        progress = ProgressSpy()
+        notifications = NotificationCenter()
+        news = PassthroughSubject()
+        defaults = UserDefaults(suiteName: "ListeningAdopterTests")
+        defaults.removePersistentDomain(forName: "ListeningAdopterTests")
+
+        recorder = ListeningRecorder(engine: engine,
+                                     progressStore: progress,
+                                     playbackState: PlaybackStateStore(defaults: defaults),
+                                     notifications: notifications)
+        recorder.start()
+
+        adopter = ListeningAdopter(engine: engine,
+                                   episodes: episodes,
+                                   playbackState: PlaybackStateStore(defaults: defaults),
+                                   recorder: recorder,
+                                   news: news.eraseToAnyPublisher())
+        adopter.start()
+
+        alarm = episode("Alarm", duration: "3:00:00")
+    }
+
+    override func tearDownWithError() throws {
+        defaults.removePersistentDomain(forName: "ListeningAdopterTests")
+    }
+
+    /// The case the whole thing is for: an episode paused on this device, the
+    /// Mac carrying on with it, and no screen here to notice.
+    func testAPausedEpisodeIsMovedToWhereTheAccountGotTo() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+        engine.stopPlaying()
+
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+
+        XCTAssertEqual(engine.seekCalls.last ?? -1, 5_397, accuracy: 0.5)
+    }
+
+    /// And it is not written back as a listen made here. Without that, the
+    /// next write stamps somebody else's listening with this moment's date
+    /// and this device takes the account's newest listen off the device that
+    /// actually listened.
+    func testTheMoveIsNotWrittenDownAsAListen() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+        engine.advance(to: 3_000)
+        engine.stopPlaying()
+        XCTAssertEqual(progress.calls.count, 1, "the pause is written down")
+
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+        XCTAssertEqual(engine.seekCalls.last ?? -1, 5_397, accuracy: 0.5)
+
+        notifications.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+
+        XCTAssertEqual(progress.calls.count, 1, "nothing was listened to here")
+    }
+
+    /// What is playing here is the truth, whatever arrives while it plays.
+    func testAPlayingEpisodeIsLeftAlone() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+
+        XCTAssertTrue(engine.seekCalls.isEmpty)
+    }
+
+    /// Buffering is about to be playing - a stream that has been asked for
+    /// and is still opening is not standing still.
+    func testAnEpisodeThatIsOpeningIsLeftAlone() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+        engine.stopPlaying()
+        engine.reportBuffering(true)
+
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+
+        XCTAssertTrue(engine.seekCalls.isEmpty)
+    }
+
+    /// This device's own writing is not news from anywhere. Without the date
+    /// this would be any difference in seconds, and the three seconds a
+    /// resume deliberately rewinds would look like another device.
+    func testThisDevicesOwnPositionIsNotAdopted() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+        engine.advance(to: 3_000)
+        engine.stopPlaying()
+
+        // Written here a moment ago; the account's record is older.
+        accountListened(to: alarm, at: 3_000, secondsAgo: 600)
+        news.send(())
+        flush()
+
+        XCTAssertTrue(engine.seekCalls.isEmpty)
+    }
+
+    /// An episode heard through elsewhere moves to its end rather than being
+    /// ignored: finished is still a position, and the player offers to start
+    /// it again from there.
+    func testAnEpisodeFinishedElsewhereMovesToItsEnd() {
+        engine.play(.podcast(alarm), startingAt: 600)
+        engine.stopPlaying()
+
+        var finished = alarm!
+        finished.playedPosition = 10_800
+        finished.playedAt = Date()
+        finished.isPlayed = true
+        episodes.rows[finished.id] = finished
+        news.send(())
+        flush()
+
+        XCTAssertEqual(engine.seekCalls.last ?? -1, 10_800, accuracy: 0.5)
+    }
+
+    /// Live radio has no position to take from anybody.
+    func testTheRadioIsLeftAlone() throws {
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+        engine.play(.radio(url: stream), startingAt: nil)
+        engine.stopPlaying()
+
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+
+        XCTAssertTrue(engine.seekCalls.isEmpty)
+    }
+
+    /// Asked directly rather than through an announcement - what the car does
+    /// on connecting, for everything that arrived while the app was asleep in
+    /// a pocket.
+    func testItCanBeAskedDirectly() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+        engine.stopPlaying()
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+
+        XCTAssertEqual(adopter.catchUp() ?? -1, 5_397, accuracy: 0.5)
+        XCTAssertEqual(engine.seekCalls.last ?? -1, 5_397, accuracy: 0.5)
+    }
+
+    /// Nothing loaded is nothing to move. A cold start in the car is this,
+    /// and there the position comes from the repository when the episode is
+    /// opened.
+    func testAnEmptyPlayerIsNotMoved() {
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+
+        XCTAssertTrue(engine.seekCalls.isEmpty)
+        XCTAssertNil(adopter.catchUp())
+    }
+
+    // MARK: Helpers
+
+    /// A listen as another device left it.
+    private func accountListened(to podcast: Podcast, at position: TimeInterval, secondsAgo: TimeInterval) {
+        var copy = podcast
+        copy.playedPosition = position
+        copy.playedAt = Date(timeIntervalSinceNow: -secondsAgo)
+        episodes.rows[copy.id] = copy
+    }
+
+    /// The adopter hands its work to the main queue, because a change from
+    /// iCloud does not arrive on it. This lets that land before the
+    /// assertions.
+    private func flush() {
+        let delivered = expectation(description: "main queue drained")
+        DispatchQueue.main.async { delivered.fulfill() }
+        wait(for: [delivered], timeout: 1)
+    }
+
+    private func episode(_ title: String, duration: String) -> Podcast {
+        var podcast = Podcast(show: .alarmSaDaskomIMladjom)
+        podcast.id = UUID()
+        podcast.title = title
+        podcast.podcastUrl = "https://example.com/\(title).mp3"
+        podcast.itunesDuration = duration
+        return podcast
     }
 }
 
@@ -1061,6 +1295,9 @@ private final class FakePlaybackEngine: PlaybackEngineType {
 
     var source: PlaybackSource? { sourceSubject.value }
     var hasContent: Bool { source != nil }
+    var isPlaying: Bool { playingSubject.value }
+    var isBuffering: Bool { bufferingSubject.value }
+    var currentTime: TimeInterval { timeSubject.value }
     var duration: TimeInterval { durationSubject.value }
     var isLive: Bool { source?.isLive ?? false }
     var progress: Double {
@@ -1121,6 +1358,7 @@ private final class FakePlaybackEngine: PlaybackEngineType {
     func advance(to time: TimeInterval) { timeSubject.send(time) }
     func reportDuration(_ duration: TimeInterval) { durationSubject.send(duration) }
     func stopPlaying() { playingSubject.send(false) }
+    func reportBuffering(_ buffering: Bool) { bufferingSubject.send(buffering) }
 }
 
 private final class ProgressSpy: ProgressRecording {

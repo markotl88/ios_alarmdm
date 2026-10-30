@@ -152,6 +152,13 @@ protocol PlaybackEngineType: AnyObject {
     var duration: TimeInterval { get }
     var isLive: Bool { get }
     var progress: Double { get }
+    /// Where the player stands and whether it is going anywhere. Readable and
+    /// not only observable, because somebody arriving late - the car
+    /// connecting, a listen landing from another device - has to be able to
+    /// ask rather than wait for the next announcement.
+    var isPlaying: Bool { get }
+    var isBuffering: Bool { get }
+    var currentTime: TimeInterval { get }
 
     var sourcePublisher: AnyPublisher<PlaybackSource?, Never> { get }
     var isPlayingPublisher: AnyPublisher<Bool, Never> { get }

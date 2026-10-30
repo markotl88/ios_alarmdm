@@ -62,6 +62,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         // this phone last looked, are asked for here or not at all.
         PodcastRepository.shared.refreshFromStore()
         EpisodeLibrary.shared.refreshLatest()
+        // Whatever came down while this app was asleep in a pocket. The
+        // engine may be holding an episode this device paused yesterday,
+        // which the Mac has since listened past.
+        ListeningAdopter.shared.catchUp()
     }
 
     func templateApplicationScene(

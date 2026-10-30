@@ -205,3 +205,92 @@ final class ListeningRecorder {
         AppLog.write(.player, "recorded \(Int(position))s (\(reason)) - \(episode.title)")
     }
 }
+
+// MARK: - Taking a position from another device
+
+/// Moves a loaded, idle player to a position that arrived from somewhere else.
+///
+/// The counterpart of ListeningRecorder: that one writes down what happened
+/// here, this one accepts what happened elsewhere - and tells the recorder so,
+/// which is what stops the move from being written back as a listen made on
+/// this device.
+///
+/// It used to live on the phone's player, and the phone's player does not
+/// always exist. When the car starts the app there is no window, no view
+/// model and nobody to notice that the Mac had got further than this device
+/// did: the list in the car redrew with the right episode on it, and the
+/// press of play still resumed the old local position. The engine exists
+/// whichever way the app was started, and so does this.
+final class ListeningAdopter {
+
+    static let shared = ListeningAdopter()
+
+    private let engine: PlaybackEngineType
+    private let episodes: EpisodeLookup
+    private let playbackState: PlaybackStateStore
+    private let recorder: ListeningRecorder
+    private let news: AnyPublisher<Void, Never>
+    private var cancellables = Set<AnyCancellable>()
+
+    init(engine: PlaybackEngineType = PlaybackEngine.shared,
+         episodes: EpisodeLookup = PodcastRepository.shared,
+         playbackState: PlaybackStateStore = .shared,
+         recorder: ListeningRecorder = .shared,
+         news: AnyPublisher<Void, Never> = PodcastRepository.shared.news) {
+        self.engine = engine
+        self.episodes = episodes
+        self.playbackState = playbackState
+        self.recorder = recorder
+        self.news = news
+    }
+
+    /// From the app delegate, which runs however the app was started.
+    func start() {
+        guard cancellables.isEmpty else { return }
+
+        news
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in self?.catchUp() }
+            .store(in: &cancellables)
+    }
+
+    /// Deliberately not subscribed to the engine's source.
+    ///
+    /// An episode being loaded is somebody deciding where to start, and they
+    /// decided by asking resumePosition, which has already weighed this
+    /// device against the account. Moving it again a moment later would
+    /// overrule a press of play with a position nobody asked for - and at
+    /// that instant the engine has not started playing yet, so the guard
+    /// below would not catch it.
+    ///
+    /// What is left is the case this is for: something loaded a while ago,
+    /// standing still, and an account that has moved on since.
+    @discardableResult
+    func catchUp() -> TimeInterval? {
+        guard case .podcast(let loaded)? = engine.source else { return nil }
+        // Playing is this device listening, and this device is then the truth.
+        // Buffering is about to be.
+        guard !engine.isPlaying, !engine.isBuffering else { return nil }
+
+        episodes.refreshFromStore()
+        guard let stored = episodes.podcast(with: loaded.id),
+              let there = stored.positionFromAccount(newerThan: lastSaidHere,
+                                                     standingAt: engine.currentTime) else { return nil }
+
+        AppLog.write(.player, "adopting \(Int(there))s from the account for \(stored.title), the player stood at \(Int(engine.currentTime))s")
+
+        engine.seek(to: there)
+        // Not a listen. Without this the move is written down at the next
+        // opportunity with this moment's date, and this device claims a
+        // listen that happened on another one.
+        recorder.noteAdopted(position: there)
+        return there
+    }
+
+    /// The last time this device said anything about where it had got to: a
+    /// listen written down here, or the player being closed.
+    private var lastSaidHere: Date {
+        max(playbackState.saved?.savedAt ?? .distantPast,
+            playbackState.clearedAt ?? .distantPast)
+    }
+}

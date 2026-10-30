@@ -122,6 +122,10 @@ struct RootView: View {
             // ListeningRecorder's, which hears it whether or not this window
             // exists.
             if phase == .active {
+                // The player itself first, in case the engine is holding an
+                // episode the account has moved on from, and then what this
+                // screen shows.
+                ListeningAdopter.shared.catchUp()
                 playerViewModel.catchUpIfIdle()
             }
         }

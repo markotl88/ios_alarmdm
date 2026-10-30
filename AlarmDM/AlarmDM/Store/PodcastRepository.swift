@@ -53,6 +53,19 @@ final class PodcastRepository: EpisodeLookup {
     /// RadioViewModel.refresh.
     let didSaveEpisodes = PassthroughSubject<Void, Never>()
 
+    /// Everything that can change what this device knows: iCloud bringing a
+    /// listen down, and the feed bringing in the episode it is about.
+    ///
+    /// One publisher because it is one question - is there something here I
+    /// did not have a moment ago - and because the answer needs both halves:
+    /// a listen syncs and an episode does not, so whichever arrives second is
+    /// what makes the first readable.
+    var news: AnyPublisher<Void, Never> {
+        database.didChangeRemotely
+            .merge(with: didSaveEpisodes)
+            .eraseToAnyPublisher()
+    }
+
     init(database: AppDatabase = .shared, playbackState: PlaybackStateStore = .shared) {
         self.database = database
         self.playbackState = playbackState
