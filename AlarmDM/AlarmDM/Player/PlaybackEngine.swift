@@ -189,7 +189,13 @@ protocol PlaybackEngineType: AnyObject {
     /// episode is still opening still means. This one carries "I have
     /// arrived", which is true only of the move that arrived - so a newer
     /// seek takes it off the board instead of inheriting it.
-    func seek(to time: TimeInterval, reportingArrival: @escaping () -> Void)
+    ///
+    /// A name of its own rather than another seek. As an overload it took
+    /// every `seek(to: x) { ... }` in the engine away from the completion it
+    /// was written for - a trailing closure prefers the parameter that is
+    /// neither optional nor defaulted - and five calls quietly stopped
+    /// carrying the intent to play.
+    func seekReportingArrival(to time: TimeInterval, report: @escaping () -> Void)
     /// A seek somebody here asked for, as opposed to one adopted from
     /// another device.
     func moveByHand(to time: TimeInterval)
@@ -531,8 +537,8 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         seek(to: time, completion: completion, reportingArrival: nil)
     }
 
-    func seek(to time: TimeInterval, reportingArrival: @escaping () -> Void) {
-        seek(to: time, completion: nil, reportingArrival: reportingArrival)
+    func seekReportingArrival(to time: TimeInterval, report: @escaping () -> Void) {
+        seek(to: time, completion: nil, reportingArrival: report)
     }
 
     private func seek(to time: TimeInterval,

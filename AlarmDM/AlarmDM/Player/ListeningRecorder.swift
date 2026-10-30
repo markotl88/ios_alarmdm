@@ -300,7 +300,7 @@ final class ListeningAdopter {
         // the air supersedes it, and this callback has to go with the move it
         // belonged to - otherwise it wakes up after the bookmark has landed,
         // finds nothing pending, and takes the bookmark's place.
-        engine.seek(to: there, reportingArrival: { [weak self] in
+        engine.seekReportingArrival(to: there, report: { [weak self] in
             // The account can have moved again while this was in the air, and
             // news that arrived then was refused by the guard above - it
             // could not tell this move from somebody pressing a bookmark.

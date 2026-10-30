@@ -1488,8 +1488,8 @@ private final class FakePlaybackEngine: PlaybackEngineType {
 
     /// Nothing supersedes anything here: the fake lands every move at once,
     /// so arriving and finishing are the same instant.
-    func seek(to time: TimeInterval, reportingArrival: @escaping () -> Void) {
-        seek(to: time, completion: reportingArrival)
+    func seekReportingArrival(to time: TimeInterval, report: @escaping () -> Void) {
+        seek(to: time, completion: report)
     }
 
     func seek(to time: TimeInterval, completion: (() -> Void)?) {
