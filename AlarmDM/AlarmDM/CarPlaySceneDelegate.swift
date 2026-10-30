@@ -31,6 +31,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     /// template instead would throw away wherever the person had navigated
     /// to, which in a car is worse than a stale row.
     private var radioTemplate: CPListTemplate?
+    private var episodeTemplate: CPListTemplate?
+    private var episodeShow: Show?
     private var engine: PlaybackEngine { .shared }
 
     /// The bookmark button briefly fills in after a capture. CPNowPlayingButton
@@ -47,14 +49,19 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     ) {
         self.interfaceController = interfaceController
 
-        #if DEBUG
         AppLog.write(.carplay, "carplay connected")
-        #endif
 
         setupRootTemplates()
         observeEngine()
+        observeStore()
         CPNowPlayingTemplate.shared.add(self)
         refreshNowPlayingButtons()
+
+        // Nobody pulled this list down - in a car there is no list to pull.
+        // What another device has said, and what the feed has published since
+        // this phone last looked, are asked for here or not at all.
+        PodcastRepository.shared.refreshFromStore()
+        EpisodeLibrary.shared.refreshLatest()
     }
 
     func templateApplicationScene(
@@ -69,6 +76,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         self.continueItem = nil
         self.continuePodcast = nil
         self.radioTemplate = nil
+        self.episodeTemplate = nil
+        self.episodeShow = nil
     }
 
     // MARK: - Templates
@@ -96,9 +105,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
         guard let interfaceController else { return }
 
         interfaceController.setRootTemplate(template, animated: true) { [weak self] done, error in
-            #if DEBUG
             AppLog.write(.carplay, "carplay root template: \(done ? "shown" : "refused")\(error.map { " - \($0.localizedDescription)" } ?? "")")
-            #endif
 
             guard !done, retriesLeft > 0 else { return }
 
@@ -200,23 +207,24 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     }
 
     private func pushEpisodes(for show: Show) {
-        let episodes = PodcastRepository.shared.latestPodcasts(limit: 100).filter { $0.show == show }
+        let template = CPListTemplate(title: show.displayName, sections: episodeSections(for: show))
+        episodeTemplate = template
+        episodeShow = show
+        interfaceController?.pushTemplate(template, animated: true, completion: nil)
+    }
 
-        let template: CPListTemplate
+    /// Used both when opening a show and when its feed arrives afterwards.
+    private func episodeSections(for show: Show) -> [CPListSection] {
+        let episodes = PodcastRepository.shared.latestPodcasts(limit: 100).filter { $0.show == show }
         if episodes.isEmpty {
             let empty = CPListItem(text: String(localized: "Nema učitanih epizoda"),
                                    detailText: String(localized: "Otvori aplikaciju na telefonu da osvežiš listu."))
-            template = CPListTemplate(title: show.displayName, sections: [CPListSection(items: [empty])])
-        } else {
-            template = CPListTemplate(
-                title: show.displayName,
-                sections: [CPListSection(items: episodes.map {
-                    listItem(for: $0, marksCut: episodes.showsInBothCuts.contains($0.show))
-                })]
-            )
+            return [CPListSection(items: [empty])]
         }
-
-        interfaceController?.pushTemplate(template, animated: true, completion: nil)
+        let bothCuts = episodes.showsInBothCuts
+        return [CPListSection(items: episodes.map {
+            listItem(for: $0, marksCut: bothCuts.contains($0.show))
+        })]
     }
 
     /// One tap plays the episode - no intermediate menu. CarPlay guidelines want
@@ -350,6 +358,30 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
             self?.justBookmarked = false
             self?.refreshNowPlayingButtons()
         }
+    }
+
+    // MARK: - Store observation
+
+    /// Two things can change what belongs on this list after it has been
+    /// built, and neither of them is the engine: an episode arriving from the
+    /// feed, and a listen arriving from another device.
+    ///
+    /// They are one subscription because they are one question - what is
+    /// there to carry on with - and because the answer needs both halves. A
+    /// listen syncs and an episode does not, so the one that arrives second
+    /// is what makes the first readable.
+    private func observeStore() {
+        PodcastRepository.shared.didSaveEpisodes
+            .merge(with: AppDatabase.shared.didChangeRemotely)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                guard let self else { return }
+                self.radioTemplate?.updateSections(self.radioSections())
+                if let show = self.episodeShow {
+                    self.episodeTemplate?.updateSections(self.episodeSections(for: show))
+                }
+            }
+            .store(in: &cancellables)
     }
 
     // MARK: - Engine observation

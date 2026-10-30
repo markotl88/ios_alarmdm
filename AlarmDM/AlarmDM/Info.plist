@@ -3,7 +3,7 @@
 <plist version="1.0">
     <dict>
         <key>CFBundleDisplayName</key>
-        <string>Daško &amp; Mlađa</string>
+        <string>Daško &amp; Mlađa$(APP_NAME_SUFFIX)</string>
         <!-- Only HTTPS: exempt from the export compliance question. -->
         <key>ITSAppUsesNonExemptEncryption</key>
         <false/>

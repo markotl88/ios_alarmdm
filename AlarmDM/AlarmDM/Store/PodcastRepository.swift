@@ -7,6 +7,7 @@
 //  preserved downloads - live in a single place.
 //
 
+import Combine
 import Foundation
 import SwiftData
 
@@ -31,9 +32,30 @@ final class PodcastRepository: EpisodeLookup {
     static let shared = PodcastRepository()
 
     private let database: AppDatabase
+    /// This device's own note of where it stopped, written in the same breath
+    /// as the episode's record and read here as a second opinion - see
+    /// resumePosition.
+    private let playbackState: PlaybackStateStore
 
-    init(database: AppDatabase = .shared) {
+    /// Fires when a feed refresh has brought in an episode this device did
+    /// not have.
+    ///
+    /// The listen syncs and the feed does not: `EpisodeStateEntity` comes
+    /// down from iCloud, `PodcastEntity` is fetched from the API by each
+    /// device for itself. So a listen on one device can arrive here before
+    /// the episode it is about, and until the episode lands there is nothing
+    /// to attach it to - `lastListened` has to skip it, because without the
+    /// feed's copy there is no title, no length and above all no URL to play.
+    ///
+    /// The moment the feed lands is the moment that listen becomes readable,
+    /// and nobody was watching for it. It is the same moment a bookmark
+    /// caught off the live radio finds its episode - see
+    /// RadioViewModel.refresh.
+    let didSaveEpisodes = PassthroughSubject<Void, Never>()
+
+    init(database: AppDatabase = .shared, playbackState: PlaybackStateStore = .shared) {
         self.database = database
+        self.playbackState = playbackState
     }
 
     private var context: ModelContext { database.context }
@@ -147,9 +169,36 @@ final class PodcastRepository: EpisodeLookup {
     /// Every read here fetches, so a position that arrived from another device
     /// a moment ago is what it finds; the refresh first is belt and braces —
     /// see AppDatabase.adoptStoreChanges.
+    ///
+    /// Two records of one listen, and the later one is right - the same rule
+    /// the phone's player reopens by. It belongs here as well, because this
+    /// is what the car reads and the car has never seen the second of them.
+    ///
+    /// They are written one after the other into places that do not fail
+    /// alike. The episode's record goes to the synced store, where a save
+    /// that fails takes the whole context back with it; the slot goes to this
+    /// device's defaults, which do not fail. So a listen the phone remembers
+    /// perfectly could start over in the car, with nothing anywhere saying
+    /// why - which is what the reports from the car describe.
     func resumePosition(for id: UUID) -> TimeInterval? {
         refreshFromStore()
-        return podcast(with: id)?.resumePosition
+        guard let episode = podcast(with: id) else { return nil }
+
+        // The slot only counts when it is about this episode and has more
+        // recent news than the episode's own record does. A record with no
+        // date has never been written at all, and anything beats that.
+        guard let saved = playbackState.saved,
+              saved.podcastId == id,
+              episode.playedAt.map({ saved.savedAt > $0 }) ?? true else {
+            return episode.resumePosition
+        }
+
+        // Then the two rules the episode's record is read by, applied to it:
+        // too near the start to be worth coming back for, and heard through -
+        // which starts over on purpose, and the slot must not undo that.
+        guard saved.position > Podcast.resumeFloor,
+              !episode.hasReachedEnd(at: saved.position) else { return nil }
+        return max(0, saved.position - 3)
     }
 
     /// Puts an episode back together from the three rows that describe it: the
@@ -196,15 +245,21 @@ final class PodcastRepository: EpisodeLookup {
             uniquingKeysWith: { first, _ in first }
         )
 
+        var arrived = false
         for podcast in podcasts {
             if let entity = existing[podcast.id] {
                 entity.apply(podcast)
             } else {
                 context.insert(PodcastEntity(from: podcast))
+                arrived = true
             }
         }
 
         commit("saving episodes")
+
+        // Only for episodes that were not here before. Every pull to refresh
+        // rewrites the same thirty rows, and that is not news.
+        if arrived { didSaveEpisodes.send() }
     }
 
     func save(_ podcast: Podcast) {

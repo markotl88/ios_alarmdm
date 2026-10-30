@@ -501,6 +501,157 @@ final class StoreChangeTests: XCTestCase {
     }
 }
 
+// MARK: - Two records of one listen
+
+/// The episode's own record syncs and can fail to be written; the slot beside
+/// it belongs to this device and does not. The car reads only the first,
+/// which is how a listen the phone remembers can start over in the car.
+final class ResumePositionTests: XCTestCase {
+
+    private var directory: URL!
+    private var defaults: UserDefaults!
+    private var slot: PlaybackStateStore!
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ResumePositionTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        defaults = UserDefaults(suiteName: "ResumePositionTests")
+        defaults.removePersistentDomain(forName: "ResumePositionTests")
+        slot = PlaybackStateStore(defaults: defaults)
+    }
+
+    override func tearDownWithError() throws {
+        defaults.removePersistentDomain(forName: "ResumePositionTests")
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    /// The case the reports describe: the write to the store did not land,
+    /// the one beside it did.
+    func testTheSlotAnswersWhenTheEpisodeRecordWasNeverWritten() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: episode.id, position: 1_500))
+
+        XCTAssertEqual(repository.resumePosition(for: episode.id) ?? 0, 1_497, accuracy: 0.5)
+    }
+
+    /// The ordinary way round, and the one that must not regress: the
+    /// episode's record is newer, including when it arrived from another
+    /// device, and the slot is this device's stale opinion.
+    func testTheEpisodeRecordWinsWhenItIsTheNewerOfTheTwo() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: episode.id,
+                                position: 600,
+                                savedAt: Date().addingTimeInterval(-600)))
+        repository.recordProgress(position: 5_400, hasFinished: false, for: episode.id)
+
+        XCTAssertEqual(repository.resumePosition(for: episode.id) ?? 0, 5_397, accuracy: 0.5)
+    }
+
+    /// Three hours less twenty seconds of credits is where an episode counts
+    /// as heard, and heard means it starts over. The slot does not get to
+    /// undo that.
+    func testAnEpisodeHeardThroughStillStartsOverWhateverTheSlotSays() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: episode.id, position: 10_790))
+
+        XCTAssertNil(repository.resumePosition(for: episode.id))
+    }
+
+    /// The slot holds one episode - whatever this device played last. It says
+    /// nothing about any other.
+    func testASlotAboutAnotherEpisodeIsIgnored() {
+        let repository = makeRepository()
+        let episode = makeEpisode(title: "Alarm")
+        let other = makeEpisode(title: "Emigracija")
+        repository.save(episode)
+
+        slot.save(PlaybackState(podcastId: other.id, position: 1_500))
+
+        XCTAssertNil(repository.resumePosition(for: episode.id))
+    }
+
+    private func makeRepository() -> PodcastRepository {
+        PodcastRepository(database: AppDatabase(storeDirectory: directory), playbackState: slot)
+    }
+}
+
+// MARK: - When the feed catches up with the listen
+
+/// The listen syncs and the feed does not: the episode's own record comes
+/// down from iCloud, while the list of episodes is fetched from the API by
+/// each device for itself. So a listen made on the Mac can be in the phone's
+/// store before the episode it is about, and until the episode lands there is
+/// nothing to attach it to - no title, no length, and no URL to play.
+///
+/// The moment it lands is the moment that listen becomes readable, and it has
+/// to be announced or nobody finds out until the next launch.
+final class FeedArrivalTests: XCTestCase {
+
+    private var directory: URL!
+    private var cancellables: Set<AnyCancellable> = []
+
+    override func setUpWithError() throws {
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("FeedArrivalTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    override func tearDownWithError() throws {
+        cancellables.removeAll()
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    func testAnEpisodeThisDeviceDidNotHaveIsAnnounced() {
+        let repository = PodcastRepository(database: AppDatabase(storeDirectory: directory))
+
+        var announcements = 0
+        repository.didSaveEpisodes.sink { announcements += 1 }.store(in: &cancellables)
+
+        repository.save([makeEpisode(title: "Alarm")])
+
+        XCTAssertEqual(announcements, 1)
+    }
+
+    /// Every pull to refresh rewrites the same rows, and that is not news.
+    func testRefreshingTheSameEpisodesAnnouncesNothing() {
+        let repository = PodcastRepository(database: AppDatabase(storeDirectory: directory))
+        let episode = makeEpisode(title: "Alarm")
+        repository.save([episode])
+
+        var announcements = 0
+        repository.didSaveEpisodes.sink { announcements += 1 }.store(in: &cancellables)
+
+        repository.save([episode])
+
+        XCTAssertEqual(announcements, 0)
+    }
+
+    /// A page with one new episode among thirty known ones is news.
+    func testOneNewEpisodeAmongKnownOnesIsAnnounced() {
+        let repository = PodcastRepository(database: AppDatabase(storeDirectory: directory))
+        let known = makeEpisode(title: "Alarm")
+        repository.save([known])
+
+        var announcements = 0
+        repository.didSaveEpisodes.sink { announcements += 1 }.store(in: &cancellables)
+
+        repository.save([known, makeEpisode(title: "Emigracija")])
+
+        XCTAssertEqual(announcements, 1)
+    }
+}
+
 // MARK: - What iCloud will accept
 
 /// iCloud refuses a model with a unique constraint, or with a required value

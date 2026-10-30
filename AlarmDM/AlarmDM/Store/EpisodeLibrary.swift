@@ -214,6 +214,29 @@ final class EpisodeLibrary: ProgressRecording {
         didChange.send()
     }
 
+    /// Asks the feed for the newest episodes and writes them down.
+    ///
+    /// Here rather than only on the Radio screen, because that screen does
+    /// not exist when the car starts the app: CarPlay has never asked the
+    /// network for anything, and showed whatever this device last happened to
+    /// cache. On the morning after an episode goes out that is yesterday's
+    /// list - and the listen that came down from the Mac has nothing to
+    /// attach itself to until the episode it names is here too.
+    func refreshLatest() {
+        podcastService.getPodcasts(for: nil, page: 1, date: nil, isBefore: true) { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .success(let page):
+                DispatchQueue.main.async {
+                    self.repository.save(page.podcasts.map { Podcast(from: $0) })
+                    self.didChange.send()
+                }
+            case .failure(let error):
+                AppLog.write(.library, "Error refreshing the feed: \(error.localizedDescription)")
+            }
+        }
+    }
+
     func toggleFavourite(_ podcast: Podcast) {
         repository.setFavorite(!podcast.isFavorite, for: podcast.id)
         didChange.send()

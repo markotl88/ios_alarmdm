@@ -202,8 +202,6 @@ final class ListeningRecorder {
         lastWritten = position
         minuteMark = position
 
-        #if DEBUG
         AppLog.write(.player, "recorded \(Int(position))s (\(reason)) - \(episode.title)")
-        #endif
     }
 }

@@ -12,6 +12,7 @@ import XCTest
 import Combine
 import UIKit
 import AVFoundation
+import MediaPlayer
 @testable import AlarmDM
 
 final class PlayerStateTests: XCTestCase {
@@ -46,6 +47,128 @@ final class PlayerStateTests: XCTestCase {
 
     override func tearDownWithError() throws {
         defaults.removePersistentDomain(forName: "PlayerStateTests")
+    }
+
+    func testFailedSeekDoesNotPlayAtZeroAndPlayRetriesPosition() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.play(.podcast(alarm), startingAt: 600)
+        transport.finishSeek(0, success: false)
+        flush()
+        XCTAssertEqual(transport.playCalls, 0)
+        XCTAssertEqual(actual.currentTime, 600)
+        actual.resume()
+        XCTAssertEqual(transport.targets, [600, 600])
+        transport.finishSeek(1, success: true)
+        flush()
+        XCTAssertEqual(transport.playCalls, 1)
+        XCTAssertEqual(transport.currentTime().seconds, 600)
+    }
+
+    func testSupersededSeekWaitsForLatestSuccessBeforePlaying() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.play(.podcast(alarm), startingAt: 600)
+        actual.seek(to: 615)
+        transport.finishSeek(0, success: false)
+        flush()
+        XCTAssertEqual(transport.playCalls, 0)
+        transport.finishSeek(1, success: true)
+        flush()
+        XCTAssertEqual(transport.playCalls, 1)
+        XCTAssertEqual(transport.currentTime().seconds, 615)
+    }
+
+    func testPauseDuringSupersedingSeekPreventsAutomaticPlay() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.play(.podcast(alarm), startingAt: 600)
+        actual.seek(to: 615)
+        actual.pause()
+        transport.finishSeek(1, success: true)
+        transport.finishSeek(0, success: false)
+        flush()
+        XCTAssertEqual(transport.playCalls, 0)
+        XCTAssertEqual(actual.currentTime, 615)
+    }
+
+    func testStopInvalidatesPendingSeekContinuation() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        actual.play(.podcast(alarm), startingAt: 600)
+        actual.stop()
+        transport.finishSeek(0, success: true)
+        flush()
+        XCTAssertEqual(transport.playCalls, 0)
+        XCTAssertNil(actual.source)
+    }
+
+    func testHeadphoneDisconnectPreservesEpisodePositionAndNowPlaying() {
+        let transport = ControlledSeekPlayer()
+        transport.position = 602.5
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.handleRouteChange(Notification(name: AVAudioSession.routeChangeNotification,
+            userInfo: [AVAudioSessionRouteChangeReasonKey:
+                        AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue]))
+        flush()
+        XCTAssertEqual(transport.pauseCalls, 1)
+        XCTAssertEqual(actual.source?.contentId, alarm.id.uuidString)
+        XCTAssertEqual(actual.currentTime, 602.5)
+        let info = MPNowPlayingInfoCenter.default().nowPlayingInfo
+        XCTAssertEqual(info?[MPMediaItemPropertyTitle] as? String, alarm.title)
+        XCTAssertEqual(info?[MPNowPlayingInfoPropertyElapsedPlaybackTime] as? Double, 602.5)
+        XCTAssertEqual(info?[MPNowPlayingInfoPropertyPlaybackRate] as? Double, 0)
+    }
+
+    func testConnectingAudioDeviceDoesNotPauseOrRestartEpisode() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.handleRouteChange(Notification(name: AVAudioSession.routeChangeNotification,
+            userInfo: [AVAudioSessionRouteChangeReasonKey:
+                        AVAudioSession.RouteChangeReason.newDeviceAvailable.rawValue]))
+        flush()
+        XCTAssertEqual(transport.pauseCalls, 0)
+        XCTAssertEqual(transport.playCalls, 0)
+        XCTAssertTrue(transport.targets.isEmpty)
+    }
+
+    func testInterruptionEndDoesNotResumeAfterHeadphonesWereRemoved() {
+        let transport = ControlledSeekPlayer()
+        transport.rate = 1
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.handleInterruption(Notification(name: AVAudioSession.interruptionNotification,
+            userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue]))
+        flush()
+        actual.handleRouteChange(Notification(name: AVAudioSession.routeChangeNotification,
+            userInfo: [AVAudioSessionRouteChangeReasonKey:
+                        AVAudioSession.RouteChangeReason.oldDeviceUnavailable.rawValue]))
+        flush()
+        actual.handleInterruption(Notification(name: AVAudioSession.interruptionNotification,
+            userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.ended.rawValue,
+                       AVAudioSessionInterruptionOptionKey: AVAudioSession.InterruptionOptions.shouldResume.rawValue]))
+        flush()
+        XCTAssertEqual(transport.playCalls, 0)
+    }
+
+    func testInterruptionCanResumePreviouslyPlayingEpisode() {
+        let transport = ControlledSeekPlayer()
+        transport.rate = 1
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+        actual.handleInterruption(Notification(name: AVAudioSession.interruptionNotification,
+            userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue]))
+        flush()
+        actual.handleInterruption(Notification(name: AVAudioSession.interruptionNotification,
+            userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.ended.rawValue,
+                       AVAudioSessionInterruptionOptionKey: AVAudioSession.InterruptionOptions.shouldResume.rawValue]))
+        flush()
+        XCTAssertEqual(transport.playCalls, 1)
     }
 
     // MARK: - Leaving one episode for another
@@ -490,6 +613,116 @@ final class PlayerStateTests: XCTestCase {
         player.seek(to: 600)
         flush()
         XCTAssertFalse(player.offersReplay)
+    }
+
+    // MARK: - Started somewhere else
+
+    /// The car starts the app, so the phone's window is built with nothing
+    /// chosen in it while the engine is already playing. The bar shows the
+    /// episode anyway - its title comes from the engine, not from what was
+    /// chosen here - and that is exactly what made this hard to see: the
+    /// screen was right and only the button was dead.
+    func testPlayPauseWorksForAnEpisodeTheCarStarted() {
+        let player = makePlayer()
+        XCTAssertNil(player.mode, "nobody chose anything on the phone")
+
+        // What CarPlaySceneDelegate does: straight to the engine.
+        engine.play(.podcast(alarm), startingAt: 600)
+        flush()
+
+        XCTAssertEqual(player.title, alarm.title)
+        XCTAssertTrue(player.isPlaying)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(engine.playCalls.count, 1, "and it is not opened a second time")
+    }
+
+    /// The same for the radio, which is the other thing the car can start.
+    func testPlayPauseWorksForTheRadioTheCarStarted() throws {
+        let player = makePlayer()
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+
+        engine.play(.radio(url: stream), startingAt: nil)
+        flush()
+
+        XCTAssertTrue(player.isLive)
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+    }
+
+    /// The phone had chosen an episode and the car then started the radio.
+    /// The screen followed, but what the buttons read did not: `.podcast`
+    /// with no podcast left behind it, and every press dropped.
+    func testPlayPauseFollowsTheCarFromAnEpisodeToTheRadio() throws {
+        let player = makePlayer()
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+
+        player.mode = .podcast(podcast: alarm)
+        flush()
+
+        engine.play(.radio(url: stream), startingAt: nil)
+        flush()
+
+        XCTAssertTrue(player.isLive)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(engine.playCalls.count, 1, "nothing was opened again")
+    }
+
+    /// The same the other way round, which was the worse of the two: the
+    /// press did not merely do nothing, it started the radio over an episode
+    /// that was playing.
+    func testPlayPauseFollowsTheCarFromTheRadioToAnEpisode() throws {
+        let player = makePlayer()
+        let stream = try XCTUnwrap(URL(string: "https://example.com/stream"))
+
+        player.mode = .radio(stream: stream)
+        flush()
+
+        engine.play(.podcast(alarm), startingAt: 600)
+        flush()
+
+        XCTAssertFalse(player.isLive)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertEqual(engine.toggleCount, 1)
+        XCTAssertFalse(player.isPlaying)
+        XCTAssertEqual(engine.playCalls.count, 1, "the radio was not started instead")
+        XCTAssertEqual(player.currentTime, 600, accuracy: 1)
+    }
+
+    /// Pausing is half the job; the press after it has to start the same
+    /// thing again rather than open anything.
+    func testPausingAndResumingWhatTheCarStartedStaysOnIt() {
+        let player = makePlayer()
+
+        engine.play(.podcast(alarm), startingAt: 600)
+        flush()
+
+        player.togglePlayPause()
+        flush()
+        XCTAssertFalse(player.isPlaying)
+
+        player.togglePlayPause()
+        flush()
+
+        XCTAssertTrue(player.isPlaying)
+        XCTAssertEqual(engine.toggleCount, 2)
+        XCTAssertEqual(engine.playCalls.count, 1)
+        XCTAssertEqual(player.currentTime, 600, accuracy: 1)
     }
 
     // MARK: - Helpers
@@ -1316,5 +1549,33 @@ final class PlaybackReplayTests: XCTestCase {
         wait(for: [obsolete], timeout: 0.5)
         XCTAssertNil(engine.source)
         XCTAssertFalse(engine.isPlaying)
+    }
+}
+
+/// Controls AVPlayer seek completion order without network or audio hardware.
+private final class ControlledSeekPlayer: AVPlayer {
+    var position: Double = 0
+    var playCalls = 0
+    var pauseCalls = 0
+    var targets: [Double] = []
+    private var completions: [(Bool) -> Void] = []
+    override func currentTime() -> CMTime {
+        CMTime(seconds: position, preferredTimescale: 600)
+    }
+    private var simulatedRate: Float = 0
+    override var rate: Float {
+        get { simulatedRate }
+        set { simulatedRate = newValue }
+    }
+    override func play() { playCalls += 1; simulatedRate = 1 }
+    override func pause() { pauseCalls += 1; simulatedRate = 0 }
+    override func seek(to time: CMTime, toleranceBefore: CMTime,
+                       toleranceAfter: CMTime, completionHandler: @escaping (Bool) -> Void) {
+        targets.append(time.seconds)
+        completions.append(completionHandler)
+    }
+    func finishSeek(_ index: Int, success: Bool) {
+        if success { position = targets[index] }
+        completions[index](success)
     }
 }
