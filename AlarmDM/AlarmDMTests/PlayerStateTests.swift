@@ -70,6 +70,43 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(transport.currentTime().seconds, 600)
     }
 
+    /// A bookmark tapped here, and a listen arriving from the account while
+    /// the seek for it is still in the air.
+    ///
+    /// In that gap the player reports neither playing nor buffering - it has
+    /// been asked and has not answered - and the account used to win it: the
+    /// targets came back [120, 5397] and the episode started three quarters
+    /// of an hour past where the bookmark pointed.
+    func testAPositionFromTheAccountDoesNotTakeAPendingBookmarksPlace() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+
+        let adopter = ListeningAdopter(
+            engine: actual,
+            episodes: episodes,
+            playbackState: PlaybackStateStore(defaults: defaults),
+            recorder: ListeningRecorder(engine: actual,
+                                        progressStore: ProgressSpy(),
+                                        playbackState: PlaybackStateStore(defaults: defaults),
+                                        notifications: NotificationCenter()),
+            news: storeChanges.eraseToAnyPublisher()
+        )
+        adopter.start()
+        adopters.append(adopter)
+
+        listened(alarm, at: 5_400, secondsAgo: 0)
+        actual.play(.podcast(alarm), startingAt: 120)
+        storeChanges.send(())
+        flush()
+
+        XCTAssertEqual(transport.targets, [120], "the account did not jump the queue")
+
+        transport.finishSeek(0, success: true)
+        flush()
+        XCTAssertEqual(transport.currentTime().seconds, 120)
+    }
+
     func testSupersededSeekWaitsForLatestSuccessBeforePlaying() {
         let transport = ControlledSeekPlayer()
         let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
@@ -902,6 +939,20 @@ final class ListeningAdopterTests: XCTestCase {
         XCTAssertTrue(engine.seekCalls.isEmpty)
     }
 
+    /// The same gap as the engine test, said plainly: asked for, not yet
+    /// answered, and nothing playing or buffering in between.
+    func testAnEpisodeWithARequestInTheAirIsLeftAlone() {
+        engine.play(.podcast(alarm), startingAt: 3_000)
+        engine.stopPlaying()
+        engine.hasRequestPending = true
+
+        accountListened(to: alarm, at: 5_400, secondsAgo: 0)
+        news.send(())
+        flush()
+
+        XCTAssertTrue(engine.seekCalls.isEmpty)
+    }
+
     /// This device's own writing is not news from anywhere. Without the date
     /// this would be any difference in seconds, and the three seconds a
     /// resume deliberately rewinds would look like another device.
@@ -1295,6 +1346,9 @@ private final class FakePlaybackEngine: PlaybackEngineType {
 
     var source: PlaybackSource? { sourceSubject.value }
     var hasContent: Bool { source != nil }
+    /// Set by a test that wants the gap this leaves open: asked for, not yet
+    /// answered. The real engine raises it for itself.
+    var hasRequestPending = false
     var isPlaying: Bool { playingSubject.value }
     var isBuffering: Bool { bufferingSubject.value }
     var currentTime: TimeInterval { timeSubject.value }

@@ -271,6 +271,12 @@ final class ListeningAdopter {
         // Playing is this device listening, and this device is then the truth.
         // Buffering is about to be.
         guard !engine.isPlaying, !engine.isBuffering else { return nil }
+        // And a request of this device's own that has not landed yet is the
+        // truth before it is even audible. A bookmark tapped here opens the
+        // episode and seeks, and for as long as that seek is in the air the
+        // player reports nothing at all - which is how a position from the
+        // account used to arrive in that gap and take the bookmark's place.
+        guard !engine.hasRequestPending else { return nil }
 
         episodes.refreshFromStore()
         guard let stored = episodes.podcast(with: loaded.id),

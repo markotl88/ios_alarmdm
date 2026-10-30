@@ -626,7 +626,12 @@ final class PlayerViewModel: ObservableObject {
     /// than anything it has to say. It used to take "nothing loaded at all",
     /// and a phone paused a few minutes from the end went on showing those
     /// minutes while the Mac played them.
-    private var isIdle: Bool { !isPlaying && !isBuffering }
+    ///
+    /// A request of this device's own that has not landed yet counts as not
+    /// idle, even though nothing is playing or buffering while it is in the
+    /// air: what is on its way is this device's answer, and following another
+    /// one on top of it shows a move the engine is right to refuse.
+    private var isIdle: Bool { !isPlaying && !isBuffering && !engine.hasRequestPending }
 
     /// Whether the engine holds this episode - loaded, playing or paused.
     private func engineHolds(_ id: UUID?) -> Bool {

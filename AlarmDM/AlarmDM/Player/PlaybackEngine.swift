@@ -159,6 +159,12 @@ protocol PlaybackEngineType: AnyObject {
     var isPlaying: Bool { get }
     var isBuffering: Bool { get }
     var currentTime: TimeInterval { get }
+    /// Somebody here has asked for something and the player has not settled
+    /// into it yet. Not a reading of whether audio is coming out: between
+    /// the asking and the answer the player reports neither playing nor
+    /// buffering, and anything that moves the position on the strength of
+    /// that gap lands on top of what was asked for.
+    var hasRequestPending: Bool { get }
 
     var sourcePublisher: AnyPublisher<PlaybackSource?, Never> { get }
     var isPlayingPublisher: AnyPublisher<Bool, Never> { get }
@@ -258,6 +264,11 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     private var seekGeneration = 0
     // Retained after a failed seek so Play retries the intended position.
     private var seekTarget: TimeInterval?
+    /// Raised when the player has been told to play and has not yet said
+    /// anything back. Cleared by the first word it says, whatever that word
+    /// is - a play that never takes effect has still been answered, and a
+    /// flag that waits for a better answer would never come down.
+    private var isStartingPlayback = false
     // A newer seek inherits the continuation, but may run it only on success.
     private var seekCompletions: [() -> Void] = []
     /// Bumped every time somebody asks for the audio to stop.
@@ -389,6 +400,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
 
     func pause() {
         pauseGeneration += 1
+        isStartingPlayback = false
         player?.pause()
         // Publish synchronously: progress must be saved before suspension.
         if pendingSeek == nil, seekTarget == nil,
@@ -473,7 +485,20 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
             // nothing on screen will say. So it is said here.
             AppLog.write(.player, "starting playback without the audio session - it will stop when the app leaves the screen")
         }
+        isStartingPlayback = true
         player?.play()
+    }
+
+    /// Everything that counts as a request of this device's own, still in
+    /// flight: an episode opening at a position, a seek on its way, a
+    /// position kept for the next press after a seek failed, and a play that
+    /// has been asked for and not yet reported.
+    ///
+    /// The gap this closes is a real one: a bookmark tapped here and a
+    /// position arriving from another device a moment later, with the player
+    /// in between reporting that it is doing nothing at all.
+    var hasRequestPending: Bool {
+        pendingSeek != nil || seekTarget != nil || isSeeking || isStartingPlayback
     }
 
     func stop() {
@@ -658,6 +683,8 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         timeControlObservation = player.observe(\.timeControlStatus, options: [.initial, .new]) { [weak self] player, _ in
             DispatchQueue.main.async {
                 guard let self, self.player === player else { return }
+                // It has answered, whatever the answer.
+                self.isStartingPlayback = false
                 self.isPlaying = player.timeControlStatus == .playing
                 self.isBuffering = player.timeControlStatus == .waitingToPlayAtSpecifiedRate
                 self.updateNowPlayingPlaybackState()
@@ -784,6 +811,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         seekGeneration += 1
         seekTarget = nil
         seekCompletions.removeAll()
+        isStartingPlayback = false
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
             timeObserverToken = nil
