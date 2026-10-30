@@ -295,7 +295,12 @@ final class ListeningAdopter {
 
         AppLog.write(.player, "adopting \(Int(there))s from the account for \(stored.title), the player stood at \(Int(standing))s")
 
-        engine.seek(to: there) { [weak self] in
+        // Reporting arrival rather than an ordinary completion, which a
+        // newer seek inherits. Somebody pressing a bookmark while this is in
+        // the air supersedes it, and this callback has to go with the move it
+        // belonged to - otherwise it wakes up after the bookmark has landed,
+        // finds nothing pending, and takes the bookmark's place.
+        engine.seek(to: there, reportingArrival: { [weak self] in
             // The account can have moved again while this was in the air, and
             // news that arrived then was refused by the guard above - it
             // could not tell this move from somebody pressing a bookmark.
@@ -303,7 +308,7 @@ final class ListeningAdopter {
             // date still newer than anything said here, and nobody having
             // started playing in the meantime.
             self?.adopt(standingAt: there)
-        }
+        })
         // Not a listen. Without this the move is written down at the next
         // opportunity with this moment's date, and this device claims a
         // listen that happened on another one.

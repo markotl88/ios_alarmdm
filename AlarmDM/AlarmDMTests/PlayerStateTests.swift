@@ -155,6 +155,58 @@ final class PlayerStateTests: XCTestCase {
         XCTAssertEqual(transport.targets.last ?? -1, 5_997, accuracy: 0.5)
     }
 
+    /// And a bookmark pressed while an adoption is in the air wins, even
+    /// though the adoption is the one that asked first.
+    ///
+    /// The engine hands a seek's completions to the seek that supersedes it,
+    /// on purpose - that is how "and then play" survives being superseded.
+    /// The adopter's callback must not travel that way: inherited by the
+    /// bookmark's seek it woke up after the bookmark had landed, found
+    /// nothing pending, and asked for the account's position instead.
+    func testABookmarkPressedDuringAnAdoptionIsNotOverruled() {
+        let transport = ControlledSeekPlayer()
+        let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
+        defer { actual.stop() }
+
+        let adopter = ListeningAdopter(
+            engine: actual,
+            episodes: episodes,
+            playbackState: PlaybackStateStore(defaults: defaults),
+            recorder: ListeningRecorder(engine: actual,
+                                        progressStore: ProgressSpy(),
+                                        playbackState: PlaybackStateStore(defaults: defaults),
+                                        notifications: NotificationCenter()),
+            news: storeChanges.eraseToAnyPublisher()
+        )
+        adopter.start()
+        adopters.append(adopter)
+
+        actual.seek(to: 3_000)
+        transport.finishSeek(0, success: true)
+        flush()
+        actual.pause()
+
+        listened(alarm, at: 5_400, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+        XCTAssertEqual(transport.targets, [3_000, 5_397])
+
+        // The Mac moves on again, and is refused while the adoption is in
+        // the air - this is the position that must not resurface later.
+        listened(alarm, at: 6_000, secondsAgo: 0)
+        storeChanges.send(())
+        flush()
+
+        // And now somebody here taps a bookmark.
+        actual.play(.podcast(alarm), startingAt: 120)
+        transport.finishSeek(1, success: false)
+        transport.finishSeek(2, success: true)
+        flush()
+
+        XCTAssertEqual(transport.targets, [3_000, 5_397, 120])
+        XCTAssertEqual(transport.playCalls, 1)
+    }
+
     func testSupersededSeekWaitsForLatestSuccessBeforePlaying() {
         let transport = ControlledSeekPlayer()
         let actual = PlaybackEngine(testPlayer: transport, source: .podcast(alarm))
@@ -1432,6 +1484,12 @@ private final class FakePlaybackEngine: PlaybackEngineType {
         stopCount += 1
         playingSubject.send(false)
         sourceSubject.send(nil)
+    }
+
+    /// Nothing supersedes anything here: the fake lands every move at once,
+    /// so arriving and finishing are the same instant.
+    func seek(to time: TimeInterval, reportingArrival: @escaping () -> Void) {
+        seek(to: time, completion: reportingArrival)
     }
 
     func seek(to time: TimeInterval, completion: (() -> Void)?) {

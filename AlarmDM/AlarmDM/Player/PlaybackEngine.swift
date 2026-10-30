@@ -182,6 +182,14 @@ protocol PlaybackEngineType: AnyObject {
     func toggle()
     func stop()
     func seek(to time: TimeInterval, completion: (() -> Void)?)
+    /// Seeks, and calls back only if this very move is the one that lands.
+    ///
+    /// The ordinary completion is handed on to a newer seek on purpose: it
+    /// carries "and then play", which somebody pressing a bookmark while an
+    /// episode is still opening still means. This one carries "I have
+    /// arrived", which is true only of the move that arrived - so a newer
+    /// seek takes it off the board instead of inheriting it.
+    func seek(to time: TimeInterval, reportingArrival: @escaping () -> Void)
     /// A seek somebody here asked for, as opposed to one adopted from
     /// another device.
     func moveByHand(to time: TimeInterval)
@@ -271,6 +279,9 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     private var isStartingPlayback = false
     // A newer seek inherits the continuation, but may run it only on success.
     private var seekCompletions: [() -> Void] = []
+    /// Dropped by the next seek rather than handed to it - see
+    /// seek(to:reportingArrival:).
+    private var arrivalReports: [() -> Void] = []
     /// Bumped every time somebody asks for the audio to stop.
     ///
     /// A seek that was told to start playing when it lands checks this on the
@@ -517,6 +528,21 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
     /// Continuations run only after the latest seek succeeds. A superseding
     /// seek inherits them; failure preserves the target for the next Play.
     func seek(to time: TimeInterval, completion: (() -> Void)? = nil) {
+        seek(to: time, completion: completion, reportingArrival: nil)
+    }
+
+    func seek(to time: TimeInterval, reportingArrival: @escaping () -> Void) {
+        seek(to: time, completion: nil, reportingArrival: reportingArrival)
+    }
+
+    private func seek(to time: TimeInterval,
+                      completion: (() -> Void)?,
+                      reportingArrival: (() -> Void)?) {
+        // Whatever was waiting to hear that it had arrived is not going to:
+        // this move replaces the one it belonged to. Cleared before anything
+        // can return early, so a refused seek takes it with it.
+        arrivalReports.removeAll()
+
         guard !isLive, let player else {
             completion?()
             return
@@ -525,6 +551,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         guard time.isFinite else { return }
         seekTarget = max(0, time)
         if let completion { seekCompletions.append(completion) }
+        if let reportingArrival { arrivalReports.append(reportingArrival) }
         if pendingSeek != nil {
             pendingSeek = max(0, time)
             currentTime = max(0, time)
@@ -576,8 +603,14 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
                     return
                 }
                 self.seekTarget = nil
+                let arrivals = self.arrivalReports
+                self.arrivalReports.removeAll()
                 self.updateNowPlayingInfo()
+                // Intent first. If one of these starts playing, whatever the
+                // arrival reports were going to do about a position finds a
+                // player that is listening, and leaves it alone.
                 continuations.forEach { $0() }
+                arrivals.forEach { $0() }
             }
         }
     }
@@ -811,6 +844,7 @@ final class PlaybackEngine: NSObject, ObservableObject, PlaybackEngineType {
         seekGeneration += 1
         seekTarget = nil
         seekCompletions.removeAll()
+        arrivalReports.removeAll()
         isStartingPlayback = false
         if let token = timeObserverToken {
             player?.removeTimeObserver(token)
